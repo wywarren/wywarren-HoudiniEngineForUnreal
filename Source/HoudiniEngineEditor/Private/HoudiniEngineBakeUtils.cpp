@@ -2029,9 +2029,11 @@ FHoudiniEngineBakeUtils::BakeInstancerOutputToActors_IAC(
 		    NewActor->SetActorLabel(NewNameStr);
 
 			// Copy properties from the Instanced object, but only for actors.
-			const auto CopyOptions = (EditorUtilities::ECopyOptions::Type)
-					(EditorUtilities::ECopyOptions::OnlyCopyEditOrInterpProperties |
-						EditorUtilities::ECopyOptions::PropagateChangesToArchetypeInstances);
+			const auto CopyOptions = static_cast<EditorUtilities::ECopyOptions::Type>(
+					EditorUtilities::ECopyOptions::OnlyCopyEditOrInterpProperties |
+					EditorUtilities::ECopyOptions::PropagateChangesToArchetypeInstances | 
+					EditorUtilities::ECopyOptions::CallPostEditChangeProperty |
+					EditorUtilities::ECopyOptions::CallPostEditMove);
 
 			EditorUtilities::CopyActorProperties(CurrentInstancedActor, NewActor, CopyOptions);
 
