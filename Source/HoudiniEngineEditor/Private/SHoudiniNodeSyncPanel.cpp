@@ -91,6 +91,27 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	TSharedPtr<SCheckBox> CheckBoxUseOutputNodes;
 	TSharedPtr<SCheckBox> CheckBoxFetchToWorld;
 	TSharedPtr<SCheckBox> CheckBoxReplaceExisting;
+
+	// Get the session status
+	auto GetSessionSyncStatusAndColor = [](FString& OutStatus, FLinearColor& OutStatusColor)
+	{
+		OutStatus = TEXT("Session Status");
+		OutStatusColor = FLinearColor::Red;
+
+		FHoudiniEngine::Get().GetSessionStatusAndColor(OutStatus, OutStatusColor);
+
+		// For valid state, check if session sync is enabled
+		if (OutStatusColor != FLinearColor::Red && OutStatusColor != FLinearColor::White)
+		{
+			bool bSessionSyncON = FHoudiniEngine::Get().IsSessionSyncEnabled();
+			if (!bSessionSyncON)
+			{
+				// Append a warning and change the color to orange
+				OutStatus += TEXT(" - Session Sync OFF");
+				OutStatusColor = FLinearColor(1.0f, 0.647f, 0.0f);
+			}
+		}
+	};	
 	
 	ChildSlot
 	[
@@ -123,18 +144,18 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 			[
 				SNew(STextBlock)
 				.Justification(ETextJustify::Left)
-				.Text_Lambda([]()
-				{
-					FString StatusString = TEXT("Session Status");
-					FLinearColor StatusColor;
-					bool result = FHoudiniEngine::Get().GetSessionStatusAndColor(StatusString, StatusColor);
-					return FText::FromString(StatusString);
-				})
-				.ColorAndOpacity_Lambda([]()
+				.Text_Lambda([GetSessionSyncStatusAndColor]()
 				{
 					FString StatusString;
-					FLinearColor StatusColor = FLinearColor::Red;
-					bool result = FHoudiniEngine::Get().GetSessionStatusAndColor(StatusString, StatusColor);
+					FLinearColor StatusColor;
+					GetSessionSyncStatusAndColor(StatusString, StatusColor);
+					return FText::FromString(StatusString);
+				})
+				.ColorAndOpacity_Lambda([GetSessionSyncStatusAndColor]()
+				{
+					FString StatusString;
+					FLinearColor StatusColor;
+					GetSessionSyncStatusAndColor(StatusString, StatusColor);
 					return FSlateColor(StatusColor);
 				})
 			]			

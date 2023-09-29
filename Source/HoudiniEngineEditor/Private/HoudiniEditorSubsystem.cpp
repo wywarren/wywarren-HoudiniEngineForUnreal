@@ -102,17 +102,13 @@ UHoudiniEditorSubsystem::SendSkeletalMeshToHoudini(
 bool
 UHoudiniEditorSubsystem::GetNodeSyncInput(UHoudiniInput*& OutInput)
 {
-	UHoudiniEditorSubsystem* HoudiniEditorSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorSubsystem>();
-	if (!IsValid(HoudiniEditorSubsystem))
+	if (!InitNodeSyncInputIfNeeded())
 		return false;
 
-	if (!HoudiniEditorSubsystem->InitNodeSyncInputIfNeeded())
+	if (!IsValid(NodeSyncInput))
 		return false;
 
-	if (!IsValid(HoudiniEditorSubsystem->NodeSyncInput))
-		return false;
-
-	OutInput = HoudiniEditorSubsystem->NodeSyncInput;
+	OutInput = NodeSyncInput;
 
 	return true;
 }
@@ -121,53 +117,48 @@ UHoudiniEditorSubsystem::GetNodeSyncInput(UHoudiniInput*& OutInput)
 bool
 UHoudiniEditorSubsystem::InitNodeSyncInputIfNeeded()
 {
-	UHoudiniEditorSubsystem* HoudiniEditorSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorSubsystem>();
-	if (!IsValid(HoudiniEditorSubsystem))
-		return false;
-
-	UHoudiniInput*& NSInput = HoudiniEditorSubsystem->NodeSyncInput;
-	if (IsValid(NSInput))
+	if (IsValid(NodeSyncInput))
 		return true;
 
 	// Create a fake HoudiniInput/HoudiniInputObject so we can use the input Translator to send the data to H
 	FString InputObjectName = TEXT("NodeSyncInput");
-	NSInput = NewObject<UHoudiniInput>(
-		HoudiniEditorSubsystem, UHoudiniInput::StaticClass(), FName(*InputObjectName), RF_Transactional);
+	NodeSyncInput = NewObject<UHoudiniInput>(
+		this, UHoudiniInput::StaticClass(), FName(*InputObjectName), RF_Transactional);
 
 	//NodeSyncInput->AddToRoot();
 
-	if (!IsValid(NSInput))
+	if (!IsValid(NodeSyncInput))
 	{
 		// TODO: Always call remove from root, even for failures! (use a lambda for returns)
-		NSInput->RemoveFromRoot();
+		NodeSyncInput->RemoveFromRoot();
 		return false;
 	}
 
 	// Set the default input options
 	// TODO: Fill those from the NodeSync UI?!
-	NSInput->SetExportColliders(false);
-	NSInput->SetExportLODs(false);
-	NSInput->SetExportSockets(false);
-	NSInput->SetLandscapeExportType(EHoudiniLandscapeExportType::Heightfield);
-	NSInput->SetAddRotAndScaleAttributes(false);
-	NSInput->SetImportAsReference(false);
-	NSInput->SetImportAsReferenceRotScaleEnabled(false);
-	NSInput->SetKeepWorldTransform(true);
-	NSInput->SetPackBeforeMerge(false);
-	NSInput->SetUnrealSplineResolution(50.0f);
+	NodeSyncInput->SetExportColliders(false);
+	NodeSyncInput->SetExportLODs(false);
+	NodeSyncInput->SetExportSockets(false);
+	NodeSyncInput->SetLandscapeExportType(EHoudiniLandscapeExportType::Heightfield);
+	NodeSyncInput->SetAddRotAndScaleAttributes(false);
+	NodeSyncInput->SetImportAsReference(false);
+	NodeSyncInput->SetImportAsReferenceRotScaleEnabled(false);
+	NodeSyncInput->SetKeepWorldTransform(true);
+	NodeSyncInput->SetPackBeforeMerge(false);
+	NodeSyncInput->SetUnrealSplineResolution(50.0f);
 
 	// default input options
-	NSInput->SetCanDeleteHoudiniNodes(false);
-	NSInput->SetUseLegacyInputCurve(true);
+	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
+	NodeSyncInput->SetUseLegacyInputCurve(true);
 
 	// TODO: Check?
-	NSInput->SetAssetNodeId(-1);
-	//NSInput->SetInputNodeId(UnrealContentNodeId);
+	NodeSyncInput->SetAssetNodeId(-1);
+	//NodeSyncInput->SetInputNodeId(UnrealContentNodeId);
 
 	// Input type? switch to world if actors in the selection ?
 	bool bOutBPModif = false;
-	NSInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
-	NSInput->SetName(TEXT("NodeSyncInput"));
+	NodeSyncInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
+	NodeSyncInput->SetName(TEXT("NodeSyncInput"));
 
 	return true;
 }
