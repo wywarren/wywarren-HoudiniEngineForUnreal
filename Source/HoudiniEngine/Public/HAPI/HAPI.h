@@ -711,6 +711,50 @@ HAPI_DECL HAPI_GetComposedNodeCookResult( const HAPI_Session * session,
                                           char * string_value,
                                           int length );
 
+/// @brief  Get the number of message nodes set in "Type Properties".
+///
+/// @ingroup Status
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[out]     count
+///                 The number of message nodes.
+///         
+HAPI_DECL HAPI_GetMessageNodeCount( const HAPI_Session * session,
+                                    HAPI_NodeId node_id,
+                                    int * count );
+
+/// @brief  Get the ids of message nodes set in the "Type Properties".
+///            
+/// @ingroup Status
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[out]     message_node_ids_array
+///                 The array of node IDs to be filled.
+///
+/// @param[in]      count
+///                 The number of message nodes.
+///
+HAPI_DECL HAPI_GetMessageNodeIds( const HAPI_Session * session, 
+                                   HAPI_NodeId node_id, 
+                                   HAPI_NodeId * message_node_ids_array, 
+                                   int count );
+
 /// @brief  Recursively check for specific errors by error code on a node.
 ///
 ///         Note that checking for errors can be expensive because it checks
