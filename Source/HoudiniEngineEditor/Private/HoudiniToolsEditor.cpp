@@ -3066,8 +3066,6 @@ FHoudiniToolsEditor::LaunchHoudiniToolPropertyEditor(const TSharedPtr<FHoudiniTo
 		PathName = HoudiniPreset->GetPathName();
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("[FHoudiniToolsEditor::LaunchHoudiniToolPropertyEditor] Asset Path: %s"), *PathName);
-
 	const FName ViewIdentifier = FName(TEXT("HoudiniToolPropertyEditor:") + PathName);
 
 	// See if we can find an existing property editor for this asset
@@ -3082,7 +3080,6 @@ FHoudiniToolsEditor::LaunchHoudiniToolPropertyEditor(const TSharedPtr<FHoudiniTo
 			ContainingWindow->BringToFront();
 		}
 		// Focus the existing details view
-		UE_LOG(LogTemp, Log, TEXT("[FHoudiniToolsEditor::LaunchHoudiniToolPropertyEditor] Found Window %s"), *(ViewIdentifier.ToString()));
 		return;
 	}
 	
