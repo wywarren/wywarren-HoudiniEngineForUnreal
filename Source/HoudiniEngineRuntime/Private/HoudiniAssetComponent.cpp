@@ -1495,6 +1495,8 @@ UHoudiniAssetComponent::MarkAsNeedRebuild()
 		}
 	}
 
+	Outputs.Empty();
+
 	// We need to mark all our inputs as changed/trigger update
 	for (auto CurrentInput : Inputs)
 	{
