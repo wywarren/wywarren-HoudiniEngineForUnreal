@@ -7514,7 +7514,7 @@ HAPI_DECL HAPI_SetAttributeFloat64ArrayData( const HAPI_Session * session,
                                              int start,
                                              int sizes_fixed_length );
 
-/// @brief  
+/// @brief  Set attribute string array data.
 ///
 /// @ingroup GeometrySetters Attributes
 ///
@@ -7571,7 +7571,7 @@ HAPI_DECL HAPI_SetAttributeStringArrayData( const HAPI_Session * session,
                                             int start,
                                             int sizes_fixed_length );
 
-/// @brief
+/// @brief  Set attribute dictionary array data.
 ///
 /// @ingroup GeometrySetters Attributes
 ///
