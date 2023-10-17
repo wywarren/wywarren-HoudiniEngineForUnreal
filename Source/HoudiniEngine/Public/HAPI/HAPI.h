@@ -6552,7 +6552,7 @@ HAPI_DECL HAPI_SetAttributeFloat64Data( const HAPI_Session * session,
 ///                 Attribute name.
 ///
 /// @param[in]      attr_info
-///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 ::HAPI_AttributeInfo used as input for what tuple size
 ///                 you want. Also contains some sanity checks like
 ///                 data type. Generally should be the same struct
 ///                 returned by ::HAPI_GetAttributeInfo().
@@ -7088,7 +7088,7 @@ HAPI_DECL HAPI_SetAttributeFloat64UniqueData(
 ///                 Attribute name.
 ///
 /// @param[in]      attr_info
-///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 ::HAPI_AttributeInfo used as input for what tuple size
 ///                 you want. Also contains some sanity checks like
 ///                 data type. Generally should be the same struct
 ///                 returned by ::HAPI_GetAttributeInfo().
