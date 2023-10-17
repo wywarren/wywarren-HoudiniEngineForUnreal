@@ -46,6 +46,7 @@
 
 #include "HoudiniDataTableTranslator.h"
 #include "HoudiniMeshTranslator.h"
+#include "HoudiniSkeletalMeshTranslator.h"
 #include "HoudiniSplineTranslator.h"
 #include "HoudiniLandscapeTranslator.h"
 #include "HoudiniLandscapeSplineTranslator.h"
@@ -476,6 +477,10 @@ FHoudiniOutputTranslator::UpdateOutputs(
 
 		case EHoudiniOutputType::Skeletal:
 		{
+			FHoudiniSkeletalMeshTranslator::CreateAllSkeletalMeshesAndComponentsFromHoudiniOutput(
+				CurOutput, PackageParams, AllOutputMaterials, OuterComponent);
+
+			NumVisibleOutputs++;
 			break;
 		}
 
