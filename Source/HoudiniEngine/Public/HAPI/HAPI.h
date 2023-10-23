@@ -4083,6 +4083,62 @@ HAPI_DECL HAPI_SetPreset( const HAPI_Session * session,
                           const char * buffer,
                           int buffer_length );
 
+/// @brief  Gets the number of presets in an IDX file.
+///         HAPI_GetPresetNames() should be called before 
+///         HAPI_GetPresetCount() is called again to prevent 
+///         the previous values from being overwritten.
+///
+/// @ingroup Presets
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      buffer
+///                 Buffer to hold the preset data.
+///
+/// @param[in]      buffer_length
+///                 Size of the buffer.
+///
+/// @param[out]     count
+///                 Number of presets in the file. 
+///
+HAPI_DECL HAPI_GetPresetCount( const HAPI_Session * session,
+                               const char * buffer,
+                               int buffer_length,
+                               int * count );
+
+/// @brief  Gets the names of presets in an IDX file
+///
+/// @ingroup Presets
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      buffer
+///                 Buffer to hold the preset data.
+///
+/// @param[in]      buffer_length
+///                 Size of the buffer.
+///
+/// @param[out]     preset_names_array
+///                 Array of preset names to be filled      
+///
+/// @param[in]      count
+///                 Number of presets in the file. Should be the same as 
+///                 the count returned by ::HAPI_GetPresetCount()
+///
+HAPI_DECL HAPI_GetPresetNames( const HAPI_Session * session,
+                               const char * buffer,
+                               int buffer_length,
+                               HAPI_StringHandle * preset_names_array,
+                               int count );
+
 /// @defgroup Objects
 /// Functions for working with OBJ Nodes
 
