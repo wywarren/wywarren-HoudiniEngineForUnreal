@@ -75,6 +75,7 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "FoliageType_InstancedStaticMesh.h"
+#include "HoudiniHLODLayerUtils.h"
 #include "GeometryCollection/GeometryCollection.h"
 #include "Landscape.h"
 #include "LandscapeInfo.h"
@@ -2783,6 +2784,20 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMeshComponent(
 			FUnrealObjectInputUtils::CreateAndAddModifier<FUnrealObjectInputPhysicalMaterialOverride>(InObject->InputNodeHandle, ModifierChainName, SKC, PhysMatOverrideAttrOwner);
 		}
 
+		// Data layer Modifier
+		FUnrealObjectInputModifier* DataLayerModifier = FUnrealObjectInputUtils::FindFirstModifierOfType(InObject->InputNodeHandle, ModifierChainName, EUnrealObjectInputModifierType::DataLayerGroups);
+		if (!DataLayerModifier)
+		{
+			FUnrealObjectInputUtils::CreateAndAddModifier<FUnrealObjectInputDataLayer>(InObject->InputNodeHandle, ModifierChainName, SKC->GetOwner());
+		}
+
+		// HLODs
+		FUnrealObjectInputModifier* HLODModifier = FUnrealObjectInputUtils::FindFirstModifierOfType(Handle, ModifierChainName, EUnrealObjectInputModifierType::HLODAttributes);
+		if (!HLODModifier)
+		{
+			FUnrealObjectInputUtils::CreateAndAddModifier<FUnrealObjectInputHLODAttributes>(Handle, ModifierChainName, SKC->GetOwner());
+		}
+
 		// Update all modifiers
 		FUnrealObjectInputUtils::UpdateAllModifierChains(InObject->InputNodeHandle);
 	}
@@ -3234,6 +3249,23 @@ FHoudiniInputTranslator::HapiCreateInputNodeForStaticMeshComponent(
 		else
 		{
 			FUnrealObjectInputUtils::CreateAndAddModifier<FUnrealObjectInputPhysicalMaterialOverride>(InObject->InputNodeHandle, ModifierChainName, SMC, PhysMatOverrideAttrOwner);
+		}
+
+		// Data layer Modifier
+		if (FUnrealObjectInputModifier* DataLayerModifier = FUnrealObjectInputUtils::FindFirstModifierOfType(InObject->InputNodeHandle, ModifierChainName, EUnrealObjectInputModifierType::DataLayerGroups))
+		{
+			// nothing for now
+		}
+		else
+		{
+			FUnrealObjectInputUtils::CreateAndAddModifier<FUnrealObjectInputDataLayer>(InObject->InputNodeHandle, ModifierChainName, SMC->GetOwner());
+		}
+
+		// HLODs
+		FUnrealObjectInputModifier* HLODModifier = FUnrealObjectInputUtils::FindFirstModifierOfType(InObject->InputNodeHandle, ModifierChainName, EUnrealObjectInputModifierType::HLODAttributes);
+		if (!HLODModifier)
+		{
+			FUnrealObjectInputUtils::CreateAndAddModifier<FUnrealObjectInputHLODAttributes>(InObject->InputNodeHandle, ModifierChainName, SMC->GetOwner());
 		}
 
 		// Update all modifiers
@@ -4301,7 +4333,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForLandscape(
 		// OutHandles.Add(InObject->InputNodeHandle);
 		// OutHandles.Append(Handles);
 	}
-	
+
 	return bSuccess;
 }
 
