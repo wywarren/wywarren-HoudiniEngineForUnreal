@@ -74,7 +74,6 @@ bool FHoudiniAnimationTranslator::IsAnimationPart(const HAPI_NodeId& GeoId, cons
 
 
 	return TransformInfo.exists && LocalTransformInfo.exists && TimeInfo.exists;
-	return true;
 }
 
 void 
@@ -129,11 +128,9 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 
 
 	FString SkeletonAssetPathString;
-	if (true)  //Panel NodeSync Settings Overrides unreal_skeleton  Attribute
-	{
-		SkeletonAssetPathString = TEXT("/Script/Engine.Skeleton'/Game/Characters/Mannequin_UE4/Meshes/SK_Mannequin_Skeleton.SK_Mannequin_Skeleton'");
-	}
-	else
+
+	bool bSkeletonExists = FHoudiniEngineUtils::HapiCheckAttributeExists(HGPO.GeoId, HGPO.PartId, "unreal_skeleton");
+	if (bSkeletonExists)  //Panel NodeSync Settings Overrides unreal_skeleton  Attribute
 	{
 		HAPI_AttributeInfo UnrealSkeletonInfo;
 		FHoudiniApi::AttributeInfo_Init(&UnrealSkeletonInfo);
@@ -145,6 +142,11 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 		}
 
 		SkeletonAssetPathString = UnrealSkeletonData[0];
+	}
+	else
+	{
+		SkeletonAssetPathString = TEXT("/Script/Engine.Skeleton'/Game/Characters/Mannequin_UE4/Meshes/SK_Mannequin_Skeleton.SK_Mannequin_Skeleton'");
+
 	}
 
 	const FSoftObjectPath SkeletonAssetPath(SkeletonAssetPathString);
@@ -393,7 +395,12 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 				ParentBoneIndex = RefSkeleton.GetParentIndex(BoneIndex);
 				ParentBoneName = RefSkeleton.GetBoneName(ParentBoneIndex);
 			}
+			if (!BoneTransformMap->Contains(ParentBoneName))
+			{
+				continue;
+			}
 			FTransform ParentCSXform = *BoneTransformMap->Find(ParentBoneName);
+			
 			FTransform BoneCSXform = Elem.Value;
 			FTransform BoneLXform = BoneCSXform * ParentCSXform.Inverse(); //Final
 			//Store
@@ -446,8 +453,18 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 		bool bShouldTransact = true;
 		for (auto Bone : BoneNames)  //loop over all bones
 		{
-			AnimController.AddBoneCurve(Bone, bShouldTransact);
-			AnimController.SetBoneTrackKeys(Bone, *BonePosMap.Find(Bone), *BoneRotMap.Find(Bone), *BoneScaleMap.Find(Bone), bShouldTransact);
+			//QUESTION:  What to do if no tracks for bone? Skip?
+			//TODO Need to insert tracks for missing bones?
+			if (BonePosMap.Contains(Bone) && BoneRotMap.Contains(Bone) && BoneScaleMap.Contains(Bone))
+			{
+				AnimController.AddBoneCurve(Bone, bShouldTransact);
+
+				AnimController.SetBoneTrackKeys(Bone, *BonePosMap.Find(Bone), *BoneRotMap.Find(Bone), *BoneScaleMap.Find(Bone), bShouldTransact);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Log, TEXT("Missing Bone %s "), Bone);
+			}
 		}
 		
 		AnimController.NotifyPopulated();

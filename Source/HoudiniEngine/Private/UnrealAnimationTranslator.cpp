@@ -331,6 +331,39 @@ FUnrealAnimationTranslator::GetCompSpaceTransformForBone(const FReferenceSkeleto
 }
 
 FTransform
+FUnrealAnimationTranslator::GetCompSpacePoseTransformForBoneMap(const TMap<int,FTransform>& BoneMap, const FReferenceSkeleton& InSkel, const int32& InBoneIdx)
+{
+	//FTransform resultBoneTransform = InSkel.GetRefBonePose()[InBoneIdx];
+	FTransform resultBoneTransform = FTransform::Identity;
+	if (BoneMap.Contains(InBoneIdx))
+	{
+		resultBoneTransform = BoneMap.FindChecked(InBoneIdx);
+	}
+
+	auto refBoneInfo = InSkel.GetRefBoneInfo();
+
+	int32 Bone = InBoneIdx;
+	while (Bone)
+	{
+		const int32 ParentIdx = refBoneInfo[Bone].ParentIndex;
+		//if root then use -90
+		//FTransform BoneTransform = Bones[refBoneInfo[Bone].ParentIndex];
+		FTransform BoneTransform = FTransform::Identity;
+		if (BoneMap.Contains(ParentIdx))
+		{
+			BoneTransform = BoneMap.FindChecked(ParentIdx);
+		}
+
+		resultBoneTransform *= BoneTransform;
+		Bone = ParentIdx;
+	}
+
+	return resultBoneTransform;
+}
+
+
+
+FTransform
 FUnrealAnimationTranslator::GetCompSpacePoseTransformForBone(const TArray<FTransform>& Bones, const FReferenceSkeleton& InSkel, const int32& InBoneIdx)
 {
 	//FTransform resultBoneTransform = InSkel.GetRefBonePose()[InBoneIdx];
@@ -364,7 +397,7 @@ FUnrealAnimationTranslator::GetComponentSpaceTransforms(TArray<FTransform>& OutR
 	}
 }
 
-FString FUnrealAnimationTranslator::GetBonePathForBone(const TArray<FTransform>& Bones, const FReferenceSkeleton& InSkel, const int32& InBoneIdx)
+FString FUnrealAnimationTranslator::GetBonePathForBone(const FReferenceSkeleton& InSkel, const int32& InBoneIdx)
 {
 	FString BonePath;
 	auto refBoneInfo = InSkel.GetRefBoneInfo();
@@ -397,7 +430,8 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 	UAnimSequence* AnimSequence = CastChecked<UAnimSequence>(Animation);
 	USkeleton* Skeleton = Animation->GetSkeleton();
 	USkeletalMesh* PreviewMesh = Skeleton ? Skeleton->GetAssetPreviewMesh(AnimSequence) : NULL;
-	const FReferenceSkeleton& RefSkeleton = PreviewMesh->GetRefSkeleton();
+	//const FReferenceSkeleton& RefSkeleton = PreviewMesh->GetRefSkeleton();
+	const FReferenceSkeleton& RefSkeleton = Skeleton->GetReferenceSkeleton();
 	TArray<FTransform> ComponentSpaceTransforms;
 	FUnrealAnimationTranslator::GetComponentSpaceTransforms(ComponentSpaceTransforms, RefSkeleton);  // In BindPose
 
@@ -457,15 +491,19 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 	int RefBoneCount = RefSkeleton.GetRefBoneInfo().Num();
 	TArray<FString> BoneNames;
 	TArray<FString> BonePaths;
+	TArray<FString> UnrealSkeletonPaths;
 	//Points.SetNumZeroed(OutNames.Num() * TotalTrackKeys * 3);
 
 	// 
-	TMap<int, TArray<FTransform>> FrameMap;  //For Each KeyFrame, Store Array of transforms (one for each bone)
+	//TMap<int, TArray<FTransform>> FrameMap;  //For Each KeyFrame, Store Array of transforms (one for each bone)
+	TArray< TMap<int, FTransform>> Frames;
+
 	for (int KeyFrame = 0; KeyFrame < TotalTrackKeys; KeyFrame++)
 	{
 		int32 BoneIndex = 0;
 		TArray<FTransform> KeyBoneTransforms;
 		//for each bone
+		TMap<int, FTransform> SingleFrame;
 		for (const FMeshBoneInfo& MeshBoneInfo : RefSkeleton.GetRefBoneInfo())
 		{
 			//add that tracks keys
@@ -474,39 +512,58 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 				TArray<FTransform>& TransformArray = TrackMap[MeshBoneInfo.Name];
 				FTransform KeyBoneTransform = TransformArray[KeyFrame];
 				KeyBoneTransforms.Add(KeyBoneTransform);
+				SingleFrame.Add(BoneIndex, KeyBoneTransform);
 
 			}
 			BoneIndex++;
 		}
-		FrameMap.Add(KeyFrame, KeyBoneTransforms);
+		//FrameMap.Add(KeyFrame, KeyBoneTransforms);
+		Frames.Add(SingleFrame);
 	}
 	TArray<int32> FrameIndexData;
 	TArray<float> TimeData;
 	//TimeData.SetNumZeroed(OutNames.Num()* (TotalTrackKeys));
 	//TimeData.SetNumZeroed(PrimitiveCount);
 
-	bool AppendFirstFrame = true;
+	bool AppendFirstFrame = true;  //topology frame
+	TMap<FName, FMeshBoneInfo> BoneInfos;
+
+	for (const FMeshBoneInfo& MeshBoneInfo : Skeleton->GetReferenceSkeleton().GetRefBoneInfo())
+	{
+		BoneInfos.Add(MeshBoneInfo.Name, MeshBoneInfo);
+	}
 	if (AppendFirstFrame)
 	{
 		//For Each Key Frame ( eg 1-60)
 		for (int i = 0; i < 1; i++)
 		{
 			int32 BoneIndex = 0;
-
+			int32 BoneNameCounter = 0;
 			//for each bone
-			for (const FMeshBoneInfo& MeshBoneInfo : RefSkeleton.GetRefBoneInfo())
+			
+			for (FName KeyBoneName : OutNames)
+			//for (const FMeshBoneInfo& MeshBoneInfo : RefSkeleton.GetRefBoneInfo())
 			{
+				BoneIndex = Skeleton->GetReferenceSkeleton().FindBoneIndex(KeyBoneName);
+				const FMeshBoneInfo& MeshBoneInfo = BoneInfos.FindChecked(KeyBoneName);
 				//add that tracks keys
 				if (TrackMap.Contains(MeshBoneInfo.Name))
 				{
 					UE_LOG(LogTemp, Log, TEXT("[CLS::AddBoneTracksToNode] Calculating Pose Transform for bone: %s"), *MeshBoneInfo.Name.ToString());
 					//check BoneIndex is correct
-					FTransform PoseTransform = FUnrealAnimationTranslator::GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, BoneIndex);
+					//FTransform PoseTransform = FUnrealAnimationTranslator::GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, BoneIndex);
+
+					FTransform PoseTransform = FUnrealAnimationTranslator::GetCompSpacePoseTransformForBoneMap(Frames[i], RefSkeleton, BoneIndex);
 
 					//alt
-					const TArray<FTransform>& LocalBones = FrameMap[i];
-					FTransform LocalBoneTransform = LocalBones[BoneIndex];
-
+					//const TArray<FTransform>& LocalBones = FrameMap[i];
+					//FTransform LocalBoneTransform = LocalBones[BoneIndex];
+					FTransform LocalBoneTransform = FTransform::Identity;
+					if (!Frames[i].Contains(BoneIndex))
+					{
+						LocalBoneTransform = Frames[i].FindChecked(BoneIndex);
+					}
+					
 					TArray<FTransform>& TransformArray = TrackMap[MeshBoneInfo.Name];
 
 					//FVector Location = TransformArray[i].GetLocation();
@@ -521,7 +578,7 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 
 
 					//--------------------4x4LocalTransform Matrix 
-					int32 LocalOffSet = i * OutNames.Num() * 4 * 4 + (BoneIndex * 4 * 4);
+					int32 LocalOffSet = i * OutNames.Num() * 4 * 4 + (BoneNameCounter * 4 * 4);
 
 					//Preconvert Rotation
 					FQuat LocalQ = LocalBoneTransform.GetRotation();
@@ -544,19 +601,19 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 					FMatrix M44LocalInverse = M44Local.Inverse();  //see pCaptData property
 					//TODO Validate inverse and conversion
 
-					int32 row = 0;
-					int32 col = 0;
-					for (int32 idx = 0; idx < 16; idx++)
-					{
-						//XFormsData[16 * BoneIndex + i] = M44.M[row][col];
-						LocalTransformData[LocalOffSet + idx] = M44Local.M[row][col];
-						col++;
-						if (col > 3)
-						{
-							row++;
-							col = 0;
-						}
-					}
+					//int32 row = 0;
+					//int32 col = 0;
+					//for (int32 idx = 0; idx < 16; idx++)
+					//{
+					//	//XFormsData[16 * BoneIndex + i] = M44.M[row][col];
+					//	LocalTransformData[LocalOffSet + idx] = M44Local.M[row][col];
+					//	col++;
+					//	if (col > 3)
+					//	{
+					//		row++;
+					//		col = 0;
+					//	}
+					//}
 					//-------------------4x4LocalTransform Matrix 
 
 					//FQuat LocalQ = LocalBoneTransform.GetRotation();
@@ -619,13 +676,15 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 						PrimitiveCount++;
 					}
 					BoneNames.Add(MeshBoneInfo.Name.ToString());
-					BonePaths.Add(FUnrealAnimationTranslator::GetBonePathForBone(FrameMap[i], RefSkeleton, BoneIndex));
-					BoneIndex++;
+					BonePaths.Add(FUnrealAnimationTranslator::GetBonePathForBone(RefSkeleton, BoneIndex));
+					UnrealSkeletonPaths.Add(*Skeleton->GetPathName());
+					//BoneIndex++;
 				}
 				else
 				{
 					HOUDINI_LOG_WARNING(TEXT("Missing Bone"));
 				}
+				BoneNameCounter++;
 			}
 		}
 	}//AppendFirstFrame
@@ -636,19 +695,35 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 	{
 		int32 BoneIndex = 0;
 
+		int32 BoneNameCounter = 0;
 		//for each bone
-		for (const FMeshBoneInfo& MeshBoneInfo : RefSkeleton.GetRefBoneInfo())
+		for (FName KeyBoneName : OutNames)
 		{
+			BoneIndex = Skeleton->GetReferenceSkeleton().FindBoneIndex(KeyBoneName);
+			const FMeshBoneInfo& MeshBoneInfo = BoneInfos.FindChecked(KeyBoneName);
 			//add that tracks keys
 			if (TrackMap.Contains(MeshBoneInfo.Name))
 			{
 				UE_LOG(LogTemp, Log, TEXT("[CLS::AddBoneTracksToNode] Calculating Pose Transform for bone: %s"), *MeshBoneInfo.Name.ToString());
 				//check BoneIndex is correct
-				FTransform PoseTransform = GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, BoneIndex);
+				//FTransform PoseTransform = GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, BoneIndex);
+				
 
 				//alt
-				const TArray<FTransform>& LocalBones = FrameMap[i];
-				FTransform LocalBoneTransform = LocalBones[BoneIndex];
+				//const TArray<FTransform>& LocalBones = FrameMap[i];
+				//FTransform LocalBoneTransform = LocalBones[BoneIndex];
+
+				FTransform PoseTransform = FUnrealAnimationTranslator::GetCompSpacePoseTransformForBoneMap(Frames[i], RefSkeleton, BoneIndex);
+
+				//alt
+				//const TArray<FTransform>& LocalBones = FrameMap[i];
+				//FTransform LocalBoneTransform = LocalBones[BoneIndex];
+				FTransform LocalBoneTransform = FTransform::Identity;
+				if (!Frames[i].Contains(BoneIndex))
+				{
+					LocalBoneTransform = Frames[i].FindChecked(BoneIndex);
+				}
+
 
 				TArray<FTransform>& TransformArray = TrackMap[MeshBoneInfo.Name];
 
@@ -680,7 +755,7 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 				PoseScaleData.Add(PoseTransform.GetScale3D());
 
 				//--------------------4x4LocalTransform 
-				int32 LocalOffSet = (i + 1) * OutNames.Num() * 4 * 4 + (BoneIndex * 4 * 4);//adding 1 because of firstframe append
+				int32 LocalOffSet = (i + 1) * OutNames.Num() * 4 * 4 + (BoneNameCounter * 4 * 4);//adding 1 because of firstframe append
 
 				//Preconvert Rotation
 				FQuat LocalQ = LocalBoneTransform.GetRotation();
@@ -708,18 +783,18 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 				FMatrix M44Local = LocalBoneTransform.ToMatrixWithScale();
 				FMatrix M44LocalInverse = M44Local.Inverse();  //see pCaptData property
 
-				int32 row = 0;
-				int32 col = 0;
-				for (int32 idx = 0; idx < 16; idx++)
-				{
-					LocalTransformData[LocalOffSet + idx] = M44Local.M[row][col];
-					col++;
-					if (col > 3)
-					{
-						row++;
-						col = 0;
-					}
-				}
+				//int32 row = 0;
+				//int32 col = 0;
+				//for (int32 idx = 0; idx < 16; idx++)
+				//{
+				//	LocalTransformData[LocalOffSet + idx] = M44Local.M[row][col];
+				//	col++;
+				//	if (col > 3)
+				//	{
+				//		row++;
+				//		col = 0;
+				//	}
+				//}
 				if (true)
 				{
 					FName BoneName = RefSkeleton.GetBoneName(BoneIndex);
@@ -729,7 +804,8 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 						ParentBoneIndex = RefSkeleton.GetParentIndex(BoneIndex);
 						FName ParentBoneName = RefSkeleton.GetBoneName(ParentBoneIndex);
 					}
-					FTransform ParentPoseTransform = GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, ParentBoneIndex);
+					//FTransform ParentPoseTransform = GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, ParentBoneIndex);
+					FTransform ParentPoseTransform = GetCompSpacePoseTransformForBoneMap(Frames[i], RefSkeleton, ParentBoneIndex);
 
 					//FTransform PoseTransform = GetCompSpacePoseTransformForBone(FrameMap[i], RefSkeleton, BoneIndex);
 					FQuat QBone = PoseTransform.GetRotation();
@@ -830,20 +906,22 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 				// WorldTransformData[i * OutNames.Num() * 3 * 3] = BoneIndex;
 				if (BoneIndex > 0)
 				{
-					PrimIndices.Add((i * BoneCount) + MeshBoneInfo.ParentIndex);
-					PrimIndices.Add((i * BoneCount) + BoneIndex);
+					PrimIndices.Add(((i+1) * BoneCount) + MeshBoneInfo.ParentIndex);
+					PrimIndices.Add(((i+1) * BoneCount) + BoneIndex);
 					FrameIndexData.Add(i + 1); //already appended a frame
 					TimeData.Add(i * FrameRate);
 					PrimitiveCount++;
 				}
 				BoneNames.Add(MeshBoneInfo.Name.ToString());
-				BonePaths.Add(GetBonePathForBone(FrameMap[i], RefSkeleton, BoneIndex));
-				BoneIndex++;
+				BonePaths.Add(GetBonePathForBone(RefSkeleton, BoneIndex));
+				UnrealSkeletonPaths.Add(Skeleton->GetFName().ToString());
+				//BoneIndex++;
 			}
 			else
 			{
 				HOUDINI_LOG_WARNING(TEXT("Missing Bone"));
 			}
+			BoneNameCounter++;
 		}
 
 	}
@@ -941,6 +1019,27 @@ bool FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAn
 
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
 		BonePaths, NewNodeId, 0, "path", AttributeInfoName), false);
+
+//--------------------------------------------------------------------------------------------------------------------- 
+// unreal_skeleton
+//---------------------------------------------------------------------------------------------------------------------
+	HAPI_AttributeInfo UnrealSkeletonInfo;
+	FHoudiniApi::AttributeInfo_Init(&AttributeInfoName);
+	UnrealSkeletonInfo.count = Part.pointCount;
+	UnrealSkeletonInfo.tupleSize = 1;
+	UnrealSkeletonInfo.exists = true;
+	UnrealSkeletonInfo.owner = HAPI_ATTROWNER_POINT;
+	UnrealSkeletonInfo.storage = HAPI_STORAGETYPE_STRING;
+	UnrealSkeletonInfo.originalOwner = HAPI_ATTROWNER_INVALID;
+
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+		FHoudiniEngine::Get().GetSession(),
+		NewNodeId, 0, "unreal_skeleton", &UnrealSkeletonInfo), false);
+
+
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+		UnrealSkeletonPaths, NewNodeId, 0, "unreal_skeleton", UnrealSkeletonInfo), false);
+
 
 	//--------------------------------------------------------------------------------------------------------------------- 
 	// Time
