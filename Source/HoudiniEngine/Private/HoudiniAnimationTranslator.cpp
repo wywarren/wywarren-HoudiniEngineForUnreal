@@ -225,73 +225,13 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 	LocalTransformSizesFixedArray.SetNum(LocalTransformInfo.count);
 	HAPI_Result LocalTransformDataResult = FHoudiniApi::GetAttributeFloatArrayData(FHoudiniEngine::Get().GetSession(), HGPO.GeoId, HGPO.PartId, "localtransform", &LocalTransformInfo, &LocalTransformData[0], LocalTransformInfo.count * LocalTransformInfo.tupleSize, &LocalTransformSizesFixedArray[0], 0, LocalTransformInfo.count);
 
-	////BoneNames---------------------------------------------------------------------------
-	//HAPI_AttributeInfo BoneNameInfo;
-	//FHoudiniApi::AttributeInfo_Init(&BoneNameInfo);
-	//HAPI_Result LocalTransformInfoResult = FHoudiniApi::GetAttributeInfo(
-	//	FHoudiniEngine::Get().GetSession(),
-	//	HGPO.GeoId, HGPO.PartId,
-	//	"name", HAPI_AttributeOwner::HAPI_ATTROWNER_POINT, &BoneNameInfo);
-
-	//// Extract the StringHandles
-	//TArray<HAPI_StringHandle> BoneNameStringHandles;
-	//TArray<int> BoneNameSizesFixedArray;
-	////BoneNameSizesFixedArray.SetNum(BoneNameInfo.totalArrayElements);
-	////BoneNameStringHandles.Init(-1, BoneNameInfo.totalArrayElements);
-	//BoneNameSizesFixedArray.SetNum(BoneNameInfo.count);
-	//BoneNameStringHandles.Init(-1, BoneNameInfo.count * BoneNameInfo.tupleSize);
-
-	////LocalTransformData.SetNum(LocalTransformInfo.totalArrayElements);
-	////LocalTransformData.SetNum(LocalTransformInfo.count * LocalTransformInfo.tupleSize);
-	////LocalTransformSizesFixedArray.SetNum(LocalTransformInfo.count);
-	//HAPI_Result BoneNameResult = FHoudiniApi::GetAttributeStringArrayData(FHoudiniEngine::Get().GetSession(), HGPO.GeoId, HGPO.PartId, "name", &BoneNameInfo, &BoneNameStringHandles[0], BoneNameInfo.count * BoneNameInfo.tupleSize, &BoneNameSizesFixedArray[0], 0, BoneNameInfo.count);
-
 	TMap <FName, TArray<FVector3f>> PosMap;
 	TMap <FName, TArray<FQuat4f>> RotMap;
 	TMap <FName, TArray<FVector3f>> ScaleMap;
-	//TMap <FName, TArray<FTransform>> MatrixMap;  //
-
-
-	//FName BoneName = TEXT("pelvis");
-	TArray<FVector3f>PositionalKeys;
-	PositionalKeys.Add(FVector3f(0, 0, 0));
-	PositionalKeys.Add(FVector3f(0, 0, 10));
-	PositionalKeys.Add(FVector3f(0, 0, 20));
-	PositionalKeys.Add(FVector3f(0, 0, 30));
-	PositionalKeys.Add(FVector3f(0, 0, 40));
-	PositionalKeys.Add(FVector3f(0, 0, 50));
-	PositionalKeys.Add(FVector3f(0, 0, 60));
-	PositionalKeys.Add(FVector3f(0, 0, 70));
-	PositionalKeys.Add(FVector3f(0, 0, 80));
-	PositionalKeys.Add(FVector3f(0, 0, 90));
-	TArray<FQuat4f>RotationalKeys;
-	RotationalKeys.Add(FQuat4f(FRotator(00, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(10, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(20, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(30, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(40, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(50, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(60, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(70, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(80, 0, 0).Quaternion()));
-	RotationalKeys.Add(FQuat4f(FRotator(90, 0, 0).Quaternion()));
-	TArray<FVector3f> ScalingKeys;
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-	ScalingKeys.Add(FVector3f(1, 1, 1));
-
-
 
 	//Build Matrix
 	int BoneCount = BoneNames.Num();
-	int FrameCount = LocalTransformData.Num() / (16 * BoneCount);
+	// int FrameCount = LocalTransformData.Num() / (16 * BoneCount);
 	int FrameIndex = 0;
 	int BoneCounter = 0;
 	TMap <int, TMap <FName, FTransform>> FrameBoneTransformMap;  //For each frame, store bone and transform
@@ -303,29 +243,30 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 
 	//TArray<FMatrix> MatrixData;
 	//BoneNameData has like 4147
-	for (int BoneIndex = 0; BoneIndex < BoneNameData.Num(); BoneIndex++)  //For each frame, store off matrix into BoneMatrixMap
+	const int32 StrideSize = BoneCount;
+	for (int BoneDataIndex = StrideSize; BoneDataIndex < BoneNameData.Num(); BoneDataIndex++)  //For each frame, store off matrix into BoneMatrixMap
 	{
-		FString BoneString = BoneNameData[BoneIndex];
+		FString BoneString = BoneNameData[BoneDataIndex];
 		FName BoneName = FName(BoneString);
 
 
 		//Read in 3x3 into Matrix, and append the translation
 		FMatrix M44Pose;  //this is unconverted houdini space
-		M44Pose.M[0][0] = WorldTransformData[9 * BoneIndex + 0];
-		M44Pose.M[0][1] = WorldTransformData[9 * BoneIndex + 1];
-		M44Pose.M[0][2] = WorldTransformData[9 * BoneIndex + 2];
+		M44Pose.M[0][0] = WorldTransformData[9 * BoneDataIndex + 0];
+		M44Pose.M[0][1] = WorldTransformData[9 * BoneDataIndex + 1];
+		M44Pose.M[0][2] = WorldTransformData[9 * BoneDataIndex + 2];
 		M44Pose.M[0][3] = 0;
-		M44Pose.M[1][0] = WorldTransformData[9 * BoneIndex + 3];
-		M44Pose.M[1][1] = WorldTransformData[9 * BoneIndex + 4];
-		M44Pose.M[1][2] = WorldTransformData[9 * BoneIndex + 5];
+		M44Pose.M[1][0] = WorldTransformData[9 * BoneDataIndex + 3];
+		M44Pose.M[1][1] = WorldTransformData[9 * BoneDataIndex + 4];
+		M44Pose.M[1][2] = WorldTransformData[9 * BoneDataIndex + 5];
 		M44Pose.M[1][3] = 0;
-		M44Pose.M[2][0] = WorldTransformData[9 * BoneIndex + 6];
-		M44Pose.M[2][1] = WorldTransformData[9 * BoneIndex + 7];
-		M44Pose.M[2][2] = WorldTransformData[9 * BoneIndex + 8];
+		M44Pose.M[2][0] = WorldTransformData[9 * BoneDataIndex + 6];
+		M44Pose.M[2][1] = WorldTransformData[9 * BoneDataIndex + 7];
+		M44Pose.M[2][2] = WorldTransformData[9 * BoneDataIndex + 8];
 		M44Pose.M[2][3] = 0;
-		M44Pose.M[3][0] = PositionData[BoneIndex].X;
-		M44Pose.M[3][1] = PositionData[BoneIndex].Y;
-		M44Pose.M[3][2] = PositionData[BoneIndex].Z;
+		M44Pose.M[3][0] = PositionData[BoneDataIndex].X;
+		M44Pose.M[3][1] = PositionData[BoneDataIndex].Y;
+		M44Pose.M[3][2] = PositionData[BoneDataIndex].Z;
 		M44Pose.M[3][3] = 1;
 
 		//FMatrix M44;
@@ -383,16 +324,15 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 	for (int Frame : Frames)
 	{
 		TMap <FName, FTransform>* BoneTransformMap = FrameBoneTransformMap.Find(Frame);
-		int BoneIndex = 0;
 		for (auto& Elem : *BoneTransformMap)
 		{
-			FName CurrentBoneName = Elem.Key;
-			FName BoneName = RefSkeleton.GetBoneName(BoneIndex);
-			int32 ParentBoneIndex = 0;
+			const FName CurrentBoneName = Elem.Key;
+			const int32 BoneRefIndex = RefSkeleton.FindBoneIndex(CurrentBoneName);
 			FName ParentBoneName = CurrentBoneName;
-			if (BoneIndex > 0)
+			if (BoneRefIndex > 0)
 			{
-				ParentBoneIndex = RefSkeleton.GetParentIndex(BoneIndex);
+				int32 ParentBoneIndex = 0;
+				ParentBoneIndex = RefSkeleton.GetParentIndex(BoneRefIndex);
 				ParentBoneName = RefSkeleton.GetBoneName(ParentBoneIndex);
 			}
 			if (!BoneTransformMap->Contains(ParentBoneName))
@@ -404,29 +344,20 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 			FTransform BoneCSXform = Elem.Value;
 			FTransform BoneLXform = BoneCSXform * ParentCSXform.Inverse(); //Final
 			//Store
-			TArray<FTransform>& KeyTransformArray = BoneKeyMap.FindOrAdd(BoneName);
+			TArray<FTransform>& KeyTransformArray = BoneKeyMap.FindOrAdd(CurrentBoneName);
 			KeyTransformArray.Add(BoneLXform);
-			TArray<FVector3f>& KeyPosArray = BonePosMap.FindOrAdd(BoneName);
+			TArray<FVector3f>& KeyPosArray = BonePosMap.FindOrAdd(CurrentBoneName);
 			FVector Pos = BoneLXform.GetLocation();
 			KeyPosArray.Add(FVector3f(Pos));
-			TArray<FQuat4f>& KeyRotArray = BoneRotMap.FindOrAdd(BoneName);
+			TArray<FQuat4f>& KeyRotArray = BoneRotMap.FindOrAdd(CurrentBoneName);
 			FQuat Q = BoneLXform.GetRotation();
 			KeyRotArray.Add(FQuat4f(Q));
-			TArray<FVector3f>& KeyScaleArray = BoneScaleMap.FindOrAdd(BoneName);
+			TArray<FVector3f>& KeyScaleArray = BoneScaleMap.FindOrAdd(CurrentBoneName);
 			FVector Scale = BoneLXform.GetScale3D();
 			KeyScaleArray.Add(FVector3f(Scale));
-
-			BoneIndex++;
 		}
 	}
-
-
-	for (auto Bone : BoneNames)  //loop over all bones
-	{
-		PosMap.Add(Bone, PositionalKeys);
-		RotMap.Add(Bone, RotationalKeys);
-		ScaleMap.Add(Bone, ScalingKeys);
-	}
+	
 
 	const int32 FrameRate30 = 30;
 	NewAnimation->ResetAnimation();
