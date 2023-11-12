@@ -3400,12 +3400,12 @@ UUserDefinedStruct * FHoudiniEngineBakeUtils::CreateBakedUserDefinedStruct(
 
 	FString* OutputName = nullptr;
 
-	if (OutputName = OutputObject.CachedAttributes.Find(HAPI_UNREAL_ATTRIB_DATA_TABLE_ROWSTRUCT))
+	if ((OutputName = OutputObject.CachedAttributes.Find(HAPI_UNREAL_ATTRIB_DATA_TABLE_ROWSTRUCT)))
 	{
 		// use the name verbatim from the user.
 		PackageParams.ObjectName = *OutputName;
 	}
-	else if (OutputName = OutputObject.CachedAttributes.Find(HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2))
+	else if ((OutputName = OutputObject.CachedAttributes.Find(HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2)))
 	{
 		PackageParams.ObjectName = *OutputName + FString("_rowstruct");
 	}
