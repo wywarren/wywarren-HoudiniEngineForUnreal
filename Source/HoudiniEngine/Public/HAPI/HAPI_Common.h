@@ -118,17 +118,17 @@
 #endif // __cplusplus
 
 // x-bit Integers
-// Thrift doesn't support unsigned integers, so we cast it as a 16-bit int, but only
-// for automated code generation
+// Thrift doesn't support unsigned integers, so we cast it as a signed 8-bit int, but only
+// for automated code generation and thrift
 #ifdef HAPI_AUTOGEN
     typedef signed char int8_t;
     typedef short int16_t;
     typedef long long int64_t;
-    typedef short HAPI_UInt8; // 16-bit type for thrift
+    typedef signed char HAPI_UInt8; // signed 8-bit int for thrift to avoid overflow 
 #else
     #include <stdint.h>
     #ifdef HAPI_THRIFT_ABI
-        typedef int16_t HAPI_UInt8; 
+        typedef int8_t HAPI_UInt8; // signed 8-bit int for thrift to avoid overflow 
     #else
         typedef uint8_t HAPI_UInt8;
         HAPI_STATIC_ASSERT(sizeof(HAPI_UInt8) == 1, unsupported_size_of_uint8);
