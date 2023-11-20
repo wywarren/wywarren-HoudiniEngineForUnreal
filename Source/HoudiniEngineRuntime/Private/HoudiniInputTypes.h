@@ -174,7 +174,7 @@ public:
 
 	// Export paint layers.
 	UPROPERTY()
-	bool bExportPaintLayers;
+	bool bExportCombinedHeightOnly;
 
 	// If enabled, level instances (and packed level actor) content is exported vs just exporting a single point
 	// with attributes identifying the level instance / packed level actor.

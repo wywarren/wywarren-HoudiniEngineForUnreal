@@ -43,7 +43,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 		// ------------------------------------------------------------------------------------------
 		static bool CreateHeightfieldFromLandscape(
 			ALandscapeProxy* LandcapeProxy,
-			bool bExportPaintLayers,
+			bool bExportCombinedHeightOnly,
 			bool bExportPerLayerData,
 			HAPI_NodeId& CreatedHeightfieldNodeId,
 			const FString &InputNodeNameStr,
@@ -296,7 +296,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			const TArray<float>& LandscapeLayerArray,
 			const FString& LayerName);
 
-		static bool ExtractAndConvertMainEditLayer(
+		static bool SendCombinedTargetLayersToHoudini(
 			ALandscapeProxy* LandscapeProxy,
 			HAPI_NodeId HeightFieldId,
 			HAPI_PartId PartId,
@@ -308,7 +308,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			int32 & OutMergeInputIndex);
 
 
-		static bool ExtractAndConvertEditLayers(
+		static bool SendAllEditLayerTargetLayersToHoudini(
 			ALandscapeProxy* LandscapeProxy,
 			HAPI_NodeId HeightFieldId,
 			HAPI_PartId PartId,
@@ -319,7 +319,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			int32 YSize,
 			int32& OutMergeInputIndex);
 
-		static bool ExtractAndConvertAllLandscapeLayers(
+		static bool SendTargetLayersToHoudini(
 			ALandscapeProxy* LandscapeProxy,
 			HAPI_NodeId HeightFieldId,
 			HAPI_PartId PartId,
