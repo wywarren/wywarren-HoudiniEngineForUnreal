@@ -57,6 +57,7 @@ FHoudiniInputObjectSettings::FHoudiniInputObjectSettings()
 	, bLandscapeSplinesExportLeftRightCurves(false)
 	, bLandscapeSplinesExportSplineMeshComponents(false)
 	, bMergeSplineMeshComponents(true)
+	, bExportPaintLayers(true)
 	, bExportPerEditLayerData(false)
 	, bExportLevelInstanceContent(true)
 {

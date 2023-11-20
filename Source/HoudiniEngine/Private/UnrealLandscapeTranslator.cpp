@@ -281,6 +281,7 @@ FUnrealLandscapeTranslator::CreateMeshOrPointsFromLandscape(
 bool 
 FUnrealLandscapeTranslator::CreateHeightfieldFromLandscape(
 	ALandscapeProxy* LandscapeProxy,
+	bool bExportPaintLayers,
 	bool bExportPerLayerData,
 	HAPI_NodeId& CreatedHeightfieldNodeId, 
 	const FString& InputNodeNameStr,
@@ -347,24 +348,19 @@ FUnrealLandscapeTranslator::CreateHeightfieldFromLandscape(
 		FHoudiniEngine::Get().GetSession(), HeightId), false);
 
 	//--------------------------------------------------------------------------------------------------
-	// Add  Data Layers and HLODS
+	// Add Data Layers and HLODS
 	//--------------------------------------------------------------------------------------------------
 
 	int PrevNode = FHoudiniHLODLayerUtils::AddHLODAttributes(LandscapeProxy, ParentNodeId, HeightFieldId);
 	FHoudiniDataLayerUtils::AddGroupsFromDataLayers(LandscapeProxy, ParentNodeId, PrevNode);
 
 	//--------------------------------------------------------------------------------------------------
-	// Extract and convert all the layers
+	// Define merge lambda, used below.
 	//--------------------------------------------------------------------------------------------------
-	ULandscapeInfo* LandscapeInfo = LandscapeProxy->GetLandscapeInfo();
-	if (!LandscapeInfo)
-		return false;
 
 	int32 MergeInputIndex = 2;
-	if (!ExtractAndConvertAllLandscapeLayers(LandscapeProxy, HeightFieldId, PartId, MergeId, MaskId, bExportPerLayerData, HeightfieldVolumeInfo, XSize, YSize, MergeInputIndex))
-		return false;
 
-	auto MergeInputFn = [&MergeInputIndex] (const HAPI_NodeId MergeId, const HAPI_NodeId NodeId) -> HAPI_Result
+	auto MergeInputFn = [&MergeInputIndex](const HAPI_NodeId MergeId, const HAPI_NodeId NodeId) -> HAPI_Result
 	{
 		// We had to create a new volume for this layer, so we need to connect it to the HF's merge node
 		HAPI_Result Result = FHoudiniApi::ConnectNodeInput(
@@ -378,13 +374,26 @@ FUnrealLandscapeTranslator::CreateHeightfieldFromLandscape(
 		return Result;
 	};
 
+	//--------------------------------------------------------------------------------------------------
+	// Extract and convert all the layers
+	//--------------------------------------------------------------------------------------------------
+	ULandscapeInfo* LandscapeInfo = LandscapeProxy->GetLandscapeInfo();
+	if (!LandscapeInfo)
+		return false;
+
+	if (bExportPaintLayers)
+	{
+		if (!ExtractAndConvertAllLandscapeLayers(LandscapeProxy, HeightFieldId, PartId, MergeId, MaskId, bExportPerLayerData, HeightfieldVolumeInfo, XSize, YSize, MergeInputIndex))
+			return false;
+	}
+
 	// We need a valid landscape actor to get the edit layers
 	ALandscape* Landscape = LandscapeProxy->GetLandscapeActor();
 	if(IsValid(Landscape))
 	{
 
 		//--------------------------------------------------------------------------------------------------
-		// Create heightfield input for each editable landscape layer
+		// Create height field input for each editable landscape layer
 		//--------------------------------------------------------------------------------------------------
 		HAPI_VolumeInfo LayerVolumeInfo;
 		FHoudiniApi::VolumeInfo_Init(&HeightfieldVolumeInfo);
@@ -944,7 +953,8 @@ FUnrealLandscapeTranslator::CreateInputNodeForLandscapeObject(
 		if (!bExportSelectionOnly || (SelectedComponents.Num() == NumComponents))
 			// Export the whole landscape and its layer as a single heightfield node
 			bSuccess = FUnrealLandscapeTranslator::CreateHeightfieldFromLandscape(
-				InLandscape, 
+				InLandscape,
+				InInput->IsExportPaintLayersEnabled(),
 				InInput->IsPerLayerExportEnabled(), 
 				InputNodeId, 
 				FinalInputNodeName, 
