@@ -80,9 +80,157 @@ GetComponentSpaceTransforms(TArray<FTransform>& OutResult, const FReferenceSkele
     }
 }
 
-
 bool
 FUnrealSkeletalMeshTranslator::HapiCreateInputNodeForSkeletalMesh(
+	USkeletalMesh* SkeletalMesh,
+	HAPI_NodeId& InputNodeId,
+	const FString& InputNodeName,
+	FUnrealObjectInputHandle& OutHandle,
+	USkeletalMeshComponent* SkeletalMeshComponent /*=nullptr*/,
+	const bool& ExportAllLODs /*=false*/,
+	const bool& ExportSockets /*=false*/,
+	const bool& ExportColliders /*=false*/,
+	const bool& ExportMainMesh /* = true */,
+	const bool& bInputNodesCanBeDeleted /*=true*/,
+	const bool& bExportMaterialParameters /*= false*/)
+{
+	// Create nodes for the mesh data
+	FUnrealObjectInputHandle SKMeshHandle;
+	if (!CreateInputNodesForSkeletalMesh(
+			SkeletalMesh,
+			InputNodeId,
+			InputNodeName,
+			SKMeshHandle,
+			SkeletalMeshComponent /*=nullptr*/,
+			ExportAllLODs /*=false*/,
+			ExportSockets /*=false*/,
+			ExportColliders /*=false*/,
+			ExportMainMesh /* = true */,
+			bInputNodesCanBeDeleted /*=true*/,
+			bExportMaterialParameters /*= false*/))
+	{
+		return false;
+	}
+
+	// Now create the capture pose node
+	HAPI_NodeId CapturePoseNodeId = -1;
+	HAPI_NodeId PackFolderNodeId = -1;
+	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+	{
+		// Create input node for the capture pose only
+		FUnrealObjectInputHandle CapturePoseHandle;
+		if (!CreateInputNodeForCapturePose(
+				SkeletalMesh,
+				-1,
+				InputNodeName + TEXT("_capture_pose"),
+				CapturePoseNodeId,
+				CapturePoseHandle,
+				bInputNodesCanBeDeleted))
+		{
+			return false;
+		}
+
+		// Build the identifier for the reference node that represents the full SKMesh with capture pose
+		FUnrealObjectInputOptions Options = SKMeshHandle.GetIdentifier().GetOptions();
+		Options.AddBoolOption(TEXT("bCapturePose"), true);
+		FUnrealObjectInputIdentifier Identifier(SkeletalMesh, Options, false);
+		FUnrealObjectInputHandle RefNodeHandle;
+		// Check if the exists in the manager and get the HAPI NodeId for it (if valid)
+		if (FUnrealObjectInputUtils::FindNodeViaManager(Identifier, RefNodeHandle))
+			FUnrealObjectInputUtils::GetHAPINodeId(RefNodeHandle, PackFolderNodeId);
+
+		FUnrealObjectInputHandle ParentHandle;
+		HAPI_NodeId ParentNodeId = -1;
+		HAPI_NodeId GeoObjectNodeId = -1;
+		// If the HAPI Node Id < 0 it means there was no entry in the manager, or HAPI Node Id for it is invalid.
+		// Create the packfolder node
+		if (PackFolderNodeId < 0)
+		{
+			FString FinalInputNodeName = InputNodeName + TEXT("_packed");
+			FUnrealObjectInputUtils::GetDefaultInputNodeName(Identifier, FinalInputNodeName);
+			// Create any parent/container nodes that we would need, and get the node id of the immediate parent
+			if (FUnrealObjectInputUtils::EnsureParentsExist(Identifier, ParentHandle, bInputNodesCanBeDeleted) && ParentHandle.IsValid())
+				FUnrealObjectInputUtils::GetHAPINodeId(ParentHandle, ParentNodeId);
+			
+			// Create geo object node
+			HOUDINI_CHECK_ERROR_RETURN(
+				FHoudiniEngineUtils::CreateNode(ParentNodeId, TEXT("geo"), FinalInputNodeName, true, &GeoObjectNodeId), false);
+			// Create packfolder node
+			HOUDINI_CHECK_ERROR_RETURN(
+				FHoudiniEngineUtils::CreateNode(GeoObjectNodeId, TEXT("packfolder"), FinalInputNodeName, true, &PackFolderNodeId), false);
+		}
+		else
+		{
+			GeoObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(PackFolderNodeId);
+		}
+
+		// Update the entry for the reference node in the manager: the node reference the SKMesh nodes (mesh, colliders,
+		// LOD, sockets) and the capture pose node
+		TSet<FUnrealObjectInputHandle> RefNodes { SKMeshHandle, CapturePoseHandle };
+		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, PackFolderNodeId, RefNodeHandle, GeoObjectNodeId, &RefNodes, bInputNodesCanBeDeleted))
+			OutHandle = RefNodeHandle;
+	}
+	else
+	{
+		const HAPI_NodeId ObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(InputNodeId);
+		// Create nodes for the capture pose
+		FUnrealObjectInputHandle CapturePoseHandle;
+		if (!CreateInputNodeForCapturePose(
+				SkeletalMesh,
+				ObjectNodeId,
+				InputNodeName + TEXT("_capture_pose"),
+				CapturePoseNodeId,
+				CapturePoseHandle,
+				bInputNodesCanBeDeleted))
+		{
+			return false;
+		}
+
+		// Create packfolder node
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateNode(ObjectNodeId, TEXT("packfolder"), TEXT("packfolder"), true, &PackFolderNodeId), false);
+
+		// Set the display flag on the packfolder node
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetNodeDisplay(FHoudiniEngine::Get().GetSession(), PackFolderNodeId, 1), false);
+	}
+
+	HAPI_Session const* const Session = FHoudiniEngine::Get().GetSession();
+
+	// Connect input 0 to skeletalmesh data
+	if (!FHoudiniEngineUtils::HapiConnectNodeInput(PackFolderNodeId, 1, InputNodeId, 0, -1), false)
+		return false;
+
+	// Connect input 1 to the capture pose
+	if (!FHoudiniEngineUtils::HapiConnectNodeInput(PackFolderNodeId, 2, CapturePoseNodeId, 0, -1), false)
+		return false;
+
+	// Cook the packfolder node
+	if (!FHoudiniEngineUtils::HapiCookNode(PackFolderNodeId, nullptr, true))
+		return false;
+
+	// Set the name# and type# attributes
+	HAPI_ParmInfo ParmInfo;
+	FHoudiniApi::ParmInfo_Init(&ParmInfo);
+	int32 ParmId = FHoudiniEngineUtils::HapiFindParameterByName(PackFolderNodeId, "name1", ParmInfo);
+	if (ParmId >= 0)
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetParmStringValue(Session, PackFolderNodeId, TCHAR_TO_ANSI(TEXT("Base")), ParmId, 0), false);
+	ParmId = FHoudiniEngineUtils::HapiFindParameterByName(PackFolderNodeId, "type1", ParmInfo);
+	if (ParmId >= 0)
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetParmStringValue(Session, PackFolderNodeId, TCHAR_TO_ANSI(TEXT("shp")), ParmId, 0), false);
+	
+	ParmId = FHoudiniEngineUtils::HapiFindParameterByName(PackFolderNodeId, "name2", ParmInfo);
+	if (ParmId >= 0)
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetParmStringValue(Session, PackFolderNodeId, TCHAR_TO_ANSI(TEXT("Base")), ParmId, 0), false);	
+	ParmId = FHoudiniEngineUtils::HapiFindParameterByName(PackFolderNodeId, "type2", ParmInfo);
+	if (ParmId >= 0)
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetParmStringValue(Session, PackFolderNodeId, TCHAR_TO_ANSI(TEXT("skel")), ParmId, 0), false);
+
+	InputNodeId = PackFolderNodeId;
+
+	return true;
+}
+
+bool
+FUnrealSkeletalMeshTranslator::CreateInputNodesForSkeletalMesh(
 	USkeletalMesh* SkeletalMesh,
 	HAPI_NodeId& InputNodeId,
 	const FString& InputNodeName,
@@ -191,7 +339,7 @@ FUnrealSkeletalMeshTranslator::HapiCreateInputNodeForSkeletalMesh(
 				}
 
 				// Recursive call
-				if (!FUnrealSkeletalMeshTranslator::HapiCreateInputNodeForSkeletalMesh(
+				if (!FUnrealSkeletalMeshTranslator::CreateInputNodesForSkeletalMesh(
 					SkeletalMesh,
 					NewNodeId,
 					NodeLabel,
@@ -1597,6 +1745,110 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForSkeletalMeshSockets(
 	// Commit the geo.
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
 		FHoudiniEngine::Get().GetSession(), OutSocketsNodeId), false);
+
+	return true;
+}
+
+
+bool
+FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
+	USkeletalMesh* InSkeletalMesh,
+	const HAPI_NodeId InParentNodeId,
+	const FString& InInputNodeName,
+	HAPI_NodeId& InOutSkeletonNodeId,
+	FUnrealObjectInputHandle& OutHandle,
+	const bool bInputNodesCanBeDeleted)
+{
+	if (!IsValid(InSkeletalMesh))
+		return false;
+
+	// Input node name, defaults to InputNodeName, but can be changed by the new input system
+	FString FinalInputNodeName = InInputNodeName;
+
+	HAPI_NodeId PreviousNodeId = InOutSkeletonNodeId;
+
+	// Build an identifier for the capture pose node
+	FUnrealObjectInputOptions Options;
+	Options.AddBoolOption(TEXT("bCapturePose"), true);
+	FUnrealObjectInputIdentifier Identifier(InSkeletalMesh, Options, true);
+	FUnrealObjectInputHandle ParentHandle;
+	HAPI_NodeId ParentNodeId = InParentNodeId;
+	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
+	if (bUseRefCountedInputSystem)
+	{
+		FUnrealObjectInputHandle Handle;
+		if (FUnrealObjectInputUtils::NodeExistsAndIsNotDirty(Identifier, Handle))
+		{
+			HAPI_NodeId NodeId = -1;
+			if (FUnrealObjectInputUtils::GetHAPINodeId(Handle, NodeId))
+			{
+				if (!bInputNodesCanBeDeleted)
+				{
+					// Make sure to prevent deletion of the input node if needed
+					FUnrealObjectInputUtils::UpdateInputNodeCanBeDeleted(Handle, bInputNodesCanBeDeleted);
+				}
+
+				OutHandle = Handle;
+				InOutSkeletonNodeId = NodeId;
+				return true;
+			}
+		}
+
+		FUnrealObjectInputUtils::GetDefaultInputNodeName(Identifier, FinalInputNodeName);
+		// Create any parent/container nodes that we would need, and get the node id of the immediate parent
+		if (FUnrealObjectInputUtils::EnsureParentsExist(Identifier, ParentHandle, bInputNodesCanBeDeleted) && ParentHandle.IsValid())
+			FUnrealObjectInputUtils::GetHAPINodeId(ParentHandle, ParentNodeId);
+
+		// Set InputNodeId to the current NodeId associated with Handle, since that is what we are replacing.
+		// (Option changes could mean that InputNodeId is associated with a completely different entry, albeit for
+		// the same asset, in the manager)
+		if (Handle.IsValid())
+		{
+			if (!FUnrealObjectInputUtils::GetHAPINodeId(Handle, PreviousNodeId))
+				PreviousNodeId = -1;
+		}
+		else
+		{
+			PreviousNodeId = -1;
+		}
+	}
+	
+	HAPI_NodeId NewNodeId = -1;
+
+	if (bUseRefCountedInputSystem)
+	{
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateInputNode(
+			FinalInputNodeName, NewNodeId, ParentNodeId), false);
+
+		// After we have created the new node, delete the old node
+		if (PreviousNodeId >= 0)
+		{
+			const HAPI_NodeId ObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(PreviousNodeId);
+			FHoudiniEngineUtils::DeleteHoudiniNode(PreviousNodeId);
+			FHoudiniEngineUtils::DeleteHoudiniNode(ObjectNodeId);
+			PreviousNodeId = -1;
+		}
+	}
+	else
+	{
+		// Create a new input node for the capture pose
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateNode(
+			InParentNodeId, TEXT("null"), FinalInputNodeName, false, &NewNodeId), false);
+	}
+
+	// TODO: create the geo / attributes on NewNodeId
+
+	
+
+	if (bUseRefCountedInputSystem)
+	{
+		const HAPI_NodeId ObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(NewNodeId);
+		FUnrealObjectInputHandle Handle;
+		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, NewNodeId, Handle, ObjectNodeId, nullptr, bInputNodesCanBeDeleted))
+			OutHandle = Handle;
+	}
+
+	InOutSkeletonNodeId = NewNodeId;
 
 	return true;
 }
