@@ -196,11 +196,11 @@ FUnrealSkeletalMeshTranslator::HapiCreateInputNodeForSkeletalMesh(
 	HAPI_Session const* const Session = FHoudiniEngine::Get().GetSession();
 
 	// Connect input 0 to skeletalmesh data
-	if (!FHoudiniEngineUtils::HapiConnectNodeInput(PackFolderNodeId, 1, InputNodeId, 0, -1), false)
+	if (!FHoudiniEngineUtils::HapiConnectNodeInput(PackFolderNodeId, 1, InputNodeId, 0, -1))
 		return false;
 
 	// Connect input 1 to the capture pose
-	if (!FHoudiniEngineUtils::HapiConnectNodeInput(PackFolderNodeId, 2, CapturePoseNodeId, 0, -1), false)
+	if (!FHoudiniEngineUtils::HapiConnectNodeInput(PackFolderNodeId, 2, CapturePoseNodeId, 0, -1))
 		return false;
 
 	// Cook the packfolder node
