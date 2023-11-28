@@ -72,37 +72,6 @@ UHoudiniEditorNodeSyncSubsystem::CreateSessionIfNeeded()
 
 
 bool
-UHoudiniEditorNodeSyncSubsystem::SendStaticMeshToHoudini(
-	const HAPI_NodeId& InMeshNodeId, UStaticMesh* InStaticMesh)
-{
-	if (!IsValid(InStaticMesh))
-		return false;
-  
-    int32 LODIndex = 0;
-    FStaticMeshSourceModel& SrcModel = InStaticMesh->GetSourceModel(LODIndex);
-    
-    FMeshDescription* MeshDesc = InStaticMesh->GetMeshDescription(LODIndex);
-	if (!MeshDesc)
-		return false;
-
-	if (!FUnrealMeshTranslator::CreateInputNodeForMeshDescription(
-		InMeshNodeId, *MeshDesc, LODIndex, false, false, InStaticMesh, nullptr))
-		return false;
-
-    //bSuccess = FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(SM, InObject->InputNodeId, SMCName, SMC, bExportLODs, bExportSockets, bExportColliders);
-   
-	// Set the display flag
-    FHoudiniApi::SetNodeDisplay(FHoudiniEngine::Get().GetSession(), InMeshNodeId, 1);
-
-	// Commit the geo
-    if(HAPI_RESULT_SUCCESS != FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), InMeshNodeId))
-		return false;
-
-	return true;
-}
-
-
-bool
 UHoudiniEditorNodeSyncSubsystem::GetNodeSyncInput(UHoudiniInput*& OutInput)
 {
 	if (!InitNodeSyncInputIfNeeded())
