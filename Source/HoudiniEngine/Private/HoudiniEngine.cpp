@@ -663,8 +663,9 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 		case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
 		{
 			// Try to connect to an existing socket session first
+			HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
 			SessionResult = FHoudiniApi::CreateThriftSocketSession(
-				SessionPtr, TCHAR_TO_UTF8(*ServerHost), ServerPort );
+				SessionPtr, TCHAR_TO_UTF8(*ServerHost), ServerPort, &SessionInfo);
 
 			// Start a session and try to connect to it if we failed
 			if ( StartAutomaticServer && SessionResult != HAPI_RESULT_SUCCESS )
@@ -677,7 +678,7 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 				bEnableSessionSync = false;
 
 				SessionResult = FHoudiniApi::CreateThriftSocketSession(
-					SessionPtr, TCHAR_TO_UTF8(*ServerHost), ServerPort);
+					SessionPtr, TCHAR_TO_UTF8(*ServerHost), ServerPort, &SessionInfo);
 			}
 		}
 		break;
@@ -685,8 +686,9 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 		case EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
 		{
 			// Try to connect to an existing pipe session first
+			HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
 			SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
-				SessionPtr, TCHAR_TO_UTF8(*ServerPipeName) );
+				SessionPtr, TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
 
 			// Start a session and try to connect to it if we failed
 			if (StartAutomaticServer && SessionResult != HAPI_RESULT_SUCCESS)
@@ -699,7 +701,7 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 				bEnableSessionSync = false;
 
 				SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
-					SessionPtr, TCHAR_TO_UTF8(*ServerPipeName));
+					SessionPtr, TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
 			}
 		}
 		break;
@@ -714,7 +716,8 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 
 		case EHoudiniRuntimeSettingsSessionType::HRSST_InProcess:
 			// As of Unreal 4.19, InProcess sessions are not supported anymore
-			SessionResult = FHoudiniApi::CreateInProcessSession(SessionPtr);
+			HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+			SessionResult = FHoudiniApi::CreateInProcessSession(SessionPtr, &SessionInfo);
 			// Disable session sync
 			bEnableSessionSync = false;
 			break;
@@ -787,16 +790,18 @@ FHoudiniEngine::SessionSyncConnect(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
 	{
 		// Try to connect to an existing socket session first
+		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
 		SessionResult = FHoudiniApi::CreateThriftSocketSession(
-			&Session, TCHAR_TO_UTF8(*ServerHost), ServerPort);
+			&Session, TCHAR_TO_UTF8(*ServerHost), ServerPort, &SessionInfo);
 	}
 	break;
 
 	case EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
 	{
 		// Try to connect to an existing pipe session first
+		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
 		SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
-			&Session, TCHAR_TO_UTF8(*ServerPipeName));
+			&Session, TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
 	}
 	break;
 
