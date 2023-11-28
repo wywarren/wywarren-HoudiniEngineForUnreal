@@ -43,7 +43,11 @@
 ///                 A ::HAPI_Session struct to receive the session id,
 ///                 in this case always 0.
 ///
-HAPI_DECL HAPI_CreateInProcessSession( HAPI_Session * session );
+/// @param[in]      session_info
+///                 A ::HAPI_SessionInfo struct to specify session configurations.
+///
+HAPI_DECL HAPI_CreateInProcessSession( HAPI_Session * session, 
+                                       const HAPI_SessionInfo * session_info );
 
 /// @brief  Starts a Thrift RPC server process on the local host serving
 ///         clients on a TCP socket and waits for it to start serving.
@@ -87,9 +91,13 @@ HAPI_DECL HAPI_StartThriftSocketServer(
 /// @param[in]      port
 ///                 The server port to connect to.
 ///
+/// @param[in]      session_info
+///                 A ::HAPI_SessionInfo struct to specify session configurations.
+///
 HAPI_DECL HAPI_CreateThriftSocketSession( HAPI_Session * session,
                                           const char * host_name,
-                                          int port );
+                                          int port,
+                                          const HAPI_SessionInfo * session_info );
 
 /// @brief  Starts a Thrift RPC server process on the local host serving
 ///         clients on a Windows named pipe or a Unix domain socket and
@@ -134,8 +142,12 @@ HAPI_DECL HAPI_StartThriftNamedPipeServer(
 /// @param[in]      pipe_name
 ///                 The name of the pipe or socket.
 ///
+/// @param[in]      session_info
+///                 A ::HAPI_SessionInfo struct to specify session configurations.
+///
 HAPI_DECL HAPI_CreateThriftNamedPipeSession( HAPI_Session * session,
-                                             const char * pipe_name );
+                                             const char * pipe_name,
+                                             const HAPI_SessionInfo * session_info );
 
 /// @brief  Binds a new implementation DLL to one of the custom session
 ///         slots.
@@ -5800,6 +5812,1179 @@ HAPI_DECL HAPI_GetAttributeDictionaryArrayData( const HAPI_Session* session,
                                                 int* sizes_fixed_array,
                                                 int start,
                                                 int sizes_fixed_length );
+
+
+/// @brief  Get attribute integer data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeIntDataAsync( const HAPI_Session * session,
+                                         HAPI_NodeId node_id,
+                                         HAPI_PartId part_id,
+                                         const char * name,
+                                         HAPI_AttributeInfo * attr_info,
+                                         int stride,
+                                         int * data_array,
+                                         int start, int length,
+                                         int * job_id );
+
+
+/// @brief  Get attribute unsigned 8-bit integer data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeUInt8DataAsync( const HAPI_Session * session,
+                                           HAPI_NodeId node_id,
+                                           HAPI_PartId part_id,
+                                           const char * name,
+                                           HAPI_AttributeInfo * attr_info,
+                                           int stride,
+                                           HAPI_UInt8 * data_array,
+                                           int start, int length,
+                                           int * job_id );
+
+
+/// @brief  Get attribute 8-bit integer data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeInt8DataAsync( const HAPI_Session * session,
+                                          HAPI_NodeId node_id,
+                                          HAPI_PartId part_id,
+                                          const char * name,
+                                          HAPI_AttributeInfo * attr_info,
+                                          int stride,
+                                          HAPI_Int8 * data_array,
+                                          int start, int length,
+                                          int * job_id );
+
+/// @brief  Get attribute 16-bit integer data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeInt16DataAsync( const HAPI_Session * session,
+                                           HAPI_NodeId node_id,
+                                           HAPI_PartId part_id,
+                                           const char * name,
+                                           HAPI_AttributeInfo * attr_info,
+                                           int stride,
+                                           HAPI_Int16 * data_array,
+                                           int start, int length,
+                                           int * job_id );
+
+/// @brief  Get attribute 64-bit integer data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeInt64DataAsync( const HAPI_Session * session,
+                                           HAPI_NodeId node_id,
+                                           HAPI_PartId part_id,
+                                           const char * name,
+                                           HAPI_AttributeInfo * attr_info,
+                                           int stride,
+                                           HAPI_Int64 * data_array,
+                                           int start, int length,
+                                           int * job_id );
+
+
+/// @brief  Get attribute float data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeFloatDataAsync( const HAPI_Session * session,
+                                           HAPI_NodeId node_id,
+                                           HAPI_PartId part_id,
+                                           const char * name,
+                                           HAPI_AttributeInfo * attr_info,
+                                           int stride,
+                                           float * data_array,
+                                           int start, int length,
+                                           int * job_id );
+
+/// @brief  Get attribute 64-bit float data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeFloat64DataAsync( const HAPI_Session * session,
+                                             HAPI_NodeId node_id,
+                                             HAPI_PartId part_id,
+                                             const char * name,
+                                             HAPI_AttributeInfo * attr_info,
+                                             int stride,
+                                             double * data_array,
+                                             int start, int length,
+                                             int * job_id );
+
+/// @brief  Get attribute string data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeStringDataAsync( const HAPI_Session * session,
+                                            HAPI_NodeId node_id,
+                                            HAPI_PartId part_id,
+                                            const char * name,
+                                            HAPI_AttributeInfo * attr_info,
+                                            int stride,
+                                            HAPI_StringHandle * data_array,
+                                            int start, int length,
+                                            int * job_id );
+
+/// @brief  Get attribute dictionary data asynchronously.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[in]      stride
+///                 Specifies how many items to skip over for each element.
+///                 With a stride of -1, the stride will be set to
+///                 @c attr_info->tuple_size. Otherwise, the stride will be
+///                 set to the maximum of @c attr_info->tuple_size and
+///                 @c stride.
+///
+/// @param[out]     data_array
+///                 An integer array at least the size of
+///                 <tt>length * ::HAPI_AttributeInfo::tupleSize</tt>.
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeDictionaryDataAsync( const HAPI_Session * session,
+                                                HAPI_NodeId node_id,
+                                                HAPI_PartId part_id,
+                                                const char * name,
+                                                HAPI_AttributeInfo * attr_info,
+                                                int stride,
+                                                HAPI_StringHandle * data_array,
+                                                int start, int length,
+                                                int * job_id );
+
+/// @brief  Get array attribute integer data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeIntArrayDataAsync( const HAPI_Session * session,
+                                              HAPI_NodeId node_id,
+                                              HAPI_PartId part_id,
+                                              const char * attr_name,
+                                              HAPI_AttributeInfo * attr_info,
+                                              int * data_fixed_array,
+                                              int data_fixed_length,
+                                              int * sizes_fixed_array,
+                                              int start, int sizes_fixed_length,
+                                              int * job_id );
+
+/// @brief  Get array attribute unsigned 8-bit integer data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeUInt8ArrayDataAsync( const HAPI_Session * session,
+                                                HAPI_NodeId node_id,
+                                                HAPI_PartId part_id,
+                                                const char * attr_name,
+                                                HAPI_AttributeInfo * attr_info,
+                                                HAPI_UInt8 * data_fixed_array,
+                                                int data_fixed_length,
+                                                int * sizes_fixed_array,
+                                                int start, int sizes_fixed_length,
+                                                int * job_id );
+
+/// @brief  Get array attribute 8-bit integer data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeInt8ArrayDataAsync( const HAPI_Session * session,
+                                               HAPI_NodeId node_id,
+                                               HAPI_PartId part_id,
+                                               const char * attr_name,
+                                               HAPI_AttributeInfo * attr_info,
+                                               HAPI_Int8 * data_fixed_array,
+                                               int data_fixed_length,
+                                               int * sizes_fixed_array,
+                                               int start, int sizes_fixed_length,
+                                               int * job_id );
+
+/// @brief  Get array attribute 16-bit integer data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeInt16ArrayDataAsync( const HAPI_Session * session,
+                                                HAPI_NodeId node_id,
+                                                HAPI_PartId part_id,
+                                                const char * attr_name,
+                                                HAPI_AttributeInfo * attr_info,
+                                                HAPI_Int16 * data_fixed_array,
+                                                int data_fixed_length,
+                                                int * sizes_fixed_array,
+                                                int start, int sizes_fixed_length,
+                                                int * job_id );
+
+/// @brief  Get array attribute 64-bit integer data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeInt64ArrayDataAsync( const HAPI_Session * session,
+                                                HAPI_NodeId node_id,
+                                                HAPI_PartId part_id,
+                                                const char * attr_name,
+                                                HAPI_AttributeInfo * attr_info,
+                                                HAPI_Int64 * data_fixed_array,
+                                                int data_fixed_length,
+                                                int * sizes_fixed_array,
+                                                int start, int sizes_fixed_length,
+                                                int * job_id );
+
+/// @brief  Get array attribute float data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeFloatArrayDataAsync( const HAPI_Session * session,
+                                                HAPI_NodeId node_id,
+                                                HAPI_PartId part_id,
+                                                const char * attr_name,
+                                                HAPI_AttributeInfo * attr_info,
+                                                float * data_fixed_array,
+                                                int data_fixed_length,
+                                                int * sizes_fixed_array,
+                                                int start, int sizes_fixed_length,
+                                                int * job_id );
+
+/// @brief  Get array attribute 64-bit float data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeFloat64ArrayDataAsync( const HAPI_Session * session,
+                                                  HAPI_NodeId node_id,
+                                                  HAPI_PartId part_id,
+                                                  const char * attr_name,
+                                                  HAPI_AttributeInfo * attr_info,
+                                                  double * data_fixed_array,
+                                                  int data_fixed_length,
+                                                  int * sizes_fixed_array,
+                                                  int start, int sizes_fixed_length,
+                                                  int * job_id );
+
+/// @brief  Get array attribute string data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeStringArrayDataAsync( const HAPI_Session * session,
+                                                 HAPI_NodeId node_id,
+                                                 HAPI_PartId part_id,
+                                                 const char * attr_name,
+                                                 HAPI_AttributeInfo * attr_info,
+                                                 HAPI_StringHandle * data_fixed_array,
+                                                 int data_fixed_length,
+                                                 int * sizes_fixed_array,
+                                                 int start, int sizes_fixed_length,
+                                                 int * job_id );
+
+/// @brief  Get array attribute dictionary data asynchronously.
+///         Each entry in an array attribute can have varying array lengths. 
+///         Therefore the array values are returned as a flat array, with 
+///         another sizes array containing the lengths of each array entry.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      node_id
+///                 The node id.
+///
+/// @param[in]      part_id
+///                 The part id.
+///
+/// @param[in]      attr_name
+///                 Attribute name.
+///
+/// @param[in]      attr_info
+///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 you want. Also contains some sanity checks like
+///                 data type. Generally should be the same struct
+///                 returned by ::HAPI_GetAttributeInfo().
+///
+/// @param[out]     data_fixed_array
+///                 An integer array at least the size of
+///                 <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///
+/// @param[in]      data_fixed_length
+///                 Must be <tt>::HAPI_AttributeInfo::totalArrayElements</tt>.
+///                 <!-- source ::HAPI_AttributeInfo::totalArrayElements -->
+///
+/// @param[out]     sizes_fixed_array
+///                 An integer array at least the size of
+///                 <tt>sizes_fixed_length</tt> to hold the size of each entry.
+///                 <!-- source ::HAPI_AttributeInfo::count -->
+///
+/// @param[in]      start
+///                 First index of range. Must be at least 0 and at
+///                 most ::HAPI_AttributeInfo::count - 1.
+///                 <!-- default 0 -->
+///
+/// @param[in]      sizes_fixed_length
+///                 Must be at least 0 and at most
+///                 ::HAPI_AttributeInfo::count - @p start.
+///                 Note, if 0 is passed for length, the function will just
+///                 do nothing and return ::HAPI_RESULT_SUCCESS.
+///                 <!-- source ::HAPI_AttributeInfo::count - start -->
+///
+/// @param[out]     job_id
+///                 The id assigned to the job.
+///
+HAPI_DECL HAPI_GetAttributeDictionaryArrayDataAsync( const HAPI_Session * session,
+                                                     HAPI_NodeId node_id,
+                                                     HAPI_PartId part_id,
+                                                     const char * attr_name,
+                                                     HAPI_AttributeInfo * attr_info,
+                                                     HAPI_StringHandle * data_fixed_array,
+                                                     int data_fixed_length,
+                                                     int * sizes_fixed_array,
+                                                     int start, int sizes_fixed_length,
+                                                     int * job_id );
+
+/// @brief  Wait for a GetAttribute job to finish.
+///
+/// @ingroup GeometryGetters Attributes
+///
+/// @param[in]      session
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      job_id
+///                 The id assigned to the job. It must equal to the index 
+///                 assigned through a previous call to HAPI_GetAttribute*Async
+///
+HAPI_DECL HAPI_GetAttributeWait( const HAPI_Session * session,
+                                 int job_id );
 
 /// @brief  Get group names for an entire geo. Please note that this
 ///         function is NOT per-part, but it is per-geo. The companion

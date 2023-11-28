@@ -1081,6 +1081,14 @@ struct HAPI_API HAPI_Session
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_Session )
 
+/// Configurations for sessions
+struct HAPI_API HAPI_SessionInfo
+{
+    /// The number of subconnections in this session
+    int connectionCount;
+};
+HAPI_C_STRUCT_TYPEDEF( HAPI_SessionInfo )
+
 /// Options to configure a Thrift server being started from HARC.
 struct HAPI_API HAPI_ThriftServerOptions
 {
