@@ -23,6 +23,7 @@
 #include "UnrealMeshTranslator.h"
 #include "UnrealSkeletalMeshTranslator.h"
 
+#include "ActorFactories/ActorFactory.h"
 #include "Engine/SkeletalMesh.h"
 #include "LevelEditor.h"
 
