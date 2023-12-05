@@ -149,6 +149,52 @@ HAPI_DECL HAPI_CreateThriftNamedPipeSession( HAPI_Session * session,
                                              const char * pipe_name,
                                              const HAPI_SessionInfo * session_info );
 
+/// @brief  Starts a Thrift RPC server process on the localhost serving clients
+///         by utilizing shared memory to transfer data between the client and
+///         server and waits for it to start serving.
+///
+/// @ingroup Sessions
+///
+/// @param[in]      options
+///                 Options to configure the server being started.
+///
+/// @param[in]      shared_mem_name
+///                 The name of the memory buffer. This must be unique to the
+///                 server in order to avoid any conflicts. 
+///
+/// @param[out]     process_id
+///                 The process id of the server, if started successfully.
+///
+/// @param[in]      log_file
+///                 When a filepath is provided for this argument, all logs will
+///                 be appended to the specified file. The specified path must
+///                 be an absolute path. The server will create any intermediate
+///                 directories in the filepath that do not already exist. When
+///                 this argument is NULL/nullptr, logging will be directed to
+///                 the standard streams.
+HAPI_DECL HAPI_StartThriftSharedMemoryServer(
+                                        const HAPI_ThriftServerOptions * options,
+                                        const char * shared_mem_name,
+                                        HAPI_ProcessId * process_id,
+                                        const char * log_file);
+
+/// @brief  Creates a Thrift RPC session using a shared memory buffer as the
+///         transport mechanism.
+///
+/// @ingroup Sessions
+///
+/// @param[out]     session
+///                 A ::HAPI_Session struct to receive the unique session id
+///                 of the new session.
+///
+/// @param[in]      shared_mem_name
+///                 The name of the memory buffer. This must match the name of
+///                 the shared memory buffer of the server that you are wishing
+///                 to connect to.
+///
+HAPI_DECL HAPI_CreateThriftSharedMemorySession( HAPI_Session * session,
+                                                const char * shared_mem_name );
+
 /// @brief  Binds a new implementation DLL to one of the custom session
 ///         slots.
 ///
