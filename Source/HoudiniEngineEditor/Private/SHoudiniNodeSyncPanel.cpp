@@ -640,7 +640,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 						.OnClicked_Lambda([]()
 						{
 							UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
-							HoudiniEditorNodeSyncSubsystem->Fetch();
+							HoudiniEditorNodeSyncSubsystem->FetchFromHoudini();
 							return FReply::Handled();
 						})
 						.Content()

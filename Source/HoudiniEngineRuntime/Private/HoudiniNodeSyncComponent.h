@@ -26,12 +26,25 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "HoudiniAssetComponent.h"
+
+#include "CoreMinimal.h"
 
 #include "HoudiniNodeSyncComponent.generated.h"
 
-class USCS_Node;
+
+UENUM()
+enum class EHoudiniNodeSyncStatus : uint8
+{
+	
+	None,				// Fetch/Send not used yet
+	Failed,				// Last operation failed
+	Success,			// Last operation was successful
+	SuccessWithErrors,	// Last operation was successful, but reported errors
+	Running,			// Sending/Fetching
+	Warning				// Display a warning
+};
+
 
 UCLASS(ClassGroup = (Rendering, Common), hidecategories = (Object, Activation, "Components|Activation", HoudiniAsset), ShowCategories = (Mobility), editinlinenew)
 class HOUDINIENGINERUNTIME_API UHoudiniNodeSyncComponent : public UHoudiniAssetComponent
@@ -55,6 +68,16 @@ public:
 	// that correspond to the HoudiniAsset when being deregistered.
 	// Node Sync component shall NOT delete nodes!
 	virtual bool CanDeleteHoudiniNodes() const { return false; }
+
+
+	//
+	// Public Members
+	//
+	
+	// Last status
+	EHoudiniNodeSyncStatus FetchStatus;
+	// Last Fetch message
+	FString FetchMessage;
 
 protected:
 

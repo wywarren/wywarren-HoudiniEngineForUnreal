@@ -135,12 +135,8 @@ UHoudiniEditorNodeSyncSubsystem::InitNodeSyncInputIfNeeded()
 void
 UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 {
-	UHoudiniEditorNodeSyncSubsystem* HoudiniSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
-	if (!IsValid(HoudiniSubsystem))
-		return;
-
-	HoudiniSubsystem->LastSendStatus = EHoudiniNodeSyncStatus::Running;
-	HoudiniSubsystem->SendStatusMessage = "Sending...";
+	LastSendStatus = EHoudiniNodeSyncStatus::Running;
+	SendStatusMessage = "Sending...";
 
 	// Get current world selection
 	TArray<UObject*> WorldSelection;
@@ -149,18 +145,18 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 	{
 		HOUDINI_LOG_MESSAGE(TEXT("Houdini Node Sync: No selection in the world outliner"));
 
-		HoudiniSubsystem->LastSendStatus = EHoudiniNodeSyncStatus::Failed;
-		HoudiniSubsystem->SendStatusMessage = "Send Failed: No selection in the world outliner.";
-		HoudiniSubsystem->SendStatusDetails = "Houdini Node Sync - Send Failed: No selection in the world outliner\nPlease select Actors in the World and try again.";
+		LastSendStatus = EHoudiniNodeSyncStatus::Failed;
+		SendStatusMessage = "Send Failed: No selection in the world outliner.";
+		SendStatusDetails = "Houdini Node Sync - Send Failed: No selection in the world outliner\nPlease select Actors in the World and try again.";
 
 		return;
 	}
 
 	// Input type? switch to world when sending from world? (necessary?)
 	//bool bOutBPModif = false;
-	//HoudiniSubsystem->NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
+	//NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
 
-	HoudiniSubsystem->SendToHoudini(WorldSelection);
+	SendToHoudini(WorldSelection);
 }
 
 
@@ -302,19 +298,9 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 }
 
 
-void 
-UHoudiniEditorNodeSyncSubsystem::Fetch()
-{
-	LastFetchStatus = EHoudiniNodeSyncStatus::Running;
-	FetchStatusMessage = "Fetching...";
-
-	FetchFromHoudini(NodeSyncOptions.UnrealAssetName, NodeSyncOptions.UnrealAssetFolder);
-}
-
 
 void 
-UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
-	const FString& InPackageName, const FString& InPackageFolder, const int32& InMaxInfluences, const bool& InImportNormals)
+UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini()
 {
 	// Add a slate notification
 	FString Notification = TEXT("Fetching data from Houdini...");
@@ -334,64 +320,40 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
 	}
 
 	// Make sure that the FetchNodePath is a valid Houdini node path pointing to a valid Node
-	HAPI_NodeId  UnrealFetchNodeId = -1;
-	HAPI_Result Result = HAPI_RESULT_FAILURE;
-
-	// Make sure we're not trying to fetch /obj, as this seems to crash HE
-	FString FetchNodePath = NodeSyncOptions.FetchNodePath;
-	if (FetchNodePath.Equals("/obj", ESearchCase::IgnoreCase)
-		|| FetchNodePath.Equals("/obj/", ESearchCase::IgnoreCase))
-	{
-		HOUDINI_LOG_ERROR(TEXT("Invalid FetchNodePath"));
-		LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
-		FetchStatusMessage = "Failed: Invalid Fetch node path!";
-		FetchStatusDetails = "Houdini Node Sync - Fetch Failed - Unable to fetch /obj/.";
-
+	HAPI_NodeId  FetchNodeId = -1;
+	if (!ValidateFetchedNodePath(NodeSyncOptions.FetchNodePath, FetchNodeId))
 		return;
-	}
-
-
-	Result = FHoudiniApi::GetNodeFromPath(FHoudiniEngine::Get().GetSession(), -1, TCHAR_TO_ANSI(*FetchNodePath), &UnrealFetchNodeId);
-	if ((Result != HAPI_RESULT_SUCCESS) || (UnrealFetchNodeId < 0))
-	{
-		HOUDINI_LOG_ERROR(TEXT("Invalid FetchNodePath"));
-		LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
-		FetchStatusMessage = "Failed: Invalid Fetch node path!";
-		FetchStatusDetails = "Houdini Node Sync - Fetch Failed - The Fetch node path is invalid.";
-
-		return;
-	}
-
-	// We need to gather all the required nodes
-	TArray<HAPI_NodeId> FetchNodeIds;
-	if (!GatherAllFetchNodeIds(UnrealFetchNodeId, NodeSyncOptions.bUseOutputNodes, FetchNodeIds))
-	{
-		HOUDINI_LOG_ERROR(TEXT("Houdini Node Sync: Failed to gather fetch nodes."));
-		LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
-		FetchStatusMessage = "Failed: Unable to gather fetch node outputs!";
-		FetchStatusDetails = "Houdini Node Sync - Fetch Failed - Unable to gather fetch node outputs.";
-
-		return;
-	}
-
-	// Make sure that the output nodes have been cooked
-	// This ensure that we'll be able to get the proper number of parts for them
-	HAPI_CookOptions CookOptions = FHoudiniEngine::GetDefaultCookOptions();
-	for (auto CurrentNodeId : FetchNodeIds)
-	{
-		if (!FHoudiniEngineUtils::HapiCookNode(UnrealFetchNodeId, &CookOptions, true))
-		{
-			HOUDINI_LOG_ERROR(TEXT("Failed to cook NodeSyncFetch node!"));
-			// Only log? still try to continue with the output processing?
-			// return;
-		}
-	}
 
 	// We use the BGEO importer when Fetching to the contentbrowser
 	bool bUseBGEOImport = !NodeSyncOptions.bFetchToWorld;
 	bool bSuccess = false;
 	if (bUseBGEOImport)
 	{
+		// We need to gather all the required nodes
+		TArray<HAPI_NodeId> FetchNodeIds;
+		if (!GatherAllFetchedNodeIds(FetchNodeId, NodeSyncOptions.bUseOutputNodes, FetchNodeIds))
+		{
+			HOUDINI_LOG_ERROR(TEXT("Houdini Node Sync: Failed to gather fetch nodes."));
+			LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
+			FetchStatusMessage = "Failed: Unable to gather fetch node outputs!";
+			FetchStatusDetails = "Houdini Node Sync - Fetch Failed - Unable to gather fetch node outputs.";
+
+			return;
+		}
+
+		// Make sure that all the required output nodes have been cooked
+		// This ensure that we'll be able to get the proper number of parts for them
+		HAPI_CookOptions CookOptions = FHoudiniEngine::GetDefaultCookOptions();
+		for (auto CurrentNodeId : FetchNodeIds)
+		{
+			if (!FHoudiniEngineUtils::HapiCookNode(CurrentNodeId, &CookOptions, true))
+			{
+				HOUDINI_LOG_ERROR(TEXT("Failed to cook NodeSyncFetch node!"));
+				// Only log? still try to continue with the output processing?
+				// return;
+			}
+		}
+
 		// Parent obj node that will contain all the merge nodes used for the import
 		// This will make cleaning up the fetch node easier
 		TArray<HAPI_NodeId> CreatedNodeIds;
@@ -462,8 +424,8 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
 		PackageParams.PackageMode = EPackageMode::Bake;
 		PackageParams.TempCookFolder = FHoudiniEngineRuntime::Get().GetDefaultTemporaryCookFolder();
 		PackageParams.HoudiniAssetName = FString();
-		PackageParams.BakeFolder = InPackageFolder;//FPackageName::GetLongPackagePath(InParent->GetOutermost()->GetName());
-		PackageParams.ObjectName = InPackageName;// FPaths::GetBaseFilename(InParent->GetName());
+		PackageParams.BakeFolder = NodeSyncOptions.UnrealAssetFolder;//FPackageName::GetLongPackagePath(InParent->GetOutermost()->GetName());
+		PackageParams.ObjectName = NodeSyncOptions.UnrealAssetName;// FPaths::GetBaseFilename(InParent->GetName());
 
 		if (NodeSyncOptions.bReplaceExisting)
 		{
@@ -579,7 +541,7 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
 
 		// Set the Node Sync options
 		// Fetch node path
-		HNSC->SetFetchNodePath(FetchNodePath);
+		HNSC->SetFetchNodePath(NodeSyncOptions.FetchNodePath);
 		HNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
 
 		// Disable proxies
@@ -591,16 +553,12 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
 		HNSC->SetBakeAfterNextCook(NodeSyncOptions.bAutoBake ? EHoudiniBakeAfterNextCook::Always : EHoudiniBakeAfterNextCook::Disabled);
 		HNSC->bRemoveOutputAfterBake = true;
 
-		// Other ptions
+		// Other options
 		HNSC->bUseOutputNodes = NodeSyncOptions.bUseOutputNodes;
 		HNSC->bReplacePreviousBake = NodeSyncOptions.bReplaceExisting;
 		HNSC->BakeFolder.Path = NodeSyncOptions.UnrealAssetFolder;
 		HACActor->SetActorLabel(NodeSyncOptions.UnrealActorName);
 
-		// Get the NodeId of the node we want to fetch
-		HAPI_NodeId FetchNodeId;
-		bSuccess = (HAPI_RESULT_SUCCESS == FHoudiniApi::GetNodeFromPath(FHoudiniEngine::Get().GetSession(), -1, TCHAR_TO_ANSI(*HNSC->GetFetchNodePath()), &FetchNodeId));
-		
 		// Get its transform
 		FTransform FetchTransform;
 		if (FHoudiniEngineUtils::HapiGetAssetTransform(FetchNodeId, FetchTransform))
@@ -619,7 +577,7 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
 		// Update the status message to fetching
 		this->LastFetchStatus = EHoudiniNodeSyncStatus::Running;
 		this->FetchStatusMessage = "Fetching";
-		this->FetchStatusDetails = "Houdini Node Sync - Fetching data from Houdini Node \"" + FetchNodePath + "\".";
+		this->FetchStatusDetails = "Houdini Node Sync - Fetching data from Houdini Node \"" + NodeSyncOptions.FetchNodePath + "\".";
 
 		bSuccess = true;
 	}
@@ -648,7 +606,7 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini(
 
 
 bool
-UHoudiniEditorNodeSyncSubsystem::GatherAllFetchNodeIds(
+UHoudiniEditorNodeSyncSubsystem::GatherAllFetchedNodeIds(
 	HAPI_NodeId InFetchNodeId,
 	const bool bUseOutputNodes,
 	TArray<HAPI_NodeId>& OutOutputNodes)
@@ -840,4 +798,39 @@ UHoudiniEditorNodeSyncSubsystem::GetStatusColor(const EHoudiniNodeSyncStatus& St
 	}
 
 	return OutStatusColor;
+}
+
+
+bool
+UHoudiniEditorNodeSyncSubsystem::ValidateFetchedNodePath(const FString& InFetchNodePath, HAPI_NodeId& OutFetchedNodeId)
+{
+	// Make sure that the FetchNodePath is a valid Houdini node path pointing to a valid Node
+	OutFetchedNodeId = -1;
+	
+	// Make sure we're not trying to fetch /obj, as this seems to crash HE	
+	if (InFetchNodePath.Equals("/obj", ESearchCase::IgnoreCase)
+		|| InFetchNodePath.Equals("/obj/", ESearchCase::IgnoreCase))
+	{
+		HOUDINI_LOG_ERROR(TEXT("Invalid FetchNodePath"));
+		LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
+		FetchStatusMessage = "Failed: Invalid Fetch node path!";
+		FetchStatusDetails = "Houdini Node Sync - Fetch Failed - Unable to fetch /obj/.";
+
+		return false;
+	}
+
+	// Get the node ID for the given path
+	HAPI_Result Result = FHoudiniApi::GetNodeFromPath(
+		FHoudiniEngine::Get().GetSession(), -1, TCHAR_TO_ANSI(*InFetchNodePath), &OutFetchedNodeId);
+	if ((Result != HAPI_RESULT_SUCCESS) || (OutFetchedNodeId < 0))
+	{
+		HOUDINI_LOG_ERROR(TEXT("Invalid FetchNodePath"));
+		LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
+		FetchStatusMessage = "Failed: Invalid Fetch node path!";
+		FetchStatusDetails = "Houdini Node Sync - Fetch Failed - The Fetch node path is invalid.";
+
+		return false;
+	}
+
+	return true;
 }

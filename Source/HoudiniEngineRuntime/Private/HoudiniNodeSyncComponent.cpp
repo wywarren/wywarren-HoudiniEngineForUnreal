@@ -50,6 +50,9 @@ UHoudiniNodeSyncComponent::UHoudiniNodeSyncComponent(const FObjectInitializer& O
 	Mobility = EComponentMobility::Movable;
 
 	bLiveSyncEnabled = true;
+
+	FetchStatus = EHoudiniNodeSyncStatus::None;
+	FetchMessage = FString();
 }
 
 

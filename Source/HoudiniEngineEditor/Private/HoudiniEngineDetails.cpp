@@ -33,6 +33,7 @@
 #include "HoudiniAssetActor.h"
 #include "HoudiniAsset.h"
 #include "HoudiniParameter.h"
+#include "HoudiniEditorNodeSyncSubsystem.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniEngineBakeUtils.h"
@@ -2723,25 +2724,20 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 
 		FString NewPathStr = Val.ToString();
 
-		/*
-		// TODO: VALIDATE NODE PATH
-		if (NewPathStr.StartsWith("Game/"))
+		UHoudiniEditorNodeSyncSubsystem* HoudiniSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+		if (!IsValid(HoudiniSubsystem))
+			return;
+
+		HAPI_NodeId FetchedNodeId = -1;
+		if (!HoudiniSubsystem->ValidateFetchedNodePath(NewPathStr, FetchedNodeId))
 		{
-			NewPathStr = "/" + NewPathStr;
+			// Node path invalid!
+			HOUDINI_LOG_WARNING(TEXT("Houdini Node Sync - Fetch Failed - The Fetch node path is invalid."));
+			FHoudiniEngineUtils::UpdateEditorProperties(MainHNSC.Get(), true);
+			return;
 		}
 
-		{
-			FText InvalidPathReason;
-			if (!FHoudiniEngineUtils::ValidatePath(NewPathStr, &InvalidPathReason))
-			{
-				HOUDINI_LOG_WARNING(TEXT("Invalid path: %s"), *InvalidPathReason.ToString());
-
-				FHoudiniEngineUtils::UpdateEditorProperties(MainHAC.Get(), true);
-				return;
-			}
-		}
-		*/
-
+		// Change the node path
 		for (auto& NextHAC : InHACs)
 		{
 			if (!IsValidWeakPointer(NextHAC))
@@ -2756,17 +2752,18 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 
 			NextHNSC->SetFetchNodePath(NewPathStr);
 			NextHNSC->MarkPackageDirty();
+			NextHNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
 		}
 	};
 
 
-	// Node Sync Category??
+	//
+	// Fetch node Path Row
+	//
+	FDetailWidgetRow & FetchNodeRow = HoudiniEngineCategoryBuilder.AddCustomRow(FText::FromString("Fetch Node Path"));
+	TSharedRef<SHorizontalBox> FetchNodeRowHorizontalBox = SNew(SHorizontalBox);
 
-	// Fetch node Row
-	FDetailWidgetRow & NodeSyncRow = HoudiniEngineCategoryBuilder.AddCustomRow(FText::FromString("Houdini Node Sync"));
-	TSharedRef<SHorizontalBox> NodeSyncRowHorizontalBox = SNew(SHorizontalBox);
-
-	NodeSyncRowHorizontalBox->AddSlot()
+	FetchNodeRowHorizontalBox->AddSlot()
 	//.Padding(30.0f, 0.0f, 6.0f, 0.0f)
 	.MaxWidth(155.0f)
 	[
@@ -2781,7 +2778,7 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 		]
 	];
 
-	NodeSyncRowHorizontalBox->AddSlot()
+	FetchNodeRowHorizontalBox->AddSlot()
 	.MaxWidth(235.0f)
 	[
 		SNew(SBox)
@@ -2797,12 +2794,12 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 			.Text(FText::FromString(MainHNSC->GetFetchNodePath()))
 			.OnTextCommitted_Lambda(OnFetchPathTextCommittedLambda)
 		]
-	];
-	
-	NodeSyncRow.WholeRowWidget.Widget = NodeSyncRowHorizontalBox;
+	];	
+	FetchNodeRow.WholeRowWidget.Widget = FetchNodeRowHorizontalBox;
 
-
-	// LiveSync Row
+	//
+	// Enable LiveSync Row
+	//
 	FDetailWidgetRow& LiveSyncRow = HoudiniEngineCategoryBuilder.AddCustomRow(FText::FromString("Live Sync"));
 	
 	TSharedRef<SHorizontalBox> LiveSyncRowHorizontalBox = SNew(SHorizontalBox);
@@ -2827,6 +2824,81 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 	];
 
 	LiveSyncRow.WholeRowWidget.Widget = LiveSyncRowHorizontalBox;
+	
+	//
+	// FETCH Button
+	// 
+	FDetailWidgetRow& NodeSyncFetchRow = HoudiniEngineCategoryBuilder.AddCustomRow(FText::FromString("Node Sync Fetch"));	
+	TSharedRef<SHorizontalBox> NodeSyncFetchRowHorizontalBox = SNew(SHorizontalBox);
+
+	NodeSyncFetchRowHorizontalBox->AddSlot()
+	.FillWidth(1.0f)
+	.Padding(2.0f, 0.0f)
+	.VAlign(VAlign_Top)
+	[
+		SNew(SBox)
+		.WidthOverride(135.0f)
+		[
+			SNew(SButton)
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Center)
+			.ToolTipText(LOCTEXT("FetchFromHoudiniLabel", "Fetch the data from Houdini"))
+			.Visibility(EVisibility::Visible)
+			.OnClicked_Lambda([InHACs]()
+			{
+				// Change the node path
+				for (auto& NextHAC : InHACs)
+				{
+					if (!IsValidWeakPointer(NextHAC))
+						continue;
+
+					const TWeakObjectPtr<UHoudiniNodeSyncComponent>& NextHNSC = Cast<UHoudiniNodeSyncComponent>(NextHAC);
+					if (!IsValidWeakPointer(NextHNSC))
+						continue;
+
+					NextHNSC->MarkPackageDirty();
+					NextHNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
+				}
+
+				return FReply::Handled();
+			})
+			.Content()
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString("Fetch"))
+			]
+		]
+	];
+	NodeSyncFetchRow.WholeRowWidget.Widget = NodeSyncFetchRowHorizontalBox;
+
+	//
+	// FETCH status
+	//
+	FDetailWidgetRow& NodeSyncStatusRow = HoudiniEngineCategoryBuilder.AddCustomRow(FText::FromString("Node Sync Status"));	
+	TSharedRef<SHorizontalBox> NodeSyncStatusRowHorizontalBox = SNew(SHorizontalBox);
+
+	NodeSyncStatusRowHorizontalBox->AddSlot()
+	.FillWidth(1.0f)
+	.Padding(2.0f, 0.0f)
+	.VAlign(VAlign_Top)
+	[
+		SNew(STextBlock)
+		.Justification(ETextJustify::Left)
+		.Text_Lambda([MainHNSC]()
+		{
+			return FText::FromString(MainHNSC->FetchMessage);
+		})
+		.ColorAndOpacity_Lambda([MainHNSC]()
+		{
+			FLinearColor StatusColor = UHoudiniEditorNodeSyncSubsystem::GetStatusColor(MainHNSC->FetchStatus);
+			return FSlateColor(StatusColor);
+		})
+		.ToolTipText_Lambda([MainHNSC]()
+		{
+			return FText::FromString(MainHNSC->FetchMessage);
+		})
+	];
+	NodeSyncStatusRow.WholeRowWidget.Widget = NodeSyncStatusRowHorizontalBox;
 }
 
 

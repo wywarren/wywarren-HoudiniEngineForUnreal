@@ -6,6 +6,7 @@
 #include "HoudiniEngine.h"
 #include "HoudiniEngineEditorPrivatePCH.h"
 #include "HoudiniInput.h"
+#include "HoudiniNodeSyncComponent.h"
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
@@ -15,27 +16,6 @@
 
 class USkeletalMesh;
 
-UENUM()
-enum class EHoudiniNodeSyncStatus : uint8
-{
-	// Fetch/Send not used yet
-	None,
-	
-	// Last operation failed
-	Failed,
-	
-	// Last operation was successfull
-	Success,
-	
-	// Last operation was succesfull, but reported errors
-	SuccessWithErrors,
-
-	// Sending/Fetching
-	Running,
-
-	// Display a warning
-	Warning
-};
 
 USTRUCT()
 struct HOUDINIENGINEEDITOR_API FHoudiniNodeSyncOptions
@@ -63,7 +43,7 @@ public:
 	bool bFetchToWorld = false;
 
 	UPROPERTY()
-	FString UnrealActorName = "HoudiniActor";
+	FString UnrealActorName = "HoudiniNodeSyncActor";
 
 	UPROPERTY()
 	FString UnrealActorFolder = "/Houdini/NodeSync";
@@ -102,11 +82,8 @@ public:
 	void SendToHoudini(const TArray<UObject*>& SelectedAssets);
 
 	UFUNCTION(BlueprintCallable, Category = "Houdini")
-	void FetchFromHoudini(const FString& InPackageName, const FString& InPackageFolder, const int32& MaxInfluences = 1, const bool& ImportNormals=false);
+	void FetchFromHoudini();
 	
-	UFUNCTION(BlueprintCallable, Category = "Houdini")
-	void Fetch();
-
 	UFUNCTION(BlueprintCallable, Category = "Houdini")
 	void SendWorldSelection();
 
@@ -115,6 +92,21 @@ public:
 	// Returns the color corresponding to a given node sync status
 	static FLinearColor GetStatusColor(const EHoudiniNodeSyncStatus& Status);
 
+	bool GetNodeSyncInput(UHoudiniInput*& OutInput);
+
+	bool GatherAllFetchedNodeIds(
+		HAPI_NodeId UnrealFetchNodeId,
+		const bool bUseOutputNodes,
+		TArray<HAPI_NodeId>& OutOutputNodes);
+
+	bool ValidateFetchedNodePath(
+		const FString& InFetchedNodePath,
+		HAPI_NodeId& OutFetchedNodeId);
+
+	//
+	// Public Members
+	//
+	
 	// Node sync options
 	FHoudiniNodeSyncOptions NodeSyncOptions;
 
@@ -127,13 +119,6 @@ public:
 	EHoudiniNodeSyncStatus LastFetchStatus = EHoudiniNodeSyncStatus::None;
 	FString FetchStatusMessage;
 	FString FetchStatusDetails;
-
-	bool GetNodeSyncInput(UHoudiniInput*& OutInput);
-
-	bool GatherAllFetchNodeIds(
-		HAPI_NodeId UnrealFetchNodeId,
-		const bool bUseOutputNodes,
-		TArray<HAPI_NodeId>& OutOutputNodes);
 
 private:
 
