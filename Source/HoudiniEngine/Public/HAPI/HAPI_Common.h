@@ -28,6 +28,8 @@
 
 #define HAPI_INVALID_PARM_ID                -1
 
+#define HAPI_MAX_NUM_CONNECTIONS            128
+
 /// Common Default Attributes' Names
 /// @{
 #define HAPI_ATTRIB_POSITION                "P"
@@ -1036,6 +1038,14 @@ HAPI_C_ENUM_TYPEDEF( HAPI_PDG_WorkItemState )
 /// Backwards compatibility for HAPI_PDG_WorkitemState
 typedef HAPI_PDG_WorkItemState HAPI_PDG_WorkitemState;
 
+enum HAPI_TCP_PortType
+{
+    HAPI_TCP_PORT_ANY,
+    HAPI_TCP_PORT_RANGE,
+    HAPI_TCP_PORT_LIST
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_TCP_PortType )
+
 /////////////////////////////////////////////////////////////////////////////
 // Main API Structs
 
@@ -1086,6 +1096,16 @@ struct HAPI_API HAPI_SessionInfo
 {
     /// The number of subconnections in this session
     int connectionCount;
+
+    /// Specification for the port numbers
+    HAPI_TCP_PortType portType;
+
+    /// Specifies a range of port numbers, [minPort, maxPort]
+    int minPort;
+    int maxPort;
+
+    /// Specifies a list of port numbers
+    int ports[ HAPI_MAX_NUM_CONNECTIONS ];
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_SessionInfo )
 
