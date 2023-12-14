@@ -133,8 +133,8 @@ struct FHoudiniSplitGroupMesh
 	FString CustomCollisionOwner;
 
 	// Static Mesh generated.
-	UStaticMesh* StaticMesh;
-
+	UStaticMesh* UnrealStaticMesh = nullptr;
+	UHoudiniStaticMesh * HoudiniStaticMesh = nullptr;
 	// Output identifier.
 	FHoudiniOutputObjectIdentifier OutputObjectIdentifier;
 
@@ -304,6 +304,8 @@ struct HOUDINIENGINE_API FHoudiniMeshTranslator
 		// Create a UHoudiniStaticMesh
 		bool CreateHoudiniStaticMesh();
 
+		bool CreateHoudiniStaticMeshesFromSplitGroups();
+
 		// Helper to make and populate a FHoudiniOutputObjectIdentifier from the current HGPO and the given
 		// InSplitGroupName and InSplitType.
 		FHoudiniOutputObjectIdentifier MakeOutputObjectIdentifier(const FString& InSplitGroupName, const EHoudiniSplitType InSplitType);
@@ -367,11 +369,12 @@ struct HOUDINIENGINE_API FHoudiniMeshTranslator
 			int32 MatIndex,
 			TArray<FStaticMaterial>& FoundStaticMaterials);
 
-		UStaticMesh* CreateNewStaticMesh(const FString& InMeshIdentifierString);
+		UStaticMesh* CreateNewUnrealStaticMesh(const FString& InMeshIdentifierString);
+
+
+		UHoudiniStaticMesh* CreateNewHoudiniStaticMesh(const FString& InSplitIdentifier);
 
 		UStaticMesh* FindExistingStaticMesh(const FHoudiniOutputObjectIdentifier& InIdentifier);
-
-		UHoudiniStaticMesh* CreateNewHoudiniStaticMesh(const FString& InMeshIdentifierString);
 
 		UHoudiniStaticMesh* FindExistingHoudiniStaticMesh(const FHoudiniOutputObjectIdentifier& InIdentifier);
 
@@ -588,8 +591,21 @@ struct HOUDINIENGINE_API FHoudiniMeshTranslator
 
 		bool CreateStaticMeshFromSplitGroups(const FString & Name, FHoudiniSplitGroupMesh & Mesh);
 
+		bool CreateHoudiniStaticMeshFromSplitGroups(const FString& Name, FHoudiniSplitGroupMesh& Mesh,
+			TMap<HAPI_NodeId, UMaterialInterface*> & MapHoudiniMatIdToUnrealInterface,
+			TMap<FHoudiniMaterialIdentifier, UMaterialInterface*> & MapHoudiniMatAttributesToUnrealInterface,
+			TMap<UHoudiniStaticMesh*, TMap<UMaterialInterface*, int32>> & MapUnrealMaterialInterfaceToUnrealIndexPerMesh);
+
 		void UpdateSplitGroups();
 
 		bool ParseSplitToken(FString& Name, const FString& Token);
 
+		void BuildHoudiniMesh(const FString & SplitGroupName, UHoudiniStaticMesh *FoundStaticMesh);
+
+		void ProcessMaterialsForHSM(
+					const FString& SplitGroupName, 
+					UHoudiniStaticMesh* FoundStaticMesh,
+					TMap<HAPI_NodeId, UMaterialInterface*> & MapHoudiniMatIdToUnrealInterface,
+					TMap<FHoudiniMaterialIdentifier, UMaterialInterface*> & MapHoudiniMatAttributesToUnrealInterface,
+					TMap<UHoudiniStaticMesh*, TMap<UMaterialInterface*, int32>> & MapUnrealMaterialInterfaceToUnrealIndexPerMesh);
 };
