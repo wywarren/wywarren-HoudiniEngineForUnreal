@@ -34,6 +34,8 @@
 #define H_SCOPED_FUNCTION_DYNAMIC_LABEL(__LABEL) \
 				TRACE_CPUPROFILER_EVENT_SCOPE_STR(__LABEL.GetCharArray().GetData())
 
+// Adds a new cpu profile event with a static label. For some reason, adding __FUNCTION__
+// fails to compile on Mac.
 #define H_SCOPED_FUNCTION_STATIC_LABEL(__LABEL) \
-				TRACE_CPUPROFILER_EVENT_SCOPE_STR(__FUNCTION__ " " __LABEL)
+				TRACE_CPUPROFILER_EVENT_SCOPE_STR(__LABEL)
 
