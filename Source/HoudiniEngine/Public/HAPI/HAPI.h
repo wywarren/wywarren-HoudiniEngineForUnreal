@@ -192,6 +192,9 @@ HAPI_DECL HAPI_StartThriftSharedMemoryServer(
 ///                 the shared memory buffer of the server that you are wishing
 ///                 to connect to.
 ///
+/// @param[in]      session_info
+///                 A ::HAPI_SessionInfo struct to specify session configurations.
+///
 HAPI_DECL HAPI_CreateThriftSharedMemorySession( HAPI_Session * session,
                                                 const char * shared_mem_name );
 
@@ -768,6 +771,76 @@ HAPI_DECL HAPI_ComposeNodeCookResult( const HAPI_Session * session,
 HAPI_DECL HAPI_GetComposedNodeCookResult( const HAPI_Session * session,
                                           char * string_value,
                                           int length );
+
+/// @brief  Gets the length of the cook result string (errors and warnings) of
+///         a specific node.
+///
+///         Unlike ::HAPI_ComposeNodeCookResult(), this node does not parse
+///         inside the node network. Only errors, warnings, and messages that
+///         appear on the specified node will be a part of the cook result
+///         string.
+///
+///         You MUST call ::HAPI_GetNodeCookResultLength() before calling
+///         ::HAPI_GetNodeCookResult() because ::HAPI_GetNodeCookResult() will
+///         not return the real result and instead returns a cached version of
+///         the string that was created during the call to
+///         ::HAPI_GetNodeCookResultLength(). The reason for this is that the
+///         length of the real status string may change between the call to
+///         ::HAPI_GetNodeCookResultLength() and ::HAPI_GetNodeCookResult().
+///
+/// @ingroup Status
+///
+/// @param[in]  session
+///             The session of Houdini you are interacting with.
+///             See @ref HAPI_Sessions for more on sessions.
+///             Pass NULL to just use the default in-process session.
+///             <!-- default NULL -->
+///
+/// @param[in]  node_id
+///             The node id.
+///
+/// @param[in]  verbosity
+///             Preferred verbosity level.
+///
+/// @param[out] buffer_length
+///             Lenght of buffer char array ready to be filled.
+///
+HAPI_DECL HAPI_GetNodeCookResultLength( const HAPI_Session * session,
+                                        HAPI_NodeId node_id,
+                                        HAPI_StatusVerbosity verbosity,
+                                        int * buffer_length );
+
+/// @brief  Return the cook result string that was composed during a call to
+///         ::HAPI_GetNodeCookResultLength().
+///
+///         You MUST call ::HAPI_GetNodeCookResultLength() before calling
+///         ::HAPI_GetNodeCookResult() because ::HAPI_GetNodeCookResult() will
+///         not return the real result and instead returns a cached version of
+///         the string that was created during the call to
+///         ::HAPI_GetNodeCookResultLength(). The reason for this is that the
+///         length of the real status string may change between the call to
+///         ::HAPI_GetNodeCookResultLength() and ::HAPI_GetNodeCookResult().
+///
+/// @ingroup Status
+///
+/// @param[in]  session
+///             The session of Houdini you are interacting with.
+///             See @ref HAPI_Sessions for more on sessions.
+///             Pass NULL to just use the default in-process session.
+///             <!-- default NULL -->
+///
+/// @param[out] string_value
+///             Buffer char array that will be filled with the cook result
+///             string.
+///
+/// @param[in]  length
+///             Length of the char buffer (must match size of
+///             @p string_value - so include NULL terminator).
+///             <!-- source ::HAPI_GetNodeCookResultLength -->
+///
+HAPI_DECL HAPI_GetNodeCookResult( const HAPI_Session * session,
+                                  char * string_value,
+                                  int length );
 
 /// @brief  Get the number of message nodes set in "Type Properties".
 ///
