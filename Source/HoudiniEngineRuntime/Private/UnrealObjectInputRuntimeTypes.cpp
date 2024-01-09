@@ -173,7 +173,7 @@ FUnrealObjectInputOptions::MakeOptionsForLevelInstanceActor(const FHoudiniInputO
 			Options.bLandscapeExportNormalizedUVs = InInputSettings.bLandscapeExportNormalizedUVs;
 			Options.bLandscapeExportTileUVs = InInputSettings.bLandscapeExportTileUVs;
 		}
-		Options.bExportPerEditLayerData = InInputSettings.bExportPerEditLayerData;
+		Options.bExportPerEditLayerData = InInputSettings.bExportEditLayers;
 		Options.bExportLandscapeSplineControlPoints = InInputSettings.bLandscapeSplinesExportControlPoints;
 		Options.bExportLandscapeSplineLeftRightCurves = InInputSettings.bLandscapeSplinesExportLeftRightCurves;
 	}
@@ -197,7 +197,7 @@ FUnrealObjectInputOptions::MakeOptionsForLandscapeActor(const FHoudiniInputObjec
 			Options.bLandscapeExportNormalizedUVs = InInputSettings.bLandscapeExportNormalizedUVs;
 			Options.bLandscapeExportTileUVs = InInputSettings.bLandscapeExportTileUVs;
 		}
-		Options.bExportPerEditLayerData = InInputSettings.bExportPerEditLayerData;
+		Options.bExportPerEditLayerData = InInputSettings.bExportEditLayers;
 		Options.bExportSelectedComponentsOnly = InInputSettings.bLandscapeExportSelectionOnly;
 		if (Options.bExportSelectedComponentsOnly && InSelectedComponents)
 			Options.SetSelectedComponents(*InSelectedComponents);
@@ -223,7 +223,7 @@ FUnrealObjectInputOptions::MakeOptionsForLandscapeData(const FHoudiniInputObject
 			Options.bLandscapeExportNormalizedUVs = InInputSettings.bLandscapeExportNormalizedUVs;
 			Options.bLandscapeExportTileUVs = InInputSettings.bLandscapeExportTileUVs;
 		}
-		Options.bExportPerEditLayerData = InInputSettings.bExportPerEditLayerData;
+		Options.bExportPerEditLayerData = InInputSettings.bExportEditLayers;
 		Options.bExportSelectedComponentsOnly = InInputSettings.bLandscapeExportSelectionOnly;
 		if (Options.bExportSelectedComponentsOnly && InSelectedComponents)
 			Options.SetSelectedComponents(*InSelectedComponents);
