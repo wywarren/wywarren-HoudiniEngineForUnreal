@@ -431,10 +431,6 @@ FHoudiniSkeletalMeshTranslator::UpdateBuildSettings(SKBuildSettings & BuildSetti
 	HAPI_NodeId PartId = INDEX_NONE;
 
 	bool bFoundImportScaleAttribute = false;
-
-	
-	ShapeMeshHGPO.PartId;
-	ShapeMeshHGPO.GeoId;
 	
 	//ImportScale----------------------------------------------------------------------------------------
 	HAPI_AttributeInfo UnrealSKImportScaleInfo;
