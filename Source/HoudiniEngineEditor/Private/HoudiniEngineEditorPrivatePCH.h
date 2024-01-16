@@ -60,6 +60,7 @@
 #define HOUDINI_ENGINE_EDITOR_CATEGORY_HANDLES					"HoudiniHandles";
 #define HOUDINI_ENGINE_EDITOR_CATEGORY_INPUTS					"HoudiniInputs";
 #define HOUDINI_ENGINE_EDITOR_CATEGORY_OUTPUTS					"HoudiniOutputs";
+#define HOUDINI_ENGINE_EDITOR_CATEGORY_NODESYNC					"HoudiniNodeSync";
 
 //
 // Parameter UI constants

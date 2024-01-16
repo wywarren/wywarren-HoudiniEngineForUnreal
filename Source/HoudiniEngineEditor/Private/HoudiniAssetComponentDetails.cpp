@@ -376,7 +376,7 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 		if (bIsNodeSyncComponent)
 		{
 			// If we are working on a node sync component, display its specific options
-			FString HoudiniNodeSyncCategoryName = "Node Sync";
+			FString HoudiniNodeSyncCategoryName = TEXT(HOUDINI_ENGINE_EDITOR_CATEGORY_NODESYNC);
 			HoudiniNodeSyncCategoryName += MultiSelectionIdentifier;
 
 			TArray<TWeakObjectPtr<UHoudiniAssetComponent>> MultiSelectedHACs;
@@ -390,7 +390,7 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
 			// Create Houdini Engine details category
 			IDetailCategoryBuilder& HouNodeSyncCategory =
-				DetailBuilder.EditCategory(*HoudiniNodeSyncCategoryName, FText::FromString("Node Sync"), ECategoryPriority::Important);
+				DetailBuilder.EditCategory(*HoudiniNodeSyncCategoryName, FText::FromString("Houdini - Node Sync"), ECategoryPriority::Important);
 			HoudiniEngineDetails->CreateNodeSyncWidgets(HouNodeSyncCategory, MultiSelectedHACs);
 		}
 
