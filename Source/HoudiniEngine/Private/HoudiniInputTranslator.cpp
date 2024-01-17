@@ -2014,6 +2014,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForObject(const FString& InObjNodeNa
 		return true;
 
 	FString NodeName = InObjNodeName + TEXT("_") + Object->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(NodeName);
 
 	// For UObjects we can't upload much, but can still create an input node
 	// with a single point, with an attribute pointing to the input object's path
@@ -2214,6 +2215,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForStaticMesh(
 		return true;
 
 	FString SMName = InObjNodeName + TEXT("_") + SM->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SMName);
 
 	// Marshall the Static Mesh to Houdini
 	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
@@ -2413,6 +2415,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForAnimation(
 		return true;
 
 	FString SKName = InObjNodeName + TEXT("_") + Animation->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SKName);
 
 	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	FUnrealObjectInputHandle AnimInputNodeHandle;
@@ -2522,6 +2525,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMesh(
 		return true;
 
 	FString SKName = InObjNodeName + TEXT("_") + SkelMesh->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SKName);
 
 	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	FUnrealObjectInputHandle SKMInputNodeHandle;
@@ -2635,6 +2639,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMeshComponent(
 
 	// Marshall the Skeletal Mesh to Houdini
 	FString SKCName = InObjNodeName + TEXT("_") + SKC->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SKCName);
 
 	FUnrealObjectInputHandle InputNodeHandle;
 	bool bSuccess = true;
@@ -2800,6 +2805,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForGeometryCollection(
 		return false;
 
 	FString GCName = InObjNodeName + TEXT("_") + GeometryCollection->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(GCName);
 
 	// TODO: Add support for the new input sytem!
 	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
@@ -2931,6 +2937,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForGeometryCollectionComponent(
 	
 	// Marshall the GeometryCollection to Houdini
 	FString GCCName = InObjNodeName + TEXT("_") + GCC->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(GCCName);
 
 	FUnrealObjectInputHandle InputNodeHandle;
 	bool bSuccess = true;
@@ -3074,6 +3081,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForStaticMeshComponent(
 
 	// Marshall the Static Mesh to Houdini
 	FString SMCName = InObjNodeName + TEXT("_") + SMC->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SMCName);
 
 	// Does the component generate unique to it, or does it use an asset directly? In cases where the component
 	// generates its own data (perhaps derived from an asset, such as a static mesh) there will be no separation
@@ -3329,6 +3337,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSplineMeshComponents(
 
 	// Marshall the Static Mesh to Houdini
 	FString SMCName = InObjNodeName + TEXT("_") + FirstSMC->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SMCName);
 
 	FUnrealObjectInputHandle InputNodeHandle;
 	bool bSuccess = FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
@@ -3473,6 +3482,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSplineComponent(
 	TArray<FTransform> SplineControlPoints = InObject->SplineControlPoints;
 
 	FString SplineName = InObjNodeName + TEXT("_") + InObject->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SplineName);
 
 	// const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	FUnrealObjectInputHandle InputNodeHandle;
@@ -3594,13 +3604,16 @@ FHoudiniInputTranslator::HapiCreateInputNodeForHoudiniAssetComponent(
 		if(bIsAssetInput)
 			HoudiniInput->SetInputNodeId(-1);
 
+		FString HAName = InObject->GetName();
+		FHoudiniEngineUtils::SanitizeHAPIVariableName(HAName);
+
 		HAPI_NodeId InputNodeId = InObject->GetInputNodeId();
 		constexpr bool bUseRefCountedInputSystem = false;
 		FUnrealObjectInputHandle InputNodeHandle;
 		if (!FHoudiniInputTranslator::CreateInputNodeForReference(
 				InputNodeId,
 				InputHAC,
-				InObject->GetName(),
+				HAName,
 				InObject->GetTransform(),
 				InInputSettings.bImportAsReferenceRotScaleEnabled,
 				bUseRefCountedInputSystem,
@@ -3886,6 +3899,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForBP(
 	if (InInput->GetImportAsReference())
 	{
 		FString BPName = InInput->GetNodeBaseName() + TEXT("_") + BP->GetName();
+		FHoudiniEngineUtils::SanitizeHAPIVariableName(BPName);
 
 		const FHoudiniInputObjectSettings InputSettings(InInput);
 		if (!FHoudiniInputTranslator::HapiCreateInputNodeForReference(
@@ -3965,7 +3979,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForLandscapeSplinesComponent(
 	// const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	HAPI_NodeId CreatedNodeId = InObject->GetInputNodeId();
 
-	const FString SplinesComponentName = InObjNodeName + TEXT("_") + SplinesComponent->GetName();
+	FString SplinesComponentName = InObjNodeName + TEXT("_") + SplinesComponent->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(SplinesComponentName);
 
 	TMap<TSoftObjectPtr<ULandscapeSplineControlPoint>, int32> ControlPointIdMap(InObject->GetControlPointIdMap());
 	int32 NextControlPointId = InObject->GetNextControlPointId();
@@ -4303,6 +4318,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForBrush(
 		return true;
 
 	FString BrushName = InObjNodeName + TEXT("_") + BrushActor->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(BrushName);
+
 	FUnrealObjectInputHandle InputNodeHandle;
 	
 	HAPI_NodeId InputNodeId = InObject->GetInputNodeId();
@@ -4337,6 +4354,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForCamera(
 		return true;
 
 	FString NodeName = InNodeName + TEXT("_") + Camera->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(NodeName);
 
 	// Create the camera OBJ.
 	int32 CameraNodeId = -1;
@@ -4958,6 +4976,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForDataTable(
 		return true;
 	
 	FString DataTableName = InNodeName + TEXT("_") + DataTable->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(DataTableName);
+
 	FUnrealObjectInputHandle DTInputNodeHandle;
 	HAPI_NodeId InputNodeId = -1;
 	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
@@ -5029,8 +5049,6 @@ FHoudiniInputTranslator::HapiCreateInputNodeForFoliageType_InstancedStaticMesh(
 	if (!IsValid(InObject))
 		return false;
 
-	FString FTName = InObjNodeName + TEXT("_");
-
 	UFoliageType_InstancedStaticMesh* FoliageType = Cast<UFoliageType_InstancedStaticMesh>(InObject->GetObject());
 	if (!IsValid(FoliageType))
 		return true;
@@ -5039,7 +5057,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForFoliageType_InstancedStaticMesh(
 	if (!IsValid(SM))
 		return true;
 
-	FTName += FoliageType->GetName();
+	FString FTName = InObjNodeName + TEXT("_") + FoliageType->GetName();
+	FHoudiniEngineUtils::SanitizeHAPIVariableName(FTName);
 
 	// Marshall the Static Mesh to Houdini
 	FUnrealObjectInputHandle InputNodeHandle;

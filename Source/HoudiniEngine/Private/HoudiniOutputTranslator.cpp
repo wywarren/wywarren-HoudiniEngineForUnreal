@@ -1541,7 +1541,7 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 				// ------------------
 				// Skeletal Mesh checks
 				// ------------------
-				if ((CurrentHapiPartInfo.type == HAPI_PARTTYPE_INSTANCER))
+				if (CurrentHapiPartInfo.type == HAPI_PARTTYPE_INSTANCER)
 				{
 					// Try to collect all the parts needed for a skeletal mesh.
 					// Check for skeletal mesh Rest Geometry (Shape, in Houdini terms))
