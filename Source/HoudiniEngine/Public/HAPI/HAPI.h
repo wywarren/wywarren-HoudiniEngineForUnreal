@@ -196,7 +196,8 @@ HAPI_DECL HAPI_StartThriftSharedMemoryServer(
 ///                 A ::HAPI_SessionInfo struct to specify session configurations.
 ///
 HAPI_DECL HAPI_CreateThriftSharedMemorySession( HAPI_Session * session,
-                                                const char * shared_mem_name );
+                                                const char * shared_mem_name,
+                                                const HAPI_SessionInfo * session_info );
 
 /// @brief  Binds a new implementation DLL to one of the custom session
 ///         slots.
