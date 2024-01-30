@@ -72,6 +72,8 @@ bool FHoudiniEditorTestOutput::RunTest(const FString & Parameters)
 
 	TSharedPtr<FHoudiniTestContext> Context(new FHoudiniTestContext(this));
 	Context->HAC = NewHAC;
+	Context->HAC->bOverrideGlobalProxyStaticMeshSettings = true;
+	Context->HAC->bEnableProxyStaticMeshOverride = false;
 	Context->StartCookingHDA();
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
