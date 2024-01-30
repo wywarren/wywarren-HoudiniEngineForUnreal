@@ -1,5 +1,5 @@
 /*
- * Copyright (c) <2023> Side Effects Software Inc. *
+ * Copyright (c) <2024> Side Effects Software Inc. *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -146,6 +146,9 @@ FHoudiniApi::CreateNode = &FHoudiniApi::CreateNodeEmptyStub;
 
 FHoudiniApi::CreateThriftNamedPipeSessionFuncPtr
 FHoudiniApi::CreateThriftNamedPipeSession = &FHoudiniApi::CreateThriftNamedPipeSessionEmptyStub;
+
+FHoudiniApi::CreateThriftSharedMemorySessionFuncPtr
+FHoudiniApi::CreateThriftSharedMemorySession = &FHoudiniApi::CreateThriftSharedMemorySessionEmptyStub;
 
 FHoudiniApi::CreateThriftSocketSessionFuncPtr
 FHoudiniApi::CreateThriftSocketSession = &FHoudiniApi::CreateThriftSocketSessionEmptyStub;
@@ -488,6 +491,12 @@ FHoudiniApi::GetMessageNodeIds = &FHoudiniApi::GetMessageNodeIdsEmptyStub;
 
 FHoudiniApi::GetNextVolumeTileFuncPtr
 FHoudiniApi::GetNextVolumeTile = &FHoudiniApi::GetNextVolumeTileEmptyStub;
+
+FHoudiniApi::GetNodeCookResultFuncPtr
+FHoudiniApi::GetNodeCookResult = &FHoudiniApi::GetNodeCookResultEmptyStub;
+
+FHoudiniApi::GetNodeCookResultLengthFuncPtr
+FHoudiniApi::GetNodeCookResultLength = &FHoudiniApi::GetNodeCookResultLengthEmptyStub;
 
 FHoudiniApi::GetNodeFromPathFuncPtr
 FHoudiniApi::GetNodeFromPath = &FHoudiniApi::GetNodeFromPathEmptyStub;
@@ -1182,6 +1191,9 @@ FHoudiniApi::Shutdown = &FHoudiniApi::ShutdownEmptyStub;
 FHoudiniApi::StartThriftNamedPipeServerFuncPtr
 FHoudiniApi::StartThriftNamedPipeServer = &FHoudiniApi::StartThriftNamedPipeServerEmptyStub;
 
+FHoudiniApi::StartThriftSharedMemoryServerFuncPtr
+FHoudiniApi::StartThriftSharedMemoryServer = &FHoudiniApi::StartThriftSharedMemoryServerEmptyStub;
+
 FHoudiniApi::StartThriftSocketServerFuncPtr
 FHoudiniApi::StartThriftSocketServer = &FHoudiniApi::StartThriftSocketServerEmptyStub;
 
@@ -1270,6 +1282,7 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::CreateInputNode = (CreateInputNodeFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateInputNode"));
 	FHoudiniApi::CreateNode = (CreateNodeFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateNode"));
 	FHoudiniApi::CreateThriftNamedPipeSession = (CreateThriftNamedPipeSessionFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateThriftNamedPipeSession"));
+	FHoudiniApi::CreateThriftSharedMemorySession = (CreateThriftSharedMemorySessionFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateThriftSharedMemorySession"));
 	FHoudiniApi::CreateThriftSocketSession = (CreateThriftSocketSessionFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateThriftSocketSession"));
 	FHoudiniApi::CreateWorkItem = (CreateWorkItemFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateWorkItem"));
 	FHoudiniApi::CreateWorkitem = (CreateWorkitemFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_CreateWorkitem"));
@@ -1384,6 +1397,8 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::GetMessageNodeCount = (GetMessageNodeCountFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetMessageNodeCount"));
 	FHoudiniApi::GetMessageNodeIds = (GetMessageNodeIdsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetMessageNodeIds"));
 	FHoudiniApi::GetNextVolumeTile = (GetNextVolumeTileFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetNextVolumeTile"));
+	FHoudiniApi::GetNodeCookResult = (GetNodeCookResultFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetNodeCookResult"));
+	FHoudiniApi::GetNodeCookResultLength = (GetNodeCookResultLengthFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetNodeCookResultLength"));
 	FHoudiniApi::GetNodeFromPath = (GetNodeFromPathFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetNodeFromPath"));
 	FHoudiniApi::GetNodeInfo = (GetNodeInfoFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetNodeInfo"));
 	FHoudiniApi::GetNodeInputName = (GetNodeInputNameFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetNodeInputName"));
@@ -1615,6 +1630,7 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::SetWorkitemStringData = (SetWorkitemStringDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetWorkitemStringData"));
 	FHoudiniApi::Shutdown = (ShutdownFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_Shutdown"));
 	FHoudiniApi::StartThriftNamedPipeServer = (StartThriftNamedPipeServerFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartThriftNamedPipeServer"));
+	FHoudiniApi::StartThriftSharedMemoryServer = (StartThriftSharedMemoryServerFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartThriftSharedMemoryServer"));
 	FHoudiniApi::StartThriftSocketServer = (StartThriftSocketServerFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartThriftSocketServer"));
 	FHoudiniApi::ThriftServerOptions_Create = (ThriftServerOptions_CreateFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_ThriftServerOptions_Create"));
 	FHoudiniApi::ThriftServerOptions_Init = (ThriftServerOptions_InitFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_ThriftServerOptions_Init"));
@@ -1675,6 +1691,7 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::CreateInputNode = &FHoudiniApi::CreateInputNodeEmptyStub;
 	FHoudiniApi::CreateNode = &FHoudiniApi::CreateNodeEmptyStub;
 	FHoudiniApi::CreateThriftNamedPipeSession = &FHoudiniApi::CreateThriftNamedPipeSessionEmptyStub;
+	FHoudiniApi::CreateThriftSharedMemorySession = &FHoudiniApi::CreateThriftSharedMemorySessionEmptyStub;
 	FHoudiniApi::CreateThriftSocketSession = &FHoudiniApi::CreateThriftSocketSessionEmptyStub;
 	FHoudiniApi::CreateWorkItem = &FHoudiniApi::CreateWorkItemEmptyStub;
 	FHoudiniApi::CreateWorkitem = &FHoudiniApi::CreateWorkitemEmptyStub;
@@ -1789,6 +1806,8 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::GetMessageNodeCount = &FHoudiniApi::GetMessageNodeCountEmptyStub;
 	FHoudiniApi::GetMessageNodeIds = &FHoudiniApi::GetMessageNodeIdsEmptyStub;
 	FHoudiniApi::GetNextVolumeTile = &FHoudiniApi::GetNextVolumeTileEmptyStub;
+	FHoudiniApi::GetNodeCookResult = &FHoudiniApi::GetNodeCookResultEmptyStub;
+	FHoudiniApi::GetNodeCookResultLength = &FHoudiniApi::GetNodeCookResultLengthEmptyStub;
 	FHoudiniApi::GetNodeFromPath = &FHoudiniApi::GetNodeFromPathEmptyStub;
 	FHoudiniApi::GetNodeInfo = &FHoudiniApi::GetNodeInfoEmptyStub;
 	FHoudiniApi::GetNodeInputName = &FHoudiniApi::GetNodeInputNameEmptyStub;
@@ -2020,6 +2039,7 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::SetWorkitemStringData = &FHoudiniApi::SetWorkitemStringDataEmptyStub;
 	FHoudiniApi::Shutdown = &FHoudiniApi::ShutdownEmptyStub;
 	FHoudiniApi::StartThriftNamedPipeServer = &FHoudiniApi::StartThriftNamedPipeServerEmptyStub;
+	FHoudiniApi::StartThriftSharedMemoryServer = &FHoudiniApi::StartThriftSharedMemoryServerEmptyStub;
 	FHoudiniApi::StartThriftSocketServer = &FHoudiniApi::StartThriftSocketServerEmptyStub;
 	FHoudiniApi::ThriftServerOptions_Create = &FHoudiniApi::ThriftServerOptions_CreateEmptyStub;
 	FHoudiniApi::ThriftServerOptions_Init = &FHoudiniApi::ThriftServerOptions_InitEmptyStub;
@@ -2319,6 +2339,13 @@ FHoudiniApi::CreateNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId paren
 
 HAPI_Result
 FHoudiniApi::CreateThriftNamedPipeSessionEmptyStub(HAPI_Session * session, const char * pipe_name, const HAPI_SessionInfo * session_info)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::CreateThriftSharedMemorySessionEmptyStub(HAPI_Session * session, const char * shared_mem_name)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -3117,6 +3144,20 @@ FHoudiniApi::GetMessageNodeIdsEmptyStub(const HAPI_Session * session, HAPI_NodeI
 
 HAPI_Result
 FHoudiniApi::GetNextVolumeTileEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, HAPI_VolumeTileInfo * tile)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::GetNodeCookResultEmptyStub(const HAPI_Session * session, char * string_value, int length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::GetNodeCookResultLengthEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_StatusVerbosity verbosity, int * buffer_length)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4734,6 +4775,13 @@ FHoudiniApi::ShutdownEmptyStub(const HAPI_Session * session)
 
 HAPI_Result
 FHoudiniApi::StartThriftNamedPipeServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id, const char * log_file)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::StartThriftSharedMemoryServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * shared_mem_name, HAPI_ProcessId * process_id, const char * log_file)
 {
 	return HAPI_RESULT_FAILURE;
 }
