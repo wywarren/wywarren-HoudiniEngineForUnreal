@@ -3,6 +3,7 @@
 
 #include "FoliageType.h"
 #include "InstancedFoliage.h"
+#include "EngineUtils.h"
 
 void
 FHoudiniFoliageUtils::RemoveFoliageTypeFromWorld(UWorld* World, UFoliageType* FoliageType)
