@@ -975,6 +975,8 @@ enum HAPI_PDG_EventType
     /// Deprecated
     HAPI_PDG_EVENT_WORKITEM_SET_FILE,
     /// Deprecated
+    HAPI_PDG_EVENT_WORKITEM_SET_DICT,
+    /// Deprecated
     HAPI_PDG_EVENT_WORKITEM_SET_PYOBJECT,
     /// Deprecated
     HAPI_PDG_EVENT_WORKITEM_SET_GEOMETRY,
