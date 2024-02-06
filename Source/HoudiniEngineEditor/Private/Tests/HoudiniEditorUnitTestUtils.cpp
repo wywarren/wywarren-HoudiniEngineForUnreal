@@ -99,7 +99,7 @@ bool FHoudiniLatentTestCommand::Update()
 		}
 		else
 		{
-			return true;
+			return false;
 		}
 	}
 

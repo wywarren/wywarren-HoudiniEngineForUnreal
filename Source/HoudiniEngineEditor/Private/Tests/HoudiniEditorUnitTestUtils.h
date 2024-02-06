@@ -183,7 +183,6 @@ struct FHoudiniTestContext
 	void StartCookingSelectedTOPNetwork();
 
 	// Bakes the top network. Synchronous, returns the baked actors.
-
 	TArray<FHoudiniEngineBakedActor> BakeSelectedTopNetwork();
 
 	double MaxTime = 15.0f;						// Max time (seconds) this test can run.
