@@ -157,7 +157,7 @@ UHoudiniGeoImporter::BuildOutputsForNode(
 }
 
 bool UHoudiniGeoImporter::CreateObjectsFromOutputs(
-	const TArray<UHoudiniOutput*>& InOutputs,
+	TArray<UHoudiniOutput*>& InOutputs,
 	FHoudiniPackageParams InPackageParams,
 	const FHoudiniStaticMeshGenerationProperties& InStaticMeshGenerationProperties,
 	const FMeshBuildSettings& InMeshBuildSettings,
@@ -178,7 +178,6 @@ bool UHoudiniGeoImporter::CreateObjectsFromOutputs(
 	TArray<UHoudiniOutput*> InstancerOutputs;
 	TArray<UHoudiniOutput*> DataTableOutputs;
 	TArray<UHoudiniOutput*> SkeletalOutputs;
-	TArray<UHoudiniOutput*> GeometryCollectionOutputs;
 	TArray<UHoudiniOutput*> AnimSequenceOutputs;
 
 	for (UHoudiniOutput* const Output : InOutputs)
@@ -206,9 +205,6 @@ bool UHoudiniGeoImporter::CreateObjectsFromOutputs(
 		case EHoudiniOutputType::Skeletal:
 			SkeletalOutputs.Add(Output);
 			break;
-		case EHoudiniOutputType::GeometryCollection:
-			GeometryCollectionOutputs.Add(Output);
-			break;
 		case EHoudiniOutputType::AnimSequence:
 			AnimSequenceOutputs.Add(Output);
 			break;
@@ -224,6 +220,9 @@ bool UHoudiniGeoImporter::CreateObjectsFromOutputs(
 	if (!CreateLandscapes(LandscapeOutputs, InPackageParams))
 		return false;
 
+	if (!CreateLandscapeSplines(LandscapeSplineOutputs, InPackageParams))
+		return false;
+
 	if (OutInstancedOutputPartData)
 	{
 		if (!CreateInstancerOutputPartData(InstancerOutputs, *OutInstancedOutputPartData))
@@ -231,7 +230,7 @@ bool UHoudiniGeoImporter::CreateObjectsFromOutputs(
 	}
 	else
 	{
-		if (!CreateInstancers(InstancerOutputs, InPackageParams))
+		if (!CreateInstancers(InOutputs, InstancerOutputs, InPackageParams))
 			return false;
 	}
 
@@ -239,9 +238,6 @@ bool UHoudiniGeoImporter::CreateObjectsFromOutputs(
 		return false;
 
 	if (!CreateSkeletalMeshes(SkeletalOutputs, InPackageParams))
-		return false;
-
-	if (!CreateGeometryCollections(GeometryCollectionOutputs, InPackageParams))
 		return false;
 
 	if (!CreateAnimSequences(AnimSequenceOutputs, InPackageParams))
@@ -507,9 +503,12 @@ UHoudiniGeoImporter::CreateLandscapeSplines(const TArray<UHoudiniOutput*>& InOut
 
 
 bool
-UHoudiniGeoImporter::CreateInstancers(const TArray<UHoudiniOutput*>& InOutputs, FHoudiniPackageParams InPackageParams)
+UHoudiniGeoImporter::CreateInstancers(
+	TArray<UHoudiniOutput*>& InAllOutputs,
+	const TArray<UHoudiniOutput*>& InInstancerOutputs,
+	FHoudiniPackageParams InPackageParams)
 {
-	if (InOutputs.IsEmpty())
+	if (InInstancerOutputs.IsEmpty())
 	{
 		return true;
 	}
@@ -518,10 +517,51 @@ UHoudiniGeoImporter::CreateInstancers(const TArray<UHoudiniOutput*>& InOutputs, 
 	FHoudiniEngine::Get().UpdateTaskSlateNotification(FText::FromString(Notification));
 
 	FHoudiniPackageParams PackageParams = GetPackageParamsForType(
-		InOutputs,
+		InInstancerOutputs,
 		InPackageParams,
 		EHoudiniOutputType::Instancer,
 		EHoudiniPartType::Instancer);
+
+	// Create a fake outer component that we'll use as a temporary outer for our instancers
+	USceneComponent* OuterComponent = NewObject<USceneComponent>();
+
+	UWorld* const World = nullptr;
+
+	// Now that all meshes have been created, process the instancers
+	FHoudiniInstanceTranslator::CreateAllInstancersFromHoudiniOutputs(
+		InAllOutputs, OuterComponent, PackageParams);
+
+	bool bHasGeometryCollection = false;
+	for (UHoudiniOutput* const CurOutput : InInstancerOutputs)
+	{
+		if (!bHasGeometryCollection && FHoudiniGeometryCollectionTranslator::IsGeometryCollectionInstancer(CurOutput))
+		{
+			bHasGeometryCollection = true;
+			break;
+		}
+	}
+
+	if (bHasGeometryCollection)
+	{
+		FHoudiniGeometryCollectionTranslator::SetupGeometryCollectionComponentFromOutputs(
+			InAllOutputs, OuterComponent, PackageParams, World);
+
+		if (InAllOutputs.Last()->GetType() != EHoudiniOutputType::GeometryCollection)
+		{
+			return false;
+		}
+
+		for (auto CurOutputPair : InAllOutputs.Last()->GetOutputObjects())
+		{
+			UObject* CurObj = CurOutputPair.Value.OutputObject;
+			if (!IsValid(CurObj))
+				continue;
+
+			OutputObjects.Add(CurObj);
+		}
+
+		return true;
+	}
 
 	// Create a Package for the BP
 	PackageParams.ObjectName = TEXT("BP_") + PackageParams.ObjectName;
@@ -536,17 +576,10 @@ UHoudiniGeoImporter::CreateInstancers(const TArray<UHoudiniOutput*>& InOutputs, 
 	if (!Blueprint)
 		return false;
 
-	// Create a fake outer component that we'll use as a temporary outer for our instancers
-	USceneComponent* OuterComponent = NewObject<USceneComponent>();
-
-	// Create all the instancers and attach them to a fake outer component
-	FHoudiniInstanceTranslator::CreateAllInstancersFromHoudiniOutputs(
-		InOutputs, OuterComponent, InPackageParams);
-
-	for (auto& CurOutput : InOutputs)
+	for (auto& CurOutput : InInstancerOutputs)
 	{
 		// Transfer all the instancer components to the BP
-		check(CurOutput->GetType() == EHoudiniOutputType::Instancer)
+		check(CurOutput->GetType() == EHoudiniOutputType::Instancer);
 
 		// Prepare an ActorComponent array for AddComponentsToBlueprint()
 		TArray<UActorComponent*> OutputComp;
@@ -647,7 +680,7 @@ UHoudiniGeoImporter::CreateSkeletalMeshes(
 		InOutputs,
 		InPackageParams,
 		EHoudiniOutputType::Skeletal,
-		EHoudiniPartType::SkeletalMeshShape); // TODO(alexanderk): What about EHoudiniPartType::SkeletalMeshPose?
+		EHoudiniPartType::SkeletalMeshShape);
 
 	for (UHoudiniOutput* const CurOutput : InOutputs)
 	{
@@ -685,22 +718,6 @@ UHoudiniGeoImporter::CreateSkeletalMeshes(
 		}
 	}
 
-	return true;
-}
-
-bool
-UHoudiniGeoImporter::CreateGeometryCollections(
-	const TArray<UHoudiniOutput*>& InOutputs,
-	FHoudiniPackageParams InPackageParams)
-{
-	if (InOutputs.IsEmpty())
-	{
-		return true;
-	}
-
-	// TODO(alexanderk)
-	// FHoudiniGeometryCollectionTranslator::SetupGeometryCollectionComponentFromOutputs(...);
-	
 	return true;
 }
 

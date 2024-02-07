@@ -103,7 +103,7 @@ public:
 
 	// 5. Create objects using outputs
 	bool CreateObjectsFromOutputs(
-		const TArray<UHoudiniOutput*>& InOutputs,
+		TArray<UHoudiniOutput*>& InOutputs,
 		FHoudiniPackageParams InPackageParams,
 		const FHoudiniStaticMeshGenerationProperties& InStaticMeshGenerationProperties,
 		const FMeshBuildSettings& InMeshBuildSettings,
@@ -140,8 +140,11 @@ private:
 	/** @param InOutputs Must all have type EHoudiniOutput::LandscapeSpline. */
 	bool CreateLandscapeSplines(const TArray<UHoudiniOutput*>& InOutputs, FHoudiniPackageParams InPackageParams);
 
-	/** @param InOutputs Must all have type EHoudiniOutput::Instancer. */
-	bool CreateInstancers(const TArray<UHoudiniOutput*>& InOutputs, FHoudiniPackageParams InPackageParams);
+	/** @param InInstancerOutputs Must all have type EHoudiniOutput::Instancer. */
+	bool CreateInstancers(
+		TArray<UHoudiniOutput*>& InAllOutputs,
+		const TArray<UHoudiniOutput*>& InInstancerOutputs, 
+		FHoudiniPackageParams InPackageParams);
 
 	/** @param InOutputs Must all have type EHoudiniOutput::Instancer. */
 	static bool CreateInstancerOutputPartData(
@@ -153,9 +156,6 @@ private:
 
 	/** @param InOutputs Must all have type EHoudiniOutput::Skeletal. */
 	bool CreateSkeletalMeshes(const TArray<UHoudiniOutput*>& InOutputs, FHoudiniPackageParams InPackageParams);
-
-	/** @param InOutputs Must all have type EHoudiniOutput::GeometryCollection. */
-	bool CreateGeometryCollections(const TArray<UHoudiniOutput*>& InOutputs, FHoudiniPackageParams InPackageParams);
 
 	/** @param InOutputs Must all have type EHoudiniOutput::AnimSequence. */
 	bool CreateAnimSequences(const TArray<UHoudiniOutput*>& InOutputs, FHoudiniPackageParams InPackageParams);

@@ -5914,13 +5914,6 @@ FHoudiniMeshTranslator::CreateNeededMaterials()
 		false, 
 		bTreatExistingMaterialsAsUpToDate);
 
-	/*
-	// Save the created packages if needed
-	// DPT: deactivated, only dirty for now, as we'll save them when saving the world.
-	if (MaterialAndTexturePackages.Num() > 0)
-		FEditorFileUtils::PromptForCheckoutAndSave(MaterialAndTexturePackages, true, false);
-	*/
-
 	if (bMaterialOverrideNeedsCreateInstance && PartFaceMaterialOverrides.Num() > 0)
 	{
 		// Map containing unique face materials override attribute
