@@ -1246,12 +1246,7 @@ FHoudiniEngine::CreateTaskSlateNotification(
 		if (HoudiniBrush.IsValid())
 			Info.Image = HoudiniBrush.Get();
 
-		/*
-		if (!IsPIEActive())
-		*/
-
 		NotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
-		//FSlateNotificationManager::Get().Tick();
 	}
 #endif
 
@@ -1267,8 +1262,6 @@ FHoudiniEngine::UpdateTaskSlateNotification(const FText& InText)
 	TSharedPtr<SNotificationItem> NotificationItem = NotificationPtr.Pin();
 	if (NotificationItem.IsValid())
 		NotificationItem->SetText(InText);
-
-	//FSlateNotificationManager::Get().Tick();
 #endif
 
 	return true;
@@ -1297,6 +1290,8 @@ FHoudiniEngine::FinishTaskSlateNotification(const FText& InText)
 bool FHoudiniEngine::UpdateCookingNotification(const FText& InText, const bool bExpireAndFade)
 {
 #if WITH_EDITOR
+	TimeSinceLastPersistentNotification = 0.0;
+
 	// Check whether we want to display Slate cooking and instantiation notifications.
 	bool bDisplaySlateCookingNotifications = false;
 	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
@@ -1305,20 +1300,8 @@ bool FHoudiniEngine::UpdateCookingNotification(const FText& InText, const bool b
 
 	if (!bDisplaySlateCookingNotifications)
 		return false;
-	
-	UpdatePersistentNotification(InText, bExpireAndFade);
-	
-#endif
-	return true;
-}
 
-bool
-FHoudiniEngine::UpdatePersistentNotification(const FText& InText, const bool bExpireAndFade)
-{
-#if WITH_EDITOR
-	TimeSinceLastPersistentNotification = 0.0;
-
-	if (!PersistentNotificationPtr.IsValid())
+	if (!CookingNotificationPtr.IsValid())
 	{
 		FNotificationInfo Info(InText);
 		Info.bFireAndForget = false;
@@ -1329,43 +1312,32 @@ FHoudiniEngine::UpdatePersistentNotification(const FText& InText, const bool bEx
 			Info.Image = HoudiniBrush.Get();
 
 
-		PersistentNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
-		//FSlateNotificationManager::Get().Tick();
+		CookingNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
 	}
 
-	TSharedPtr<SNotificationItem> NotificationItem = PersistentNotificationPtr.Pin();
-
+	TSharedPtr<SNotificationItem> NotificationItem = CookingNotificationPtr.Pin();
 	if (NotificationItem.IsValid())
 	{
 		// Update the persistent notification.
 		NotificationItem->SetText(InText);
-		bPersistentAllowExpiry = bExpireAndFade;
+		
+		// Instead of setting the boolean and fading the next tick, just fade & reset now
+		if (bExpireAndFade)
+		{
+			NotificationItem->ExpireAndFadeout();
+			CookingNotificationPtr.Reset();
+		}
 	}
 
-	//FSlateNotificationManager::Get().Tick();
 #endif
 
 	return true;
 }
 
-void FHoudiniEngine::TickPersistentNotification(const float DeltaTime)
+void FHoudiniEngine::TickCookingNotification(const float DeltaTime)
 {
-	if (PersistentNotificationPtr.IsValid() && DeltaTime > 0.0f)
-	{
+	if (CookingNotificationPtr.IsValid() && DeltaTime > 0.0f)
 		TimeSinceLastPersistentNotification += DeltaTime;
-		if (bPersistentAllowExpiry && TimeSinceLastPersistentNotification > HAPI_UNREAL_NOTIFICATION_EXPIRE)
-		{
-			TSharedPtr<SNotificationItem> NotificationItem = PersistentNotificationPtr.Pin();
-			if (NotificationItem.IsValid())
-			{
-				NotificationItem->Fadeout();
-				PersistentNotificationPtr.Reset();
-			}
-		}
-	}
-
-	// Tick the notification manager
-	//FSlateNotificationManager::Get().Tick();
 }
 
 void
@@ -1377,7 +1349,6 @@ FHoudiniEngine::UpdateSessionSyncInfoFromHoudini()
 	// Set the Session Sync settings to Houdini
 	HAPI_SessionSyncInfo SessionSyncInfo;
 	//FHoudiniApi::SessionSyncInfo_Create(&SessionSyncInfo);
-
 	if (HAPI_RESULT_SUCCESS == FHoudiniApi::GetSessionSyncInfo(&Session, &SessionSyncInfo))
 	{
 		bCookUsingHoudiniTime = SessionSyncInfo.cookUsingHoudiniTime;
