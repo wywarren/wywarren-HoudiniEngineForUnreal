@@ -132,14 +132,47 @@ UHoudiniEditorNodeSyncSubsystem::InitNodeSyncInputIfNeeded()
 
 
 void
+UHoudiniEditorNodeSyncSubsystem::SendContentBrowserSelection(const TArray<UObject*>& CurrentCBSelection)
+{
+	LastSendStatus = EHoudiniNodeSyncStatus::Running;
+	SendStatusMessage = "Sending...";
+
+	if (CurrentCBSelection.Num() <= 0)
+	{
+		HOUDINI_LOG_MESSAGE(TEXT("Houdini Node Sync: No selection in the content browser"));
+
+		LastSendStatus = EHoudiniNodeSyncStatus::Failed;
+		SendStatusMessage = "Send Failed: No selection in the content browser.";
+		SendStatusDetails = "Houdini Node Sync - Send Failed: No selection in the content browser\nPlease select Assets in the content browser and try again.";
+
+		return;
+	}
+
+	// Input type? switch to geo
+	bool bOutBPModif = false;
+	NodeSyncInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
+
+	for (auto& CurObject : CurrentCBSelection)
+	{
+		if (ContentBrowserSelection.Contains(CurObject))
+			continue;
+
+		ContentBrowserSelection.Add(CurObject);
+	}
+
+	SendToHoudini(ContentBrowserSelection);
+}
+
+
+void
 UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 {
 	LastSendStatus = EHoudiniNodeSyncStatus::Running;
 	SendStatusMessage = "Sending...";
 
 	// Get current world selection
-	TArray<UObject*> WorldSelection;
-	int32 SelectedHoudiniAssets = FHoudiniEngineEditorUtils::GetWorldSelection(WorldSelection, false);
+	TArray<UObject*> CurrentWorldSelection;
+	int32 SelectedHoudiniAssets = FHoudiniEngineEditorUtils::GetWorldSelection(CurrentWorldSelection, false);
 	if (SelectedHoudiniAssets <= 0)
 	{
 		HOUDINI_LOG_MESSAGE(TEXT("Houdini Node Sync: No selection in the world outliner"));
@@ -151,9 +184,17 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 		return;
 	}
 
-	// Input type? switch to world when sending from world? (necessary?)
-	//bool bOutBPModif = false;
-	//NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
+	// Input type? switch to world
+	bool bOutBPModif = false;
+	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
+
+	for (auto& CurObject : CurrentWorldSelection)
+	{
+		if (WorldSelection.Contains(CurObject))
+			continue;
+
+		WorldSelection.Add(CurObject);
+	}
 
 	SendToHoudini(WorldSelection);
 }

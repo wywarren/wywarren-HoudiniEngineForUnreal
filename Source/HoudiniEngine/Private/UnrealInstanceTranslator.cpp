@@ -70,17 +70,18 @@ FUnrealInstanceTranslator::HapiCreateInputNodeForInstancer(
 	FUnrealObjectInputHandle SMNodeHandle;
 	bool bSuccess = FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 		SM,
-		SMNodeId, 
+		SMNodeId,
 		InNodeName,
 		SMNodeHandle,
 		ISMC,
-		bExportLODs, 
+		bExportLODs,
 		bExportSockets,
 		bExportColliders,
-		true, 
 		true,
-		bPreferNaniteFallbackMesh, 
-		bExportMaterialParameters);
+		true,
+		bPreferNaniteFallbackMesh,
+		bExportMaterialParameters,
+		false);
 
 	if (!bSuccess)
 		return false;

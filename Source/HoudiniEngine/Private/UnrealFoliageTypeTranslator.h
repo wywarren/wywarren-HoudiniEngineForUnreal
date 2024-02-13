@@ -62,7 +62,7 @@ public:
 		const bool& bImportAsReferenceRotScaleEnabled,
 		const bool bInUseRefCountedInputSystem,
 		FUnrealObjectInputHandle& OutHandle,
-		const bool& bInputNodesCanBeDeleted = true,
+		const bool& bInputNodesCanBeDeleted,
 		const bool& bImportAsReferenceBboxEnabled = false,
 		const FBox& InBbox = FBox(EForceInit::ForceInit),
 		const bool& bImportAsReferenceMaterialEnabled = false,

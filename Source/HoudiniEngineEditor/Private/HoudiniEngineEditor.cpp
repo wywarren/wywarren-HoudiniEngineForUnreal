@@ -1277,11 +1277,7 @@ FHoudiniEngineEditor::SendToHoudini_CB(TArray<FAssetData> SelectedAssets)
 		SelectedObjects.Add(CurrentObject);
 	}
 
-	// Input type? switch to geo when sending from CB? (necessary?)
-	//bool bOutBPModif = false;
-	//HoudiniSubsystem->NodeSyncOptions.NodeSyncInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
-
-	HoudiniSubsystem->SendToHoudini(SelectedObjects);
+	HoudiniSubsystem->SendContentBrowserSelection(SelectedObjects);
 }
 
 void
@@ -1290,22 +1286,6 @@ FHoudiniEngineEditor::SendToHoudini_World()
 	UHoudiniEditorNodeSyncSubsystem* HoudiniSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 	if (!IsValid(HoudiniSubsystem))
 		return;
-	/*
-	// Get current world selection
-	TArray<UObject*> WorldSelection;
-	int32 SelectedHoudiniAssets = FHoudiniEngineEditorUtils::GetWorldSelection(WorldSelection, false);
-	if (SelectedHoudiniAssets <= 0)
-	{
-		HOUDINI_LOG_MESSAGE(TEXT("No selection in the world outliner"));
-		return;
-	}
-
-	// Input type? switch to world when sending from world? (necessary?)
-	//bool bOutBPModif = false;
-	//HoudiniSubsystem->NodeSyncOptions.NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
-
-	HoudiniSubsystem->SendToHoudini(WorldSelection);
-	*/
 
 	HoudiniSubsystem->SendWorldSelection();
 }

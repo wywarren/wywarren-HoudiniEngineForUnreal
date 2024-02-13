@@ -868,7 +868,6 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	//
 	// TODO: World selection Widget?
 	// 
-	/*
 	{
 		FMenuBuilder MenuBuilder = FHoudiniInputDetails::Helper_CreateWorldActorPickerWidget(FakeInputs);
 		WorldINVBox->AddSlot()
@@ -878,7 +877,6 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 			MenuBuilder.MakeWidget()
 		];
 	}
-	*/
 
 	// ... so we can reuse the input UI code
 	FHoudiniInputDetails::AddExportOptions(ExportOptionsVBox.ToSharedRef(), FakeInputs);

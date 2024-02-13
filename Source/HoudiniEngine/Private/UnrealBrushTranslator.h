@@ -48,6 +48,5 @@ struct HOUDINIENGINE_API FUnrealBrushTranslator
 			const FString& NodeName,
 			bool bInExportMaterialParametersAsAttributes,
 			FUnrealObjectInputHandle& OutInputNodeHandle,
-			const bool& bInputNodesCanBeDeleted = true
-		);
+			const bool& bInputNodesCanBeDeleted);
 };

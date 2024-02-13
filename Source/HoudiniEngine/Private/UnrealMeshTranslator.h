@@ -60,15 +60,15 @@ struct HOUDINIENGINE_API FUnrealMeshTranslator
 			HAPI_NodeId& InputObjectNodeId,
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
-			class UStaticMeshComponent* StaticMeshComponent = nullptr,
-			const bool& ExportAllLODs = false,
-			const bool& ExportSockets = false,
-			const bool& ExportColliders = false,
-			const bool& ExportMainMesh = true,
-			const bool& bInputNodesCanBeDeleted = true,
-			const bool& bPreferNaniteFallbackMesh = false,
-			const bool& bExportMaterialParameters = false,
-			const bool& bForceReferenceInputNodeCreation = false);
+			class UStaticMeshComponent* StaticMeshComponent,
+			const bool& ExportAllLODs,
+			const bool& ExportSockets,
+			const bool& ExportColliders,
+			const bool& ExportMainMesh,
+			const bool& bInputNodesCanBeDeleted,
+			const bool& bPreferNaniteFallbackMesh,
+			const bool& bExportMaterialParameters,
+			const bool& bForceReferenceInputNodeCreation);
 
 		// Convert the Mesh using FStaticMeshLODResources
 		static bool CreateInputNodeForStaticMeshLODResources(

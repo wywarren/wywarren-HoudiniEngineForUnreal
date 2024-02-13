@@ -74,9 +74,9 @@ struct HOUDINIENGINE_API FUnrealObjectInputUtils
 			const FUnrealObjectInputIdentifier& InIdentifier,
 			const int32 NodeId,
 			FUnrealObjectInputHandle& OutHandle,
-			const int32 InObjectNodeId=INDEX_NONE,
-			TSet<FUnrealObjectInputHandle> const* const InReferencedNodes=nullptr,
-			const bool& bInputNodesCanBeDeleted=true,
+			const int32 InObjectNodeId,
+			TSet<FUnrealObjectInputHandle> const* const InReferencedNodes,
+			const bool& bInputNodesCanBeDeleted,
 			const TOptional<int32> InReferencesConnectToNodeId=TOptional<int32>());
 
 		// Helper to get the HAPI NodeId associated with InHandle.
@@ -138,8 +138,8 @@ struct HOUDINIENGINE_API FUnrealObjectInputUtils
 			const FUnrealObjectInputIdentifier& InIdentifier,
 			const TSet<FUnrealObjectInputHandle>& InReferencedNodes,
 			FUnrealObjectInputHandle& OutHandle,
-			const bool bInConnectReferencedNodes=true,
-			const bool& bInputNodesCanBeDeleted=true);
+			const bool bInConnectReferencedNode,
+			const bool& bInputNodesCanBeDeleted);
 
 		// Add a named modifier chain to the input node. Returns false if the chain was not added (if it existed already, for example)
 		static bool AddModifierChain(const FUnrealObjectInputIdentifier& InIdentifier, FName InChainName, int32 InNodeIdToConnectTo);

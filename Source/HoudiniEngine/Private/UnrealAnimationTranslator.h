@@ -41,18 +41,17 @@ struct HOUDINIENGINE_API FUnrealAnimationTranslator
 			HAPI_NodeId& InputNodeId,
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
-			const bool& bInputNodesCanBeDeleted = true
-		);
+			const bool& bInputNodesCanBeDeleted);
 
 		static bool HapiCreateInputNodeForAnimation(
 			UAnimSequence* Animation,
 			HAPI_NodeId& InputObjectNodeId,
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
-			const bool& ExportAllLODs = false,
-			const bool& ExportSockets = false,
-			const bool& ExportColliders = false,
-			const bool& bInputNodesCanBeDeleted = true);
+			const bool& ExportAllLODs,
+			const bool& ExportSockets,
+			const bool& ExportColliders,
+			const bool& bInputNodesCanBeDeleted);
 
 		static bool SetAnimationDataOnNode(
 			UAnimSequence* Animation,

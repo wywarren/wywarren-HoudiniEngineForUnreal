@@ -50,5 +50,5 @@ struct HOUDINIENGINE_API FUnrealInstanceTranslator
 			const bool& bExportAsAttributeInstancer,
 			bool bPreferNaniteFallbackMesh,
 			bool bExportMaterialParameters,
-			const bool& bInputNodesCanBeDeleted = true);
+			const bool& bInputNodesCanBeDeleted);
 };

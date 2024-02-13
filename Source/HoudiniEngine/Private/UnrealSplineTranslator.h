@@ -42,6 +42,6 @@ public:
 		const float& SplineResolution,
 		const FString& NodeName, 
 		const bool& bInUseLegacyInputCurves,
-		const bool& bInputNodesCanBeDeleted = true);
+		const bool& bInputNodesCanBeDeleted);
 
 };

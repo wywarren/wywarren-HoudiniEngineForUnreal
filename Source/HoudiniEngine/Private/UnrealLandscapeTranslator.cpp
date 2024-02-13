@@ -990,7 +990,7 @@ FUnrealLandscapeTranslator::CreateInputNodeForLandscapeObject(
 	{
 		FUnrealObjectInputHandle Handle;
 		HAPI_NodeId InputObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(InputNodeId);
-		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId))
+		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))
 			OutHandle = Handle;
 	}
 

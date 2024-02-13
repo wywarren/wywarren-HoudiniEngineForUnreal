@@ -40,6 +40,5 @@ struct HOUDINIENGINE_API FUnrealDataTableTranslator
 			HAPI_NodeId& InputNodeId,
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
-			const bool& bInputNodesCanBeDeleted = true
-		);
+			const bool& bInputNodesCanBeDeleted);
 };

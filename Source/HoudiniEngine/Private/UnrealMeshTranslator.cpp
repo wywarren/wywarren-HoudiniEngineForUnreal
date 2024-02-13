@@ -248,6 +248,29 @@ FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 		}
 	}
 
+	// Delete previous node first
+	// This will avoid naming collisions due to the previous node already existing?
+	// 
+	HAPI_NodeId PreviousInputNodeId = InputNodeId;
+	if (PreviousInputNodeId >= 0)
+	{
+		// Get the parent OBJ node ID before deleting!
+		HAPI_NodeId PreviousInputOBJNode = FHoudiniEngineUtils::HapiGetParentNodeId(PreviousInputNodeId);
+
+		if (HAPI_RESULT_SUCCESS != FHoudiniApi::DeleteNode(
+			FHoudiniEngine::Get().GetSession(), PreviousInputNodeId))
+		{
+			HOUDINI_LOG_WARNING(TEXT("Failed to cleanup the previous input node for %s."), *FinalInputNodeName);
+		}
+
+		if (HAPI_RESULT_SUCCESS != FHoudiniApi::DeleteNode(
+			FHoudiniEngine::Get().GetSession(), PreviousInputOBJNode))
+		{
+			HOUDINI_LOG_WARNING(TEXT("Failed to cleanup the previous input OBJ node for %s."), *FinalInputNodeName);
+		}
+	}
+
+
 	// Node ID for the newly created node
 	HAPI_NodeId NewNodeId = -1;
 
@@ -308,31 +331,12 @@ FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 	if (!FHoudiniEngineUtils::IsHoudiniNodeValid(NewNodeId))
 		return false;
 
-	HAPI_NodeId PreviousInputNodeId = InputNodeId;
 
 	// Update our input NodeId
 	InputNodeId = NewNodeId;
 	// Get our parent OBJ NodeID
 	HAPI_NodeId InputObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(NewNodeId);
 
-	// We have now created a valid new input node, delete the previous one
-	if (PreviousInputNodeId >= 0)
-	{
-		// Get the parent OBJ node ID before deleting!
-		HAPI_NodeId PreviousInputOBJNode = FHoudiniEngineUtils::HapiGetParentNodeId(PreviousInputNodeId);
-
-		if (HAPI_RESULT_SUCCESS != FHoudiniApi::DeleteNode(
-			FHoudiniEngine::Get().GetSession(), PreviousInputNodeId))
-		{
-			HOUDINI_LOG_WARNING(TEXT("Failed to cleanup the previous input node for %s."), *FinalInputNodeName);
-		}
-
-		if (HAPI_RESULT_SUCCESS != FHoudiniApi::DeleteNode(
-			FHoudiniEngine::Get().GetSession(), PreviousInputOBJNode))
-		{
-			HOUDINI_LOG_WARNING(TEXT("Failed to cleanup the previous input OBJ node for %s."), *FinalInputNodeName);
-		}		
-	}
 
 	// TODO:
 	// Setting for lightmap resolution?	

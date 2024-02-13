@@ -46,13 +46,13 @@ struct HOUDINIENGINE_API FUnrealSkeletalMeshTranslator
 			HAPI_NodeId& InputObjectNodeId,
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
-			class USkeletalMeshComponent* SkeletalMeshComponent = nullptr,
-			const bool& ExportAllLODs = false,
-			const bool& ExportSockets = false,
-			const bool& ExportColliders = false,
-			const bool& ExportMainMesh = true,
-			const bool& bInputNodesCanBeDeleted = true,
-			const bool& bExportMaterialParameters = false);
+			class USkeletalMeshComponent* SkeletalMeshComponent,
+			const bool& ExportAllLODs,
+			const bool& ExportSockets,
+			const bool& ExportColliders,
+			const bool& ExportMainMesh,
+			const bool& bInputNodesCanBeDeleted,
+			const bool& bExportMaterialParameters);
 
 		// Create nodes for the mesh data only: mesh, LODs, colliders, sockets.
 		static bool CreateInputNodesForSkeletalMesh(
@@ -60,13 +60,13 @@ struct HOUDINIENGINE_API FUnrealSkeletalMeshTranslator
 			HAPI_NodeId& InputObjectNodeId,
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
-			class USkeletalMeshComponent* SkeletalMeshComponent = nullptr,
-			const bool& ExportAllLODs = false,
-			const bool& ExportSockets = false,
-			const bool& ExportColliders = false,
-			const bool& ExportMainMesh = true,
-			const bool& bInputNodesCanBeDeleted = true,
-			const bool& bExportMaterialParameters = false);
+			class USkeletalMeshComponent* SkeletalMeshComponent,
+			const bool& ExportAllLODs,
+			const bool& ExportSockets,
+			const bool& ExportColliders,
+			const bool& ExportMainMesh,
+			const bool& bInputNodesCanBeDeleted,
+			const bool& bExportMaterialParameters);
 
 		// Actually exports the skeletal mesh data (mesh, skeleton ... ) using LOD's SourceModel to the newly created input node - returns true on success
 		static bool SetSkeletalMeshDataOnNodeFromSourceModel(
@@ -105,6 +105,6 @@ struct HOUDINIENGINE_API FUnrealSkeletalMeshTranslator
 			const FString& InInputNodeName,
 			HAPI_NodeId& InOutSkeletonNodeId,
 			FUnrealObjectInputHandle& OutHandle,
-			const bool bInputNodesCanBeDeleted=true);
+			const bool bInputNodesCanBeDeleted);
 
 };

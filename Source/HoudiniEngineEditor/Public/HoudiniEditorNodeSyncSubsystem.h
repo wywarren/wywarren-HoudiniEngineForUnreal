@@ -87,6 +87,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Houdini")
 	void SendWorldSelection();
 
+	UFUNCTION(BlueprintCallable, Category = "Houdini")
+	void SendContentBrowserSelection(const TArray<UObject*>& SelectedAssets);
+
 	bool CreateSessionIfNeeded();
 
 	// Returns the color corresponding to a given node sync status
@@ -126,4 +129,12 @@ private:
 
 	UPROPERTY()
 	UHoudiniInput* NodeSyncInput;
+
+	UPROPERTY()
+	TArray<UObject*> WorldSelection;
+
+	UPROPERTY()
+	TArray<UObject*> ContentBrowserSelection;
+
+
 };

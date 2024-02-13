@@ -69,7 +69,8 @@ FUnrealFoliageTypeTranslator::HapiCreateInputNodeForFoliageType_InstancedStaticM
 		true,
 		true,
 		false,
-		ExportMaterialParameters);
+		ExportMaterialParameters,
+		false);
 
 	if (bSuccess)
 	{

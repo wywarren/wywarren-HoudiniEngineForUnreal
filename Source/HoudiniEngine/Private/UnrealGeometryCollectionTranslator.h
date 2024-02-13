@@ -45,8 +45,8 @@ struct HOUDINIENGINE_API FUnrealGeometryCollectionTranslator
 			const FString& InputNodeName,
 			FUnrealObjectInputHandle& OutHandle,
 			bool bExportMaterialParameters,
-			class UGeometryCollectionComponent* GeometryCollectionComponent = nullptr,
-			const bool& bInputNodesCanBeDeleted = true);
+			class UGeometryCollectionComponent* GeometryCollectionComponent,
+			const bool& bInputNodesCanBeDeleted);
 
 		static bool SetGeometryCollectionAttributesForPart(
 			UGeometryCollection * InGeometryCollection,
