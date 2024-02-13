@@ -45,6 +45,7 @@ public:
 
 private:
 
+    TSharedPtr<SVerticalBox> WorldINVBox;
     TSharedPtr<SVerticalBox> ExportOptionsVBox;
     TSharedPtr<SVerticalBox> LandscapeOptionsVBox;
     TSharedPtr<SVerticalBox> LandscapeSplineOptionsVBox; 

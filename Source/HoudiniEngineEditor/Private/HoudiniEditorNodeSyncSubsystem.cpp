@@ -86,7 +86,6 @@ UHoudiniEditorNodeSyncSubsystem::GetNodeSyncInput(UHoudiniInput*& OutInput)
 	return true;
 }
 
-
 bool
 UHoudiniEditorNodeSyncSubsystem::InitNodeSyncInputIfNeeded()
 {
@@ -186,31 +185,35 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 	}
 
 	// Create the content node
-	// As as subnet, so it's able to contain multiple geos
+	// As a subnet, so it's able to contain multiple geos
 	FString SendNodePath = NodeSyncOptions.SendNodePath;
 	HAPI_NodeId  UnrealContentNodeId = -1;
-	HAPI_Result result = FHoudiniApi::GetNodeFromPath(FHoudiniEngine::Get().GetSession(), -1, TCHAR_TO_ANSI(*SendNodePath), &UnrealContentNodeId);
+	HAPI_Result result = FHoudiniApi::GetNodeFromPath(
+		FHoudiniEngine::Get().GetSession(), -1, TCHAR_TO_ANSI(*SendNodePath), &UnrealContentNodeId);
+
 	if ((result != HAPI_RESULT_SUCCESS) || (UnrealContentNodeId < 0))
 	{
 		FString Name = SendNodePath;
 		Name.RemoveFromStart("/obj/");
-		result = FHoudiniApi::CreateNode(FHoudiniEngine::Get().GetSession(), -1, "Object/subnet", TCHAR_TO_ANSI(*Name), true, &UnrealContentNodeId);
+		result = FHoudiniEngineUtils::CreateNode( - 1, "Object/subnet", TCHAR_TO_ANSI(*Name), true, &UnrealContentNodeId);
 	}
 
-	// Get the NodeSync input from the Editor Subsystem
-	UHoudiniInput* NSInput;
-	if (!GetNodeSyncInput(NSInput))
+	// Make sure the NodeSync input has been initialized
+	if (!InitNodeSyncInputIfNeeded())
+		return;
+
+	if (!IsValid(NodeSyncInput))
 		return;
 
 	// Default input options
-	NSInput->SetCanDeleteHoudiniNodes(false);
-	NSInput->SetUseLegacyInputCurve(true);
+	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
+	NodeSyncInput->SetUseLegacyInputCurve(true);
 		
 	// TODO: Check?
-	NSInput->SetAssetNodeId(-1);
-	NSInput->SetInputNodeId(UnrealContentNodeId);
+	NodeSyncInput->SetAssetNodeId(-1);
+	NodeSyncInput->SetInputNodeId(UnrealContentNodeId);
 
-	const FHoudiniInputObjectSettings InputSettings(NSInput);
+	const FHoudiniInputObjectSettings InputSettings(NodeSyncInput);
 
 	// For each selected Asset, create a HoudiniInputObject and send it to H
 	for (int32 Idx = 0; Idx < SelectedAssets.Num(); Idx++)
@@ -221,8 +224,16 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 		if (!IsValid(CurrentObject))
 			continue;
 
+		/*
 		// Create an input object wrapper for the current object
-		UHoudiniInputObject * CurrentInputObject = UHoudiniInputObject::CreateTypedInputObject(CurrentObject, NSInput, FString::FromInt(Idx + 1), InputSettings);
+		UHoudiniInputObject * CurrentInputObject = UHoudiniInputObject::CreateTypedInputObject(CurrentObject, NodeSyncInput, FString::FromInt(Idx + 1), InputSettings);
+		if (!IsValid(CurrentInputObject))
+			continue;
+		*/
+
+		NodeSyncInput->SetInputObjectAt(Idx, CurrentObject);
+
+		UHoudiniInputObject* CurrentInputObject = NodeSyncInput->GetHoudiniInputObjectAt(Idx);
 		if (!IsValid(CurrentInputObject))
 			continue;
 
@@ -237,28 +248,35 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 			ObjectName = CurrentActor->GetActorNameOrLabel();
 		}
 
+		// See first if the node already exists
 		HAPI_NodeId CurrentObjectNodeId = -1;
-		if (HAPI_RESULT_SUCCESS != FHoudiniApi::CreateNode(
-			FHoudiniEngine::Get().GetSession(), UnrealContentNodeId, "geo", TCHAR_TO_ANSI(*ObjectName), true, &CurrentObjectNodeId))
-		{
-			HOUDINI_LOG_WARNING(TEXT("HoudiniNodeSync: Failed to create input object geo node for %s."), *CurrentInputObject->GetName());
+		result = FHoudiniApi::GetNodeFromPath(
+			FHoudiniEngine::Get().GetSession(),	UnrealContentNodeId, TCHAR_TO_ANSI(*ObjectName), &CurrentObjectNodeId);
 
-			LastSendStatus = EHoudiniNodeSyncStatus::SuccessWithErrors;
-			SendStatusMessage = "Send Success with errors";
-			SendStatusDetails = "Houdini Node Sync - Send success with errors - Not all selected objects were created.";
+		if ((result != HAPI_RESULT_SUCCESS) || (CurrentObjectNodeId < 0))
+		{
+			// No existing node found - create a new one
+			if (HAPI_RESULT_SUCCESS != FHoudiniEngineUtils::CreateNode(
+				UnrealContentNodeId, "geo", TCHAR_TO_ANSI(*ObjectName), true, &CurrentObjectNodeId))
+			{
+				HOUDINI_LOG_WARNING(TEXT("HoudiniNodeSync: Failed to create input object geo node for %s."), *CurrentInputObject->GetName());
+
+				LastSendStatus = EHoudiniNodeSyncStatus::SuccessWithErrors;
+				SendStatusMessage = "Send Success with errors";
+				SendStatusDetails = "Houdini Node Sync - Send success with errors - Not all selected objects were created.";
+			}
 		}
 
 		// Preset the existing Object Node ID to the unreal content node
-		// !! Do not preset, as the input system will destroy those previous input nodes!
 		CurrentInputObject->SetInputNodeId(-1);
-		CurrentInputObject->SetInputObjectNodeId(-1);
-			
+		CurrentInputObject->SetInputObjectNodeId(CurrentObjectNodeId);
+
 		// TODO: Transform for actors?
 		FTransform CurrentActorTransform = FTransform::Identity;
 
 		// Send the HoudiniInputObject to H
 		if (!FHoudiniInputTranslator::UploadHoudiniInputObject(
-			NSInput, CurrentInputObject, CurrentActorTransform, CreatedNodeIds, Handles, false))
+			NodeSyncInput, CurrentInputObject, CurrentActorTransform, CreatedNodeIds, Handles, false))
 		{
 			HOUDINI_LOG_WARNING(TEXT("HoudiniNodeSync: Failed to send %s to %s."), *CurrentInputObject->GetName(), *SendNodePath);
 
@@ -269,7 +287,7 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 			continue;
 		}
 
-		// We've created the input nodes for this objet, now, we need to object merge them into the content node in the path specified by the user
+		// We've created the input nodes for this object, now, we need to object merge them into the content node in the path specified by the user
 		bool bObjMergeSuccess = false;
 		for (int32 CreatedNodeIdx = 0; CreatedNodeIdx < CreatedNodeIds.Num(); CreatedNodeIdx++)
 		{

@@ -2127,6 +2127,7 @@ FHoudiniInputTranslator::HapiCreateOrUpdateGeoObjectMergeAndSetTransform(
 
 	bool bCreatedGeoObject = false;
 	constexpr bool bCookOnCreation = true;
+
 	// Check that InOutGeoObjectNodeId is valid
 	if (!FHoudiniEngineUtils::IsHoudiniNodeValid(InOutGeoObjectNodeId))
 	{
@@ -2139,13 +2140,24 @@ FHoudiniInputTranslator::HapiCreateOrUpdateGeoObjectMergeAndSetTransform(
 			FHoudiniEngineUtils::CreateNode(InParentNodeId, ObjOperatorName, InObjNodeName, bCookOnCreation, &InOutGeoObjectNodeId), false);
 		bCreatedGeoObject = true;
 	}
-	// Check that InOutObjectMergeNodeId is valid
+	
+	HAPI_NodeId CurrentGeoNodeId = -1;
+	if (InOutObjectMergeNodeId < 0)
+	{
+		// See if the node already exists
+		HAPI_Result result = FHoudiniApi::GetNodeFromPath(
+			FHoudiniEngine::Get().GetSession(), InOutGeoObjectNodeId, TCHAR_TO_ANSI(*InObjNodeName), &CurrentGeoNodeId);
+
+		if (CurrentGeoNodeId >= 0)
+			InOutObjectMergeNodeId = CurrentGeoNodeId;
+	}
+
 	if (!FHoudiniEngineUtils::IsHoudiniNodeValid(InOutObjectMergeNodeId))
 	{
 		if (!bInCreateIfMissingInvalid)
 			return false;
 
-		// Create objmerge SOP in InOutGeoObjectNodeId
+		// Create the objmerge SOP in InOutGeoObjectNodeId if non existent
 		HOUDINI_CHECK_ERROR_RETURN(
 			FHoudiniEngineUtils::CreateNode(InOutGeoObjectNodeId, TEXT("object_merge"), InObjNodeName, bCookOnCreation, &InOutObjectMergeNodeId), false);
 	}
@@ -2154,6 +2166,7 @@ FHoudiniInputTranslator::HapiCreateOrUpdateGeoObjectMergeAndSetTransform(
 	HAPI_Session const* const Session = FHoudiniEngine::Get().GetSession();
 	HOUDINI_CHECK_ERROR_RETURN(
 		FHoudiniApi::SetParmNodeValue(Session, InOutObjectMergeNodeId, TCHAR_TO_UTF8(TEXT("objpath1")), InNodeToObjectMerge), false);
+
 	/*
 	// We shoudnt use WorldOrigin here, as it causes transform issues when merging into an input!
 	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
@@ -3494,8 +3507,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSplineComponent(
 
 	// Cache the exported curve's data to the input object
 	InObject->InputNodeHandle = InputNodeHandle;
-	InObject->SetInputNodeId(CreatedNodeId);
-	InObject->SetInputObjectNodeId(FHoudiniEngineUtils::HapiGetParentNodeId(CreatedNodeId));
+	InObject->SetInputNodeId((int32)CreatedNodeId);
+	InObject->SetInputObjectNodeId((int32)FHoudiniEngineUtils::HapiGetParentNodeId(CreatedNodeId));
 
 	InObject->MarkChanged(true);
 

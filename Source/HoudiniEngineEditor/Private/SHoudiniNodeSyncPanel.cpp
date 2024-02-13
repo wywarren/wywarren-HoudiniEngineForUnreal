@@ -79,6 +79,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	TSharedPtr<SExpandableArea> ImportOptionsArea;
 	TSharedPtr<SExpandableArea> FetchToWorldOptionsArea;
 	
+	WorldINVBox = SNew(SVerticalBox);
 	ExportOptionsVBox = SNew(SVerticalBox);
 	LandscapeOptionsVBox = SNew(SVerticalBox);
 	LandscapeSplineOptionsVBox = SNew(SVerticalBox);
@@ -746,7 +747,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 					})
 				]
 			]
-
+			
 			// Export Options
 			+ SVerticalBox::Slot()
 			.AutoHeight()
@@ -840,6 +841,14 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 					})
 				]
 			]
+
+			// World IN UI
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(10.0, 0.0, 0.0, 5.0)
+			[
+				WorldINVBox.ToSharedRef()
+			]
 		]
 	];
 	
@@ -855,6 +864,21 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	// ... and a fake input array ...
 	TArray<TWeakObjectPtr<UHoudiniInput>> FakeInputs;
 	FakeInputs.Add(NodeSyncInput);
+
+	//
+	// TODO: World selection Widget?
+	// 
+	/*
+	{
+		FMenuBuilder MenuBuilder = FHoudiniInputDetails::Helper_CreateWorldActorPickerWidget(FakeInputs);
+		WorldINVBox->AddSlot()
+		.Padding(2, 2, 5, 2)
+		.AutoHeight()
+		[
+			MenuBuilder.MakeWidget()
+		];
+	}
+	*/
 
 	// ... so we can reuse the input UI code
 	FHoudiniInputDetails::AddExportOptions(ExportOptionsVBox.ToSharedRef(), FakeInputs);
