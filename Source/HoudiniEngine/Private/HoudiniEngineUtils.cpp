@@ -99,7 +99,6 @@
 	#include "EditorModeManager.h"
 	#include "EditorModes.h"	
 	#include "Interfaces/IMainFrameModule.h"
-	#include "LevelEditor.h"
 #endif
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE
@@ -3275,13 +3274,18 @@ FHoudiniEngineUtils::UpdateEditorProperties_Internal(const bool bInForceFullUpda
 	FPropertyEditorModule& PropertyModule =
 		FModuleManager::Get().GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
+	//
 	// We want to iterate over all the details panels.
 	// Note that Unreal can have up to 4 of them open at once!
+	//
+	// TODO: These shouldn't be hardcoded strings, but when building on Mac, we get linking errors
+	//       when trying to use LevelEditorTabIds::LevelEditorSelectionDetails
+	//
 	static const FName DetailsTabIdentifiers[] = {
-		LevelEditorTabIds::LevelEditorSelectionDetails,
-		LevelEditorTabIds::LevelEditorSelectionDetails2,
-		LevelEditorTabIds::LevelEditorSelectionDetails3,
-		LevelEditorTabIds::LevelEditorSelectionDetails4 };
+		"LevelEditorSelectionDetails",
+		"LevelEditorSelectionDetails2",
+		"LevelEditorSelectionDetails3",
+		"LevelEditorSelectionDetails4" };
 
 	for (const FName DetailsPanelName : DetailsTabIdentifiers)
 	{
