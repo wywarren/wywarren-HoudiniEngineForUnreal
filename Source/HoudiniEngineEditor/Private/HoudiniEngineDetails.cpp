@@ -362,7 +362,7 @@ FHoudiniEngineDetails::CreateGenerateWidgets(
 			{
 				HOUDINI_LOG_WARNING(TEXT("Invalid path: %s"), *InvalidPathReason.ToString());
 
-				FHoudiniEngineUtils::UpdateEditorProperties(MainHAC.Get(), true);
+				FHoudiniEngineUtils::UpdateEditorProperties(true);
 				return;
 			}
 		}
@@ -690,7 +690,7 @@ FHoudiniEngineDetails::CreateBakeWidgets(
 			{
 				HOUDINI_LOG_WARNING(TEXT("Invalid path: %s"), *InvalidPathReason.ToString());
 
-				FHoudiniEngineUtils::UpdateEditorProperties(MainHAC.Get(), true);
+				FHoudiniEngineUtils::UpdateEditorProperties(true);
 				return;
 			}
 		}
@@ -820,7 +820,7 @@ FHoudiniEngineDetails::CreateBakeWidgets(
 				}
 
 				if (MainHAC.IsValid())
-					FHoudiniEngineUtils::UpdateEditorProperties(MainHAC.Get(), true);
+					FHoudiniEngineUtils::UpdateEditorProperties(true);
 			})
 			[
 				SNew(STextBlock)
@@ -1038,7 +1038,7 @@ FHoudiniEngineDetails::CreateBakeWidgets(
 				}
 
 				if (MainHAC.IsValid())
-					FHoudiniEngineUtils::UpdateEditorProperties(MainHAC.Get(), true);
+					FHoudiniEngineUtils::UpdateEditorProperties(true);
 			})
 		]
 	];
@@ -2477,7 +2477,7 @@ FHoudiniEngineDetails::AddHeaderRowForHoudiniAssetComponent(IDetailCategoryBuild
 				HoudiniAssetComponent->bHelpAndDebugMenuExpanded = !HoudiniAssetComponent->bHelpAndDebugMenuExpanded;
 		}
 
-		FHoudiniEngineUtils::UpdateEditorProperties(HoudiniAssetComponent.Get(), true);
+		FHoudiniEngineUtils::UpdateEditorProperties(true);
 
 		// TODO: This is a quick fix for 130742. However, its not a complete solution since clicking the expansion does not
 		// always update all details panels correctly. The correct solution here is to move all the above expansion bools, like
@@ -2733,7 +2733,7 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 		{
 			// Node path invalid!
 			HOUDINI_LOG_WARNING(TEXT("Houdini Node Sync - Fetch Failed - The Fetch node path is invalid."));
-			FHoudiniEngineUtils::UpdateEditorProperties(MainHNSC.Get(), true);
+			FHoudiniEngineUtils::UpdateEditorProperties(true);
 			return;
 		}
 

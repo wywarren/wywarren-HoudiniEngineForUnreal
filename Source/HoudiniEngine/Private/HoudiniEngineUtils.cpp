@@ -99,6 +99,7 @@
 	#include "EditorModeManager.h"
 	#include "EditorModes.h"	
 	#include "Interfaces/IMainFrameModule.h"
+	#include "LevelEditor.h"
 #endif
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE
@@ -3222,41 +3223,20 @@ FHoudiniEngineUtils::IsHoudiniAssetComponentCooking(UObject* InObj)
 }
 
 void
-FHoudiniEngineUtils::UpdateEditorProperties(UObject* InObjectToUpdate, const bool& InForceFullUpdate)
+FHoudiniEngineUtils::UpdateEditorProperties(const bool bInForceFullUpdate)
 {
-	TArray<UObject*> ObjectsToUpdate;
-	ObjectsToUpdate.Add(InObjectToUpdate);
-
 	if (!IsInGameThread())
 	{
 		// We need to be in the game thread to trigger editor properties update
-		AsyncTask(ENamedThreads::GameThread, [ObjectsToUpdate, InForceFullUpdate]()
+		AsyncTask(ENamedThreads::GameThread, [bInForceFullUpdate]()
 		{
-			FHoudiniEngineUtils::UpdateEditorProperties_Internal(ObjectsToUpdate, InForceFullUpdate);
+			FHoudiniEngineUtils::UpdateEditorProperties_Internal(bInForceFullUpdate);
 		});
 	}
 	else
 	{
 		// We're in the game thread, no need  for an async task
-		FHoudiniEngineUtils::UpdateEditorProperties_Internal(ObjectsToUpdate, InForceFullUpdate);
-	}
-}
-
-void
-FHoudiniEngineUtils::UpdateEditorProperties(TArray<UObject*> ObjectsToUpdate, const bool& InForceFullUpdate)
-{
-	if (!IsInGameThread())
-	{
-		// We need to be in the game thread to trigger editor properties update
-		AsyncTask(ENamedThreads::GameThread, [ObjectsToUpdate, InForceFullUpdate]()
-		{
-			FHoudiniEngineUtils::UpdateEditorProperties_Internal(ObjectsToUpdate, InForceFullUpdate);
-		});
-	}
-	else
-	{
-		// We're in the game thread, no need  for an async task
-		FHoudiniEngineUtils::UpdateEditorProperties_Internal(ObjectsToUpdate, InForceFullUpdate);
+		FHoudiniEngineUtils::UpdateEditorProperties_Internal(bInForceFullUpdate);
 	}
 }
 
@@ -3278,15 +3258,8 @@ void FHoudiniEngineUtils::UpdateBlueprintEditor(UHoudiniAssetComponent* HAC)
 }
 
 void
-FHoudiniEngineUtils::UpdateEditorProperties_Internal(TArray<UObject*> ObjectsToUpdate, const bool& bInForceFullUpdate)
+FHoudiniEngineUtils::UpdateEditorProperties_Internal(const bool bInForceFullUpdate)
 {
-	// TODO: Don't use this method. Prefer using IDetailLayoutBuilder::ForceRefreshDetails(). 
-	// Example to correctly update details panel through IDetailCategoryBuilder / IDetailLayoutBuilder
-	// IDetailCategoryBuilder &CategoryBuilder = StructBuilder.GetParentCategory();
-    // IDetailLayoutBuilder &LayoutBuilder = CategoryBuilder.GetParentLayout();
-    // LayoutBuilder.ForceRefreshDetails();
-	// However, the above code should only be called during UI functions... for now, the following works:
-
 #if WITH_EDITOR	
 	if (!bInForceFullUpdate)
 	{
@@ -3298,111 +3271,31 @@ FHoudiniEngineUtils::UpdateEditorProperties_Internal(TArray<UObject*> ObjectsToU
 		return;
 	}
 
-	// We now want to get all the components/actors owning the objects to update
-	TArray<USceneComponent*> AllSceneComponents;
-	for (auto CurrentObject : ObjectsToUpdate)
+	// Get the property editor module
+	FPropertyEditorModule& PropertyModule =
+		FModuleManager::Get().GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	// We want to iterate over all the details panels.
+	// Note that Unreal can have up to 4 of them open at once!
+	static const FName DetailsTabIdentifiers[] = {
+		LevelEditorTabIds::LevelEditorSelectionDetails,
+		LevelEditorTabIds::LevelEditorSelectionDetails2,
+		LevelEditorTabIds::LevelEditorSelectionDetails3,
+		LevelEditorTabIds::LevelEditorSelectionDetails4 };
+
+	for (const FName DetailsPanelName : DetailsTabIdentifiers)
 	{
-		if (!IsValid(CurrentObject))
-			continue;
+		// Locate the details panel.
+		TSharedPtr<IDetailsView> DetailsView = PropertyModule.FindDetailView(DetailsPanelName);
 
-		// In some case, the object itself is the component
-		USceneComponent* SceneComp = Cast<USceneComponent>(CurrentObject);
-		if (!SceneComp)
+		if (!DetailsView.IsValid())
 		{
-			SceneComp = Cast<USceneComponent>(CurrentObject->GetOuter());
-		}
-
-		if (IsValid(SceneComp))
-		{
-			AllSceneComponents.Add(SceneComp);
+			// We have no details panel, nothing to update.
 			continue;
 		}
+
+		DetailsView->ForceRefresh();
 	}
-
-	TArray<AActor*> AllActors;
-	for (auto CurrentSceneComp : AllSceneComponents)
-	{
-		if (!IsValid(CurrentSceneComp))
-			continue;
-
-		AActor* Actor = CurrentSceneComp->GetOwner();
-		if (IsValid(Actor))
-			AllActors.Add(Actor);
-	}
-
-	// Updating the editor properties can be done in two ways, depending if we're in the BP editor or not
-	// If we have a parent actor, we're not in the BP Editor, so update via the property editor module
-	if (AllActors.Num() > 0)
-	{
-		// Get the property editor module
-		FPropertyEditorModule& PropertyModule =
-			FModuleManager::Get().GetModuleChecked< FPropertyEditorModule >("PropertyEditor");
-
-		TArray<UObject*> SelectedActors;
-		for (auto Actor : AllActors)
-		{
-			if (Actor && Actor->IsSelected())
-				SelectedActors.Add(Actor);
-		}
-
-		if (SelectedActors.Num() > 0)
-		{
-			PropertyModule.UpdatePropertyViews(SelectedActors);
-		}
-
-		// We want to iterate on all the details panel
-		static const FName DetailsTabIdentifiers[] =
-		{
-			"LevelEditorSelectionDetails",
-			"LevelEditorSelectionDetails2",
-			"LevelEditorSelectionDetails3",
-			"LevelEditorSelectionDetails4"
-		};
-
-		for (const FName& DetailsPanelName : DetailsTabIdentifiers)
-		{
-			// Locate the details panel.
-			TSharedPtr<IDetailsView> DetailsView = PropertyModule.FindDetailView(DetailsPanelName);
-			if (!DetailsView.IsValid())
-			{
-				// We have no details panel, nothing to update.
-				continue;
-			}
-
-			// Get the selected actors for this details panels and check if one of ours belongs to it
-			const TArray<TWeakObjectPtr<AActor>>& SelectedDetailActors = DetailsView->GetSelectedActors();
-			bool bFoundActor = false;
-			for (int32 ActorIdx = 0; ActorIdx < SelectedDetailActors.Num(); ActorIdx++)
-			{
-				TWeakObjectPtr<AActor> SelectedActor = SelectedDetailActors[ActorIdx];
-				if (SelectedActor.IsValid() && AllActors.Contains(SelectedActor.Get()))
-				{
-					bFoundActor = true;
-					break;
-				}
-			}
-			
-			// None of our actors belongs to this detail panel, no need to update it
-			if (!bFoundActor)
-				continue;
-
-			// Refresh that details panels using its current selection
-			TArray<UObject*> Selection;
-			for (auto DetailsActor : SelectedDetailActors)
-			{
-				if (DetailsActor.IsValid())
-					Selection.Add(DetailsActor.Get());
-			}
-
-			// Reset selected actors, force refresh and override the lock.
-			DetailsView->SetObjects(SelectedActors, bInForceFullUpdate, true);
-
-			if (GUnrealEd)
-				GUnrealEd->UpdateFloatingPropertyWindows();
-		}
-	}
-
-	return;
 #endif
 }
 
