@@ -35,9 +35,9 @@
 #include "HoudiniInput.h"
 #include "SNewFilePathPicker.h"
 
+#include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "PropertyCustomizationHelpers.h"
 #include "SlateOptMacros.h"
-
 #include "UObject/UObjectGlobals.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Input/SButton.h"
@@ -46,16 +46,6 @@
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SExpandableArea.h"
 #include "Widgets/Layout/SScrollBox.h"
-
-//#include "Widgets/Docking/SDockTab.h"
-//#include "Widgets/Layout/SBox.h"
-//#include "Widgets/Text/STextBlock.h"
-//#include "Widgets/SBoxPanel.h"
-//#include "Widgets/Images/SImage.h"
-//#include "Widgets/Input/SMultiLineEditableTextBox.h"
-//#include "Widgets/Layout/SUniformGridPanel.h"
-//#include "Brushes/SlateImageBrush.h"
-//#include "Widgets/Input/SComboBox.h"
 
 
 #define LOCTEXT_NAMESPACE "HoudiniNodeSync"
