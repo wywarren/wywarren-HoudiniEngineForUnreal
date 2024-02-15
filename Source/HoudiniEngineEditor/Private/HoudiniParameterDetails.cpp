@@ -2709,7 +2709,7 @@ FHoudiniParameterDetails::CreateWidgetFloat(
 					.Visibility(EVisibility::Visible)
 					[
 						SNew(SImage)
-						.Image(MainParam->IsUniformLocked() ? FAppStyle::GetBrush(TEXT("Icons.Lock")) : FAppStyle::GetBrush(TEXT("Icons.Unlock")))
+						.Image(MainParam->IsUniformLocked() ? _GetEditorStyle().GetBrush("Icons.Lock") : _GetEditorStyle().GetBrush("Icons.Unlock"))
 					]
 					.OnClicked_Lambda([FloatParams, MainParam]()
 					{
