@@ -64,7 +64,7 @@ public:
 	{
 	}
 
-	bool operator==(const FHoudiniParameterWidgetMetaData& Other)
+	bool operator==(const FHoudiniParameterWidgetMetaData& Other) const
 	{
 		return UniqueName == Other.UniqueName && Index == Other.Index;
 	}
