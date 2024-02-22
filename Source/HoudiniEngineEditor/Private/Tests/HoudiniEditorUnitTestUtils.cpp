@@ -77,7 +77,7 @@ bool FHoudiniLatentTestCommand::Update()
 	double DeltaTime = FPlatformTime::Seconds() - Context->TimeStarted;
 	if (DeltaTime > Context->MaxTime)
 	{
-		Context->Test->AddError(TEXT("***************** Test timed out. *************"));
+		Context->Test->AddError(TEXT("***************** Test timed out After %.2f seconds*************"), DeltaTime);
 		return true;
 	}
 
@@ -86,6 +86,7 @@ bool FHoudiniLatentTestCommand::Update()
 		if (!FHoudiniEditorUnitTestUtils::IsHDAIdle(Context->HAC))
 			return false;
 		Context->bCookInProgress = false;
+		HOUDINI_LOG_MESSAGE(TEXT("HDA Cook Finished after %.2f seconds"), DeltaTime);
 	}
 
 	if (Context->bPDGCookInProgress)
@@ -94,6 +95,7 @@ bool FHoudiniLatentTestCommand::Update()
 		// else wait for it be set.
 		if (Context->bPDGPostCookDelegateCalled)
 		{
+			HOUDINI_LOG_MESSAGE(TEXT("PDG Cook Finished after %.2f seconds"), DeltaTime);
 			Context->bPDGCookInProgress = false;
 			Context->bPDGPostCookDelegateCalled = false;
 		}
@@ -135,8 +137,7 @@ TArray<FHoudiniEngineBakedActor> FHoudiniTestContext::BakeSelectedTopNetwork()
 {
 	UHoudiniPDGAssetLink * PDGAssetLink = HAC->GetPDGAssetLink();
 
-	TArray<UPackage*> PackagesToSave;
-	FHoudiniEngineOutputStats BakeStats;
+	FHoudiniBakeOutputs BakeOutputs;
 	TArray<FHoudiniEngineBakedActor> BakedActors;
 
 	FHoudiniEngineBakeUtils::BakePDGAssetLinkOutputsKeepActors(
@@ -144,8 +145,7 @@ TArray<FHoudiniEngineBakedActor> FHoudiniTestContext::BakeSelectedTopNetwork()
 		PDGAssetLink->PDGBakeSelectionOption, 
 		PDGAssetLink->PDGBakePackageReplaceMode, 
 		PDGAssetLink->bRecenterBakedActors,
-		PackagesToSave,
-		BakeStats,
+		BakeOutputs,
 		BakedActors);
 
 	return BakedActors;
