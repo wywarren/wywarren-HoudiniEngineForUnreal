@@ -77,7 +77,7 @@ bool FHoudiniLatentTestCommand::Update()
 	double DeltaTime = FPlatformTime::Seconds() - Context->TimeStarted;
 	if (DeltaTime > Context->MaxTime)
 	{
-		Context->Test->AddError(TEXT("Test timed out."));
+		Context->Test->AddError(TEXT("***************** Test timed out. *************"));
 		return true;
 	}
 
