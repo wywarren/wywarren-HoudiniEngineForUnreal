@@ -92,7 +92,23 @@ bool FHoudiniEditorTestsDataLayers::RunTest(const FString& Parameters)
 	// Bake and check results.
 	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
 	{
-		auto & Results = Context->HAC->GetPDGAssetLink()->GetSelectedTOPNode()->WorkResult;
+		UHoudiniPDGAssetLink * AssetLink = Context->HAC->GetPDGAssetLink();
+		UTOPNetwork * Network = AssetLink->GetTOPNetwork(0);
+		HOUDINI_TEST_NOT_NULL(Network);
+
+		UTOPNode * Node = nullptr;
+		for(UTOPNode * It : Network->AllTOPNodes)
+		{
+			if (It->NodeName == "HE_OUT_X")
+			{
+				Node = It;
+				break;
+			}
+		}
+		HOUDINI_TEST_NOT_NULL(Node);
+
+		auto & Results = Node->WorkResult;
+
 
 		// We should have one work result. Check this before baking.
 		HOUDINI_TEST_EQUAL_ON_FAIL(Results.Num(), 1, return true);
