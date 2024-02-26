@@ -79,12 +79,20 @@ bool FHoudiniEditorTestsDataLayers::RunTest(const FString& Parameters)
 	Context->HAC->bEnableProxyStaticMeshOverride = false;
 	Context->StartCookingHDA();
 
-	// HDA Path and kick PDG Cook.
+	// HDA Path and kick Cook.
 	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
 	{
 		FString HDAPath = FHoudiniEditorUnitTestUtils::GetAbsolutePathOfProjectFile(TEXT("TestHDAS/DataLayers/CreateMeshWithDataLayer.hda"));
+		HOUDINI_LOG_MESSAGE(TEXT("Resolved HDA to %s"), *HDAPath);
 
 		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterString, "hda_path", HDAPath, 0);
+		Context->StartCookingHDA();
+		return true;
+	}));
+
+	// kick PDG Cook.
+	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+	{
 		Context->StartCookingSelectedTOPNetwork();
 		return true;
 	}));
