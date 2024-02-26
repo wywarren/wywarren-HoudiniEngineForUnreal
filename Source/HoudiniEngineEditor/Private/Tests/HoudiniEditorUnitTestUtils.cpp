@@ -46,14 +46,6 @@ UHoudiniAssetComponent* FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(
 	return HAC;
 }
 
-bool FHoudiniEditorUnitTestUtils::IsHDAIdle(UHoudiniAssetComponent* HAC)
-{
-	if (HAC->NeedUpdate())
-		return false;
-
-	return 	HAC->GetAssetState() == EHoudiniAssetState::None;
-}
-
 AActor* FHoudiniEditorUnitTestUtils::GetActorWithName(UWorld* World, FString& Name)
 {
 	if (!IsValid(World))
@@ -83,10 +75,16 @@ bool FHoudiniLatentTestCommand::Update()
 
 	if (Context->bCookInProgress && IsValid(Context->HAC))
 	{
-		if (!FHoudiniEditorUnitTestUtils::IsHDAIdle(Context->HAC))
+		if (Context->bCookPostDelegateCalled)
+		{
+			HOUDINI_LOG_MESSAGE(TEXT("Cook Finished after %.2f seconds"), DeltaTime);
+			Context->bCookInProgress = false;
+			Context->bCookPostDelegateCalled = false;
+		}
+		else
+		{
 			return false;
-		Context->bCookInProgress = false;
-		HOUDINI_LOG_MESSAGE(TEXT("HDA Cook Finished after %.2f seconds"), DeltaTime);
+		}
 	}
 
 	if (Context->bPDGCookInProgress)
@@ -113,6 +111,7 @@ void FHoudiniTestContext::StartCookingHDA()
 {
 	HAC->MarkAsNeedCook();
 	bCookInProgress = true;
+	bCookPostDelegateCalled = false;
 }
 
 void FHoudiniTestContext::StartCookingSelectedTOPNetwork()
@@ -158,6 +157,25 @@ FString FHoudiniEditorUnitTestUtils::GetAbsolutePathOfProjectFile(const FString&
 	FPaths::MakePlatformFilename(File);
 	return File;
 
+}
+
+FHoudiniTestContext::FHoudiniTestContext(FAutomationTestBase* CurrentTest, UHoudiniAssetComponent* HACToUse)
+{
+	TimeStarted = FPlatformTime::Seconds();
+	Test = CurrentTest;
+
+	HAC = HACToUse;
+
+	CookLambdaHandle = HAC->GetOnPostCookDelegate().AddLambda([this](UHoudiniAssetComponent* _HAC, bool  bSuccess)
+	{
+		this->bCookPostDelegateCalled = true;
+	});
+
+}
+
+FHoudiniTestContext::~FHoudiniTestContext()
+{
+	HAC->GetOnPostCookDelegate().Remove(CookLambdaHandle);
 }
 
 #endif

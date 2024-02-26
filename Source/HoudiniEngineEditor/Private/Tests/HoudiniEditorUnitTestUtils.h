@@ -147,9 +147,6 @@ struct FHoudiniEditorUnitTestUtils
 	}
 
 	static AActor* GetActorWithName(UWorld* World, FString& Name);
-	static bool IsHDAIdle(UHoudiniAssetComponent* HAC);
-
-
 };
 
 // Helper macro to set parm, ensures the parameter is valid.
@@ -169,12 +166,8 @@ struct FHoudiniTestContext
 	//
 	// The "Data" map can be used to pass data between tests.
 	//
-
-	FHoudiniTestContext(FAutomationTestBase* CurrentTest)
-	{
-		TimeStarted = FPlatformTime::Seconds();
-		Test = CurrentTest;
-	}
+	FHoudiniTestContext(FAutomationTestBase* CurrentTest, UHoudiniAssetComponent* HACToUse);
+	~FHoudiniTestContext();
 
 	// Starts cooking the HDA asynchrously.
 	void StartCookingHDA();
@@ -192,8 +185,13 @@ struct FHoudiniTestContext
 	UHoudiniAssetComponent* HAC = nullptr;		// HAC being tested
 	TMap<FString, FString> Data;				// Use this to pass data between different tests.
 	bool bCookInProgress = false;
+	bool bCookPostDelegateCalled = false;
 	bool bPDGCookInProgress = false;
 	bool bPDGPostCookDelegateCalled = false;
+
+private:
+	FDelegateHandle CookLambdaHandle;
+
 };
 
 class FHoudiniLatentTestCommand : public FFunctionLatentCommand

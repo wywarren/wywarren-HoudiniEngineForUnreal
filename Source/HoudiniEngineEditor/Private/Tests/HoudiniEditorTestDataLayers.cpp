@@ -73,8 +73,7 @@ bool FHoudiniEditorTestsDataLayers::RunTest(const FString& Parameters)
 	// the context live in a SharedPtr<> because each part of the test, in AddCommand(), are executed asyncronously
 	// after the test returns.
 
-	TSharedPtr<FHoudiniTestContext> Context(new FHoudiniTestContext(this));
-	Context->HAC = NewHAC;
+	TSharedPtr<FHoudiniTestContext> Context(new FHoudiniTestContext(this, NewHAC));
 	Context->HAC->bOverrideGlobalProxyStaticMeshSettings = true;
 	Context->HAC->bEnableProxyStaticMeshOverride = false;
 	Context->StartCookingHDA();
