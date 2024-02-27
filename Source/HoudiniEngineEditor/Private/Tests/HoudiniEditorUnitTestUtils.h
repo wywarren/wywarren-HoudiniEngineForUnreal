@@ -166,7 +166,11 @@ struct FHoudiniTestContext
 	//
 	// The "Data" map can be used to pass data between tests.
 	//
-	FHoudiniTestContext(FAutomationTestBase* CurrentTest, UHoudiniAssetComponent* HACToUse);
+	FHoudiniTestContext(FAutomationTestBase* CurrentTest,
+		const FString& HDAName,
+		const FTransform& Transform,
+		bool bOpenWorld);
+
 	~FHoudiniTestContext();
 
 	// Starts cooking the HDA asynchrously.

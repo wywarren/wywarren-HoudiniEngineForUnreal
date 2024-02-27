@@ -66,17 +66,15 @@ bool FHoudiniEditorTestsDataLayers::RunTest(const FString& Parameters)
 	/// Make sure we have a Houdini Session before doing anything.
 	FHoudiniEditorTestUtils::CreateSessionIfInvalidWithLatentRetries(this, FHoudiniEditorTestUtils::HoudiniEngineSessionPipeName, {}, {});
 
-	// Load the HDA into a new map and kick start the cook. We do an initial cook to make sure the parameters are available.
-	static UHoudiniAssetComponent* NewHAC = FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(TEXT("/Game/TestHDAs/PDG/PDGHarness"), FTransform::Identity, true);
+	FString HDAName = TEXT("/Game/TestHDAs/PDG/PDGHarness");
 
 	// Now create the test context. This should be the last step before the tests start as it starts the timeout timer. Note
 	// the context live in a SharedPtr<> because each part of the test, in AddCommand(), are executed asyncronously
 	// after the test returns.
 
-	TSharedPtr<FHoudiniTestContext> Context(new FHoudiniTestContext(this, NewHAC));
+	TSharedPtr<FHoudiniTestContext> Context(new FHoudiniTestContext(this, HDAName, FTransform::Identity, true));
 	Context->HAC->bOverrideGlobalProxyStaticMeshSettings = true;
 	Context->HAC->bEnableProxyStaticMeshOverride = false;
-	Context->StartCookingHDA();
 
 	// HDA Path and kick Cook.
 	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()

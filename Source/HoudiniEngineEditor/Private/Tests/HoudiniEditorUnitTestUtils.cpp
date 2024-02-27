@@ -159,18 +159,25 @@ FString FHoudiniEditorUnitTestUtils::GetAbsolutePathOfProjectFile(const FString&
 
 }
 
-FHoudiniTestContext::FHoudiniTestContext(FAutomationTestBase* CurrentTest, UHoudiniAssetComponent* HACToUse)
+FHoudiniTestContext::FHoudiniTestContext(
+	FAutomationTestBase* CurrentTest, 
+	const FString & HDAName,
+	const FTransform& Transform,
+	bool bOpenWorld)
 {
-	TimeStarted = FPlatformTime::Seconds();
 	Test = CurrentTest;
 
-	HAC = HACToUse;
-
+	// Load the HDA into a new map and kick start the cook. We do an initial cook to make sure the parameters are available.
+	HAC = FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(HDAName, Transform, true);
+	this->bCookInProgress = true;
+	this->bPostOutputDelegateCalled = true;
 	OutputDelegateHandle = HAC->GetOnPostOutputProcessingDelegate().AddLambda([this](UHoudiniAssetComponent* _HAC, bool  bSuccess)
 	{
 		this->bPostOutputDelegateCalled = true;
 	});
 
+	// Set time last so we don't include instantiation time.
+	TimeStarted = FPlatformTime::Seconds();
 }
 
 FHoudiniTestContext::~FHoudiniTestContext()
