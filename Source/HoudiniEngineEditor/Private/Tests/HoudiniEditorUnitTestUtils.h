@@ -185,12 +185,12 @@ struct FHoudiniTestContext
 	UHoudiniAssetComponent* HAC = nullptr;		// HAC being tested
 	TMap<FString, FString> Data;				// Use this to pass data between different tests.
 	bool bCookInProgress = false;
-	bool bCookPostDelegateCalled = false;
+	bool bPostOutputDelegateCalled = false;
 	bool bPDGCookInProgress = false;
 	bool bPDGPostCookDelegateCalled = false;
 
 private:
-	FDelegateHandle CookLambdaHandle;
+	FDelegateHandle OutputDelegateHandle;
 
 };
 

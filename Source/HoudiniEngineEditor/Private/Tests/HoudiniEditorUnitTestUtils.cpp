@@ -75,11 +75,11 @@ bool FHoudiniLatentTestCommand::Update()
 
 	if (Context->bCookInProgress && IsValid(Context->HAC))
 	{
-		if (Context->bCookPostDelegateCalled)
+		if (Context->bPostOutputDelegateCalled)
 		{
 			HOUDINI_LOG_MESSAGE(TEXT("Cook Finished after %.2f seconds"), DeltaTime);
 			Context->bCookInProgress = false;
-			Context->bCookPostDelegateCalled = false;
+			Context->bPostOutputDelegateCalled = false;
 		}
 		else
 		{
@@ -111,7 +111,7 @@ void FHoudiniTestContext::StartCookingHDA()
 {
 	HAC->MarkAsNeedCook();
 	bCookInProgress = true;
-	bCookPostDelegateCalled = false;
+	bPostOutputDelegateCalled = false;
 }
 
 void FHoudiniTestContext::StartCookingSelectedTOPNetwork()
@@ -166,16 +166,16 @@ FHoudiniTestContext::FHoudiniTestContext(FAutomationTestBase* CurrentTest, UHoud
 
 	HAC = HACToUse;
 
-	CookLambdaHandle = HAC->GetOnPostCookDelegate().AddLambda([this](UHoudiniAssetComponent* _HAC, bool  bSuccess)
+	OutputDelegateHandle = HAC->GetOnPostOutputProcessingDelegate().AddLambda([this](UHoudiniAssetComponent* _HAC, bool  bSuccess)
 	{
-		this->bCookPostDelegateCalled = true;
+		this->bPostOutputDelegateCalled = true;
 	});
 
 }
 
 FHoudiniTestContext::~FHoudiniTestContext()
 {
-	HAC->GetOnPostCookDelegate().Remove(CookLambdaHandle);
+	HAC->GetOnPostOutputProcessingDelegate().Remove(OutputDelegateHandle);
 }
 
 #endif
