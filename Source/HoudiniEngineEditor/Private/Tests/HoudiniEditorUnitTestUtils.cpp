@@ -159,6 +159,25 @@ FString FHoudiniEditorUnitTestUtils::GetAbsolutePathOfProjectFile(const FString&
 
 }
 
+UHoudiniParameter* FHoudiniEditorUnitTestUtils::GetTypedParameter(UHoudiniAssetComponent* HAC, UClass* Class, const char* Name)
+{
+	FString ParamName = Name;
+	UHoudiniParameter * Parameter = HAC->FindParameterByName(FString(ParamName));
+	if (!Parameter)
+	{
+		HOUDINI_LOG_ERROR(TEXT("Could not find paramter called %s"), *ParamName);
+		return nullptr;
+	}
+
+	if (!Parameter->IsA(Class))
+	{
+		HOUDINI_LOG_ERROR(TEXT("Parameter '%s' is of wrong type. IsA '%s' expected '%s'"), *ParamName, *Parameter->GetClass()->GetName(), *Class->GetName());
+		return nullptr;
+	}
+	return Parameter;
+
+}
+
 FHoudiniTestContext::FHoudiniTestContext(
 	FAutomationTestBase* CurrentTest, 
 	const FString & HDAName,

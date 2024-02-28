@@ -147,14 +147,26 @@ struct FHoudiniEditorUnitTestUtils
 	}
 
 	static AActor* GetActorWithName(UWorld* World, FString& Name);
+
+	static UHoudiniParameter * GetTypedParameter(UHoudiniAssetComponent * HAC, UClass * Class, const char* Name);
+
+	template <typename TYPED_PARAMETER>
+	static TYPED_PARAMETER*  GetTypedParameter(UHoudiniAssetComponent* HAC, const char * Name)
+	{
+		return Cast<TYPED_PARAMETER>(GetTypedParameter(HAC, TYPED_PARAMETER::StaticClass(), Name));
+	}
+
 };
+
 
 // Helper macro to set parm, ensures the parameter is valid.
 #define SET_HDA_PARAMETER(_HAC, _PARAMETER_TYPE, _PARAMATER_NAME, _PARAMETER_VALUE, _PARAMETER_INDEX)\
 	{\
-		_PARAMETER_TYPE* __Parameter = Cast<_PARAMETER_TYPE>(_HAC->FindParameterByName(_PARAMATER_NAME));\
+		_PARAMETER_TYPE* __Parameter = FHoudiniEditorUnitTestUtils::GetTypedParameter<_PARAMETER_TYPE>(_HAC, _PARAMATER_NAME);\
 		if (!TestNotNull(#_PARAMATER_NAME, __Parameter))\
+		{\
 			return true;\
+		}\
 		__Parameter->SetValueAt(_PARAMETER_VALUE, _PARAMETER_INDEX);\
 	}
 
