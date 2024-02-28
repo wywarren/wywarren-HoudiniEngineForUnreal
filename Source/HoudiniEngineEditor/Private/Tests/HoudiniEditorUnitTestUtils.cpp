@@ -165,7 +165,13 @@ UHoudiniParameter* FHoudiniEditorUnitTestUtils::GetTypedParameter(UHoudiniAssetC
 	UHoudiniParameter * Parameter = HAC->FindParameterByName(FString(ParamName));
 	if (!Parameter)
 	{
-		HOUDINI_LOG_ERROR(TEXT("Could not find paramter called %s"), *ParamName);
+		HOUDINI_LOG_ERROR(TEXT("Could not find parameter called %s. Dumping Parameters:"), *ParamName);
+		for(int Index = 0; Index < HAC->GetNumParameters(); Index++)
+		{
+			UHoudiniParameter * Param = HAC->GetParameterAt(Index);
+			HOUDINI_LOG_ERROR(TEXT("Parameter %d name=%s label=%s class=%s"), 
+				Index, *Param->GetParameterName(), *Param->GetParameterLabel(), *Param->GetClass()->GetName());
+		}
 		return nullptr;
 	}
 
