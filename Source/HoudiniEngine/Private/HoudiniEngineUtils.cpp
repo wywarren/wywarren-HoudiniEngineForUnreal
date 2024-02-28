@@ -3261,13 +3261,19 @@ FHoudiniEngineUtils::UpdateEditorProperties_Internal(const bool bInForceFullUpda
 {
 #if WITH_EDITOR
 #define HOUDINI_USE_DETAILS_FOCUS_HACK 0
+
+	// TODO: As an optimization, it might be worth adding an extra parameter to control if we 
+	// update floating property windows. We need to do this whenever we update something visible in
+	// actor details, such as adding/removing a component.
+	if (GUnrealEd)
+	{
+		GUnrealEd->UpdateFloatingPropertyWindows();
+	}
+
 	if (!bInForceFullUpdate)
 	{
 		// bNeedFullUpdate is false only when small changes (parameters value) have been made
 		// We do not refresh the details view to avoid loosing the currently selected parameter
-		if(GUnrealEd)
-			GUnrealEd->UpdateFloatingPropertyWindows();
-
 		return;
 	}
 
