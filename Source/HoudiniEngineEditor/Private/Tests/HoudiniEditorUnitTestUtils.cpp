@@ -34,6 +34,8 @@ UHoudiniAssetComponent* FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	TArray<FAssetData> AssetData;
 	AssetRegistryModule.Get().GetAssetsByPackageName(FName(PackageName), AssetData);
+	if (AssetData.IsEmpty())
+		return nullptr;
 	UHoudiniAsset* HoudiniAsset = Cast<UHoudiniAsset>(AssetData[0].GetAsset());
 
 	UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AHoudiniAssetActor::StaticClass());
@@ -193,7 +195,13 @@ FHoudiniTestContext::FHoudiniTestContext(
 	Test = CurrentTest;
 
 	// Load the HDA into a new map and kick start the cook. We do an initial cook to make sure the parameters are available.
-	HAC = FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(HDAName, Transform, true);
+	HAC = FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(HDAName, Transform, bOpenWorld);
+	if (!HAC)
+	{
+		HOUDINI_LOG_ERROR(TEXT("Failed to load HDA %s into map. Missing uasset?"), *HDAName);
+		return;
+	}
+
 	this->bCookInProgress = true;
 	this->bPostOutputDelegateCalled = true;
 	OutputDelegateHandle = HAC->GetOnPostOutputProcessingDelegate().AddLambda([this](UHoudiniAssetComponent* _HAC, bool  bSuccess)
@@ -209,5 +217,11 @@ FHoudiniTestContext::~FHoudiniTestContext()
 {
 	HAC->GetOnPostOutputProcessingDelegate().Remove(OutputDelegateHandle);
 }
+
+bool FHoudiniTestContext::IsValid()
+{
+	return HAC != nullptr;
+}
+
 
 #endif

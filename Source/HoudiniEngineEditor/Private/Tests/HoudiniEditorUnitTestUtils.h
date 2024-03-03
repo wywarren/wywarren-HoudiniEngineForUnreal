@@ -191,6 +191,9 @@ struct FHoudiniTestContext
 	// Starts cooking the Selected top network in the HDA asynchronously.
 	void StartCookingSelectedTOPNetwork();
 
+	//  Check if the context is valid. This will be false if, for example, the HDA failed to load.
+	bool IsValid();
+
 	// Bakes the top network. Synchronous, returns the baked actors.
 	TArray<FHoudiniEngineBakedActor> BakeSelectedTopNetwork();
 
