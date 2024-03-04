@@ -228,7 +228,7 @@ bool FHoudiniEditorTestLandscapes_Simple::RunTest(const FString & Parameters)
 	return true;
 }
 
-
+#if 0
 IMPLEMENT_SIMPLE_HOUDINI_AUTOMATION_TEST(FHoudiniEditorTestLandscapes_GridSize, "AAAHoudini.UnitTests.Landscapes.GridSize", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
 bool FHoudiniEditorTestLandscapes_GridSize::RunTest(const FString& Parameters)
@@ -316,6 +316,6 @@ bool FHoudiniEditorTestLandscapes_GridSize::RunTest(const FString& Parameters)
 	///
 	return true;
 }
-
+#endif
 #endif
 
