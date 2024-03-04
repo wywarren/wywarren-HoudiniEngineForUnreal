@@ -37,7 +37,8 @@ public:
     static TArray<FString> CheckHeightFieldValues(TArray<float>& Results, TArray<float>& Expected, const FIntPoint& Size, int MaxErrors);
     static TArray<float> GetLandscapeValues(ALandscape* LandscapeActor);
     static TArray<float> CreateExpectedLandscapeValues(const FIntPoint& ExpectedSize, float HeightScale);
-
+    static float GetMin(const TArray<float> & Values);
+    static float GetMax(const TArray<float> & Values);
 };
 
 #endif

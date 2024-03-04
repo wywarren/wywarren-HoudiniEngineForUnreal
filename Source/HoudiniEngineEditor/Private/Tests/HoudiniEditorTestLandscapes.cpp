@@ -39,8 +39,6 @@
 #include "HoudiniEditorUnitTestUtils.h"
 #include "LandscapeEdit.h"
 
-IMPLEMENT_SIMPLE_HOUDINI_AUTOMATION_TEST(FHoudiniEditorTestLandscapes_Simple, "Houdini.UnitTests.Landscapes", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
 TArray<FString> FHoudiniEditorTestLandscapes::CheckHeightFieldValues(TArray<float> & Results, TArray<float> & Expected, const FIntPoint & Size, int MaxErrors)
 {
 	TArray<FString> Errors;
@@ -124,6 +122,26 @@ TArray<float> FHoudiniEditorTestLandscapes::CreateExpectedLandscapeValues(const 
 	return ExpectedResults;
 }
 
+float FHoudiniEditorTestLandscapes::GetMin(const TArray<float>& Values)
+{
+	float MinValue = TNumericLimits<float>::Max();
+	for( float Value : Values)
+		MinValue = FMath::Min(MinValue, Value);
+	return MinValue;
+}
+
+float FHoudiniEditorTestLandscapes::GetMax(const TArray<float>& Values)
+{
+	float MaxValue = TNumericLimits<float>::Min();
+	for (float Value : Values)
+		MaxValue = FMath::Max(MaxValue, Value);
+
+	return MaxValue;
+}
+
+
+IMPLEMENT_SIMPLE_HOUDINI_AUTOMATION_TEST(FHoudiniEditorTestLandscapes_Simple, "Houdini.UnitTests.Landscapes.Simple", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
 bool FHoudiniEditorTestLandscapes_Simple::RunTest(const FString & Parameters)
 {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,12 +161,13 @@ bool FHoudiniEditorTestLandscapes_Simple::RunTest(const FString & Parameters)
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Create a small landscape and check it loads.
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+
+	constexpr int LandscapeSize = 64;
 	{
-		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context, LandscapeSize]()
 		{
-			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "size", 64, 0);
-			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "size", 64, 1);
+			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "size", LandscapeSize, 0);
+			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "size", LandscapeSize, 1);
 			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "grid_size", 1, 0);
 			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterFloat, "height_scale", 1.0f, 0);
 			Context->StartCookingHDA();
@@ -156,6 +175,13 @@ bool FHoudiniEditorTestLandscapes_Simple::RunTest(const FString & Parameters)
 		}));
 
 		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+		{
+			// Cooking has finished, however, Unreal updates the landscape during Tick(), so wait a couple of frames
+			Context->WaitForTicks(10);
+			return true;
+		}));
+
+		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context, LandscapeSize]()
 		{
 			TArray<UHoudiniOutput*> Outputs;
 			Context->HAC->GetOutputs(Outputs);
@@ -168,22 +194,32 @@ bool FHoudiniEditorTestLandscapes_Simple::RunTest(const FString & Parameters)
 			HOUDINI_TEST_EQUAL(LandscapeOutputs.Num(), 1);
 			ALandscape* LandscapeActor = LandscapeOutputs[0]->Landscape;
 
-			const FIntPoint ExpectedSize = FIntPoint(64, 64);
+			const FIntPoint ExpectedGridSize = FIntPoint(LandscapeSize, LandscapeSize);
 
 			// Check the size of the landscape is correct.
 			FIntPoint LandscapeQuadSize = LandscapeActor->GetBoundingRect().Size();
 			FIntPoint LandscapeVertSize(LandscapeQuadSize.X + 1, LandscapeQuadSize.Y + 1);
-			HOUDINI_TEST_EQUAL(LandscapeVertSize, ExpectedSize);
+			HOUDINI_TEST_EQUAL(LandscapeVertSize, ExpectedGridSize);
 
-			TArray<float> ExpectedResults = FHoudiniEditorTestLandscapes::CreateExpectedLandscapeValues(ExpectedSize, 1.0f);
+			TArray<float> ExpectedResults = FHoudiniEditorTestLandscapes::CreateExpectedLandscapeValues(ExpectedGridSize, 1.0f);
 			TArray<float> HoudiniValues = FHoudiniEditorTestLandscapes::GetLandscapeValues(LandscapeActor);
-			TArray<FString> Errors = FHoudiniEditorTestLandscapes::CheckHeightFieldValues(HoudiniValues, ExpectedResults, ExpectedSize, true);
+			TArray<FString> Errors = FHoudiniEditorTestLandscapes::CheckHeightFieldValues(HoudiniValues, ExpectedResults, ExpectedGridSize, true);
 			HOUDINI_TEST_EQUAL_ON_FAIL(Errors.Num(), 0, for(auto & Error : Errors) this->AddError(Error); );
+
+			FBox Bounds = LandscapeActor->GetLoadedBounds();
+
+			float MinValue = FHoudiniEditorTestLandscapes::GetMin(ExpectedResults);
+			float MaxValue = FHoudiniEditorTestLandscapes::GetMax(ExpectedResults);
 			
+			FVector3d ExpectedSize((LandscapeSize - 1) * 100.0f, (LandscapeSize - 1) * 100.0f, (MaxValue - MinValue) * 100.0f);
+			FVector3d ActualSize = Bounds.GetSize();
+			HOUDINI_TEST_EQUAL(ExpectedSize.X, ActualSize.X);
+			HOUDINI_TEST_EQUAL(ExpectedSize.Y, ActualSize.Y);
+			HOUDINI_TEST_EQUAL(ExpectedSize.Z, ActualSize.Z);
+
 			return true;
 		}));
 	}
-
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Done

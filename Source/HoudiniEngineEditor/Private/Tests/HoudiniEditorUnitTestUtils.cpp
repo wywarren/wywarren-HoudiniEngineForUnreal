@@ -75,6 +75,20 @@ bool FHoudiniLatentTestCommand::Update()
 		return true;
 	}
 
+	int CurrentFrame = GFrameCounter;
+	if (Context->WaitTickFrame)
+	{
+		if (CurrentFrame < Context->WaitTickFrame)
+		{
+			return false;
+		}
+		else
+		{
+			Context->WaitTickFrame = 0;
+		}
+
+	}
+
 	if (Context->bCookInProgress && IsValid(Context->HAC))
 	{
 		if (Context->bPostOutputDelegateCalled)
@@ -115,6 +129,12 @@ void FHoudiniTestContext::StartCookingHDA()
 	bCookInProgress = true;
 	bPostOutputDelegateCalled = false;
 }
+
+void FHoudiniTestContext::WaitForTicks(int Count)
+{
+	WaitTickFrame = Count + GFrameCounter;
+}
+
 
 void FHoudiniTestContext::StartCookingSelectedTOPNetwork()
 {

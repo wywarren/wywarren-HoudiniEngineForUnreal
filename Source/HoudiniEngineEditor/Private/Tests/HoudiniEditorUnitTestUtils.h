@@ -191,6 +191,8 @@ struct FHoudiniTestContext
 	// Starts cooking the Selected top network in the HDA asynchronously.
 	void StartCookingSelectedTOPNetwork();
 
+	void WaitForTicks(int Count);
+
 	//  Check if the context is valid. This will be false if, for example, the HDA failed to load.
 	bool IsValid();
 
@@ -207,6 +209,7 @@ struct FHoudiniTestContext
 	bool bPostOutputDelegateCalled = false;
 	bool bPDGCookInProgress = false;
 	bool bPDGPostCookDelegateCalled = false;
+	int WaitTickFrame = 0;
 
 private:
 	FDelegateHandle OutputDelegateHandle;
