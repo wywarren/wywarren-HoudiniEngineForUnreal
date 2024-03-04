@@ -229,5 +229,93 @@ bool FHoudiniEditorTestLandscapes_Simple::RunTest(const FString & Parameters)
 }
 
 
+IMPLEMENT_SIMPLE_HOUDINI_AUTOMATION_TEST(FHoudiniEditorTestLandscapes_GridSize, "AAAHoudini.UnitTests.Landscapes.GridSize", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FHoudiniEditorTestLandscapes_GridSize::RunTest(const FString& Parameters)
+{
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// This test various aspects of Landscapes.
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/// Make sure we have a Houdini Session before doing anything.
+	FHoudiniEditorTestUtils::CreateSessionIfInvalidWithLatentRetries(this, FHoudiniEditorTestUtils::HoudiniEngineSessionPipeName, {}, {});
+
+	// Now create the test context.
+	TSharedPtr<FHoudiniTestContext> Context(new FHoudiniTestContext(this, TEXT("/Game/TestHDAs/Landscape/Test_Landscapes"), FTransform::Identity, false));
+	HOUDINI_TEST_EQUAL_ON_FAIL(Context->IsValid(), true, return false);
+
+	Context->HAC->bOverrideGlobalProxyStaticMeshSettings = true;
+	Context->HAC->bEnableProxyStaticMeshOverride = false;
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Create a small landscape and check it loads.
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	constexpr int LandscapeSize = 64;
+	{
+		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context, LandscapeSize]()
+			{
+				SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "size", LandscapeSize, 0);
+				SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "size", LandscapeSize, 1);
+				SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterInt, "grid_size", 2, 0);
+				SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterFloat, "height_scale", 1.0f, 0);
+				Context->StartCookingHDA();
+				return true;
+			}));
+
+		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+			{
+				// Cooking has finished, however, Unreal updates the landscape during Tick(), so wait a couple of frames
+				Context->WaitForTicks(10);
+				return true;
+			}));
+
+		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context, LandscapeSize]()
+			{
+				TArray<UHoudiniOutput*> Outputs;
+				Context->HAC->GetOutputs(Outputs);
+
+				// We should have one output.
+				HOUDINI_TEST_EQUAL_ON_FAIL(Outputs.Num(), 1, return true);
+
+				// Fetch the output as a landscape..
+				TArray<UHoudiniLandscapeTargetLayerOutput*> LandscapeOutputs = FHoudiniEditorUnitTestUtils::GetOutputsWithObject<UHoudiniLandscapeTargetLayerOutput>(Outputs);
+				HOUDINI_TEST_EQUAL(LandscapeOutputs.Num(), 1);
+				ALandscape* LandscapeActor = LandscapeOutputs[0]->Landscape;
+
+				const FIntPoint ExpectedGridSize = FIntPoint(LandscapeSize / 2, LandscapeSize / 2);
+
+				// Check the size of the landscape is correct.
+				FIntPoint LandscapeQuadSize = LandscapeActor->GetBoundingRect().Size();
+				FIntPoint LandscapeVertSize(LandscapeQuadSize.X + 1, LandscapeQuadSize.Y + 1);
+				HOUDINI_TEST_EQUAL_ON_FAIL(LandscapeVertSize, ExpectedGridSize, return true);
+
+				TArray<float> ExpectedResults = FHoudiniEditorTestLandscapes::CreateExpectedLandscapeValues(ExpectedGridSize, 1.0f);
+				TArray<float> HoudiniValues = FHoudiniEditorTestLandscapes::GetLandscapeValues(LandscapeActor);
+				TArray<FString> Errors = FHoudiniEditorTestLandscapes::CheckHeightFieldValues(HoudiniValues, ExpectedResults, ExpectedGridSize, true);
+				HOUDINI_TEST_EQUAL_ON_FAIL(Errors.Num(), 0, { for (auto& Error : Errors) this->AddError(Error); return true; } );
+
+				FBox Bounds = LandscapeActor->GetLoadedBounds();
+
+				float MinValue = FHoudiniEditorTestLandscapes::GetMin(ExpectedResults);
+				float MaxValue = FHoudiniEditorTestLandscapes::GetMax(ExpectedResults);
+
+				FVector3d ExpectedSize((LandscapeSize - 1) * 100.0f, (LandscapeSize - 1) * 100.0f, (MaxValue - MinValue) * 100.0f);
+				FVector3d ActualSize = Bounds.GetSize();
+				HOUDINI_TEST_EQUAL(ExpectedSize.X, ActualSize.X);
+				HOUDINI_TEST_EQUAL(ExpectedSize.Y, ActualSize.Y);
+				HOUDINI_TEST_EQUAL(ExpectedSize.Z, ActualSize.Z);
+
+				return true;
+			}));
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Done
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///
+	return true;
+}
+
 #endif
 
