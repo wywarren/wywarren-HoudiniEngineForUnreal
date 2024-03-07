@@ -3260,7 +3260,7 @@ void
 FHoudiniEngineUtils::UpdateEditorProperties_Internal(const bool bInForceFullUpdate)
 {
 #if WITH_EDITOR
-#define HOUDINI_USE_DETAILS_FOCUS_HACK 0
+#define HOUDINI_USE_DETAILS_FOCUS_HACK 1
 
 	// TODO: As an optimization, it might be worth adding an extra parameter to control if we 
 	// update floating property windows. We need to do this whenever we update something visible in
