@@ -7101,7 +7101,8 @@ HAPI_DECL HAPI_GetAttributeDictionaryArrayDataAsync( const HAPI_Session * sessio
 ///
 /// @param[in]      job_id
 ///                 The id assigned to the job. It must equal to the index 
-///                 assigned through a previous call to HAPI_GetAttribute*Async
+///                 assigned through a previous call to an asynchronous HAPI
+///                 attribute getter method.
 ///
 HAPI_DECL HAPI_GetAttributeWait( const HAPI_Session * session,
                                  int job_id );
