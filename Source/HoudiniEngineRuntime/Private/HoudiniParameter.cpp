@@ -35,6 +35,7 @@ UHoudiniParameter::UHoudiniParameter(const FObjectInitializer & ObjectInitialize
 	, ParentParmId(-1)
 	, ChildIndex(-1)
 	, bIsVisible(true)
+	, bIsLabelVisible(true)
 	, bIsDisabled(false)
 	, bHasChanged(false)
 	, bNeedsToTriggerUpdate(true)
