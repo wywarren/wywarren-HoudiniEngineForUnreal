@@ -72,54 +72,6 @@ FHoudiniAssetComponentDetails::FHoudiniAssetComponentDetails()
 	HoudiniEngineDetails = MakeShared<FHoudiniEngineDetails, ESPMode::NotThreadSafe>();
 }
 
-
-FHoudiniAssetComponentDetails::~FHoudiniAssetComponentDetails()
-{
-	// The ramp param's curves are added to root to avoid garbage collection
-	// We need to remove those curves from the root when the details classes are destroyed.
-	if (ParameterDetails.IsValid()) 
-	{
-		FHoudiniParameterDetails* ParamDetailsPtr = ParameterDetails.Get();
-
-		for (auto& CurFloatRampCurveEditor : ParamDetailsPtr->CreatedFloatCurveEditors)
-		{
-			if (!CurFloatRampCurveEditor.IsValid())
-				continue;
-
-			CurFloatRampCurveEditor->HoudiniFloatRampCurve = nullptr;
-			CurFloatRampCurveEditor->SetCurveOwner(nullptr);
-		}
-		for (auto& CurFloatRampCurve : ParamDetailsPtr->CreatedFloatRampCurves)
-		{
-			if (!IsValid(CurFloatRampCurve))
-				continue;
-
-			CurFloatRampCurve->RemoveFromRoot();
-		}
-
-		for (auto& CurColorRampCurveEditor : ParamDetailsPtr->CreatedColorGradientEditors)
-		{
-			if (!CurColorRampCurveEditor.IsValid())
-				continue;
-
-			CurColorRampCurveEditor->HoudiniColorRampCurve = nullptr;
-			CurColorRampCurveEditor->SetCurveOwner(nullptr);
-		}
-		for (auto& CurColorRampCurve : ParamDetailsPtr->CreatedColorRampCurves)
-		{
-			if (!IsValid(CurColorRampCurve))
-				continue;
-
-			CurColorRampCurve->RemoveFromRoot();
-		}
-		
-		ParamDetailsPtr->CreatedFloatCurveEditors.Empty();
-		ParamDetailsPtr->CreatedColorGradientEditors.Empty();
-		ParamDetailsPtr->CreatedFloatRampCurves.Empty();
-		ParamDetailsPtr->CreatedColorRampCurves.Empty();
-	}
-}
-
 void 
 FHoudiniAssetComponentDetails::AddIndieLicenseRow(IDetailCategoryBuilder& InCategory)
 {
