@@ -50,6 +50,8 @@ class UHoudiniAssetComponent;
 #define HOUDINI_TEST_NOT_EQUAL(A,B)	TestNotEqual(#A, A, B)
 #define HOUDINI_TEST_NOT_EQUAL_ON_FAIL(A,B,_FAIL)	if (!TestNotEqual(#A, A, B)) _FAIL;
 #define HOUDINI_TEST_NOT_NULL(A)	TestNotNull(#A, A)
+#define HOUDINI_TEST_NOT_NULL_ON_FAIL(A, _FAIL)	if (!TestNotNull(#A, A) ) _FAIL;
+
 #define HOUDINI_TEST_NULL(A)	TestNull(#A, A)
 
 // Utils functions
@@ -156,6 +158,17 @@ struct FHoudiniEditorUnitTestUtils
 		return Cast<TYPED_PARAMETER>(GetTypedParameter(HAC, TYPED_PARAMETER::StaticClass(), Name));
 	}
 
+	template<typename COMPONENT>
+	static TArray<COMPONENT *> FilterComponents(const TArray<UActorComponent*> & Components)
+	{
+		TArray<COMPONENT *> Results;
+		for(auto Component : Components)
+		{
+			if (Component->GetClass() == COMPONENT::StaticClass())
+				Results.Add((COMPONENT*)Component);
+		}
+		return Results;
+	}
 };
 
 

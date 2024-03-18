@@ -1022,6 +1022,9 @@ FHoudiniEngineEditor::InitializeWidgetResource()
 	HoudiniEnginePDGBakePackageReplaceModeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(EPDGBakePackageReplaceModeOption::ReplaceExistingAssets))));
 	HoudiniEnginePDGBakePackageReplaceModeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(EPDGBakePackageReplaceModeOption::CreateNewAssets))));
 	
+	HoudiniEngineBakeActorOptionsLabels.Reset();
+	HoudiniEngineBakeActorOptionsLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringfromActorBakeOption(EHoudiniEngineActorBakeOption::OneActorPerComponent))));
+	HoudiniEngineBakeActorOptionsLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringfromActorBakeOption(EHoudiniEngineActorBakeOption::OneActorPerHDA))));
 
 	static FString IconsDir = FHoudiniEngineUtils::GetHoudiniEnginePluginDir() / TEXT("Resources/Icons/");
 
@@ -1760,7 +1763,7 @@ FHoudiniEngineEditor::UnregisterEditorDelegates()
 }
 
 FString 
-FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(const EHoudiniEngineBakeOption & BakeOption) 
+FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption BakeOption) 
 {
 	FString Str;
 	switch (BakeOption) 
@@ -1778,7 +1781,7 @@ FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(const EHoudiniEngineB
 }
 
 FString 
-FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(const EPDGBakeSelectionOption& BakeOption) 
+FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(EPDGBakeSelectionOption BakeOption) 
 {
 	FString Str;
 	switch (BakeOption) 
@@ -1800,7 +1803,35 @@ FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(const EPDGBakeSelectionOp
 }
 
 FString
-FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(const EPDGBakePackageReplaceModeOption & InOption)
+FHoudiniEngineEditor::GetStringfromActorBakeOption(EHoudiniEngineActorBakeOption ActorBakeOption)
+{
+	FString Str;
+	switch(ActorBakeOption)
+	{
+	case EHoudiniEngineActorBakeOption::OneActorPerHDA:
+		Str = "One Actor Per HDA";
+		break;
+
+	case EHoudiniEngineActorBakeOption::OneActorPerComponent:
+		Str = "One Actor Per Component";
+		break;
+	}
+	return Str;
+}
+
+
+EHoudiniEngineActorBakeOption
+FHoudiniEngineEditor::StringToHoudiniEngineActorBakeOption(const FString& InString)
+{
+	if (InString == "One Actor Per HDA")
+		return  EHoudiniEngineActorBakeOption::OneActorPerHDA;
+	if (InString == "One Actor Per Component")
+		return  EHoudiniEngineActorBakeOption::OneActorPerComponent;
+	return EHoudiniEngineActorBakeOption::OneActorPerComponent;;
+}
+
+FString
+FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(EPDGBakePackageReplaceModeOption InOption)
 {
 	FString Str;
 	switch (InOption)
@@ -1816,7 +1847,7 @@ FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(const EPDGBak
 	return Str;
 }
 
-const EHoudiniEngineBakeOption 
+EHoudiniEngineBakeOption 
 FHoudiniEngineEditor::StringToHoudiniEngineBakeOption(const FString & InString) 
 {
 	if (InString == "Actor")
@@ -1828,7 +1859,7 @@ FHoudiniEngineEditor::StringToHoudiniEngineBakeOption(const FString & InString)
 	return EHoudiniEngineBakeOption::ToActor;
 }
 
-const EPDGBakeSelectionOption 
+EPDGBakeSelectionOption 
 FHoudiniEngineEditor::StringToPDGBakeSelectionOption(const FString& InString) 
 {
 	if (InString == "All Outputs")
@@ -1843,7 +1874,7 @@ FHoudiniEngineEditor::StringToPDGBakeSelectionOption(const FString& InString)
 	return EPDGBakeSelectionOption::All;
 }
 
-const EPDGBakePackageReplaceModeOption
+EPDGBakePackageReplaceModeOption
 FHoudiniEngineEditor::StringToPDGBakePackageReplaceModeOption(const FString & InString)
 {
 	if (InString == "Create New Assets")
@@ -1855,7 +1886,7 @@ FHoudiniEngineEditor::StringToPDGBakePackageReplaceModeOption(const FString & In
 	return EPDGBakePackageReplaceModeOption::ReplaceExistingAssets;
 }
 
-const EPackageReplaceMode
+EPackageReplaceMode
 FHoudiniEngineEditor::PDGBakePackageReplaceModeToPackageReplaceMode(const EPDGBakePackageReplaceModeOption& InReplaceMode)
 {
 	EPackageReplaceMode Mode;

@@ -239,7 +239,7 @@ UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & Object
 	bRemoveOutputAfterBake = false;
 	bRecenterBakedActors = false;
 	bReplacePreviousBake = false;
-	
+	ActorBakeOption = EHoudiniEngineActorBakeOption::OneActorPerComponent;
 	bAllowPlayInEditorRefinement = false;
 #endif
 

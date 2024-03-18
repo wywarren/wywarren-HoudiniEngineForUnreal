@@ -398,7 +398,10 @@ FHoudiniOutputDetails::CreateLandscapeOutputWidget_Helper(
 					{
 						if (!InOutput.IsValid() || !HAC.IsValid() || !Landscape.IsValid())
 							return FReply::Handled();
-						
+
+						FHoudiniBakeSettings BakeSettings;
+						BakeSettings.SetFromHAC(HAC.Get());
+
 						FHoudiniOutputObject const* const FoundOutputObject = InOutput->GetOutputObjects().Find(OutputIdentifier);
 						if (FoundOutputObject)
 						{
@@ -414,6 +417,7 @@ FHoudiniOutputDetails::CreateLandscapeOutputWidget_Helper(
 								HAC.Get(),
 								InOutput.Get(),
 								HAC->BakeFolder.Path,
+								BakeSettings,
 								HAC->TemporaryCookFolder.Path,
 								LandscapeOutputBakeType,
 								AllOutputs);
@@ -1693,6 +1697,8 @@ FHoudiniOutputDetails::CreateCurveWidgets(
 				break;
 			}
 
+			FHoudiniBakeSettings BakeSettings;
+
 			FHoudiniOutputDetails::OnBakeOutputObject(
 				OutputCurveName,
 				SplineComponent.Get(),
@@ -1702,6 +1708,7 @@ FHoudiniOutputDetails::CreateCurveWidgets(
 				HAC.Get(),
 				InOutput.Get(),
 				HAC->BakeFolder.Path,
+				BakeSettings,
 				HAC->TemporaryCookFolder.Path,
 				EHoudiniLandscapeOutputBakeType::InValid,
 				AllOutputs);
@@ -2033,7 +2040,10 @@ FHoudiniOutputDetails::CreateStaticMeshAndMaterialWidgets(
 							TempCookFolder = OwningHAC->TemporaryCookFolder.Path;
 							BakeFolder = OwningHAC->BakeFolder.Path;
 						}
-						
+
+						FHoudiniBakeSettings BakeSettings;
+						BakeSettings.SetFromHAC(OwningHAC.Get());
+
 						FHoudiniGeoPartObject HoudiniGeoPartObject;
 						for (const auto& curHGPO : InOutput->GetHoudiniGeoPartObjects())
 						{
@@ -2053,6 +2063,7 @@ FHoudiniOutputDetails::CreateStaticMeshAndMaterialWidgets(
 							OwningHAC.Get(),
 							InOutput.Get(),
 							BakeFolder,
+							BakeSettings,
 							TempCookFolder,
 							EHoudiniLandscapeOutputBakeType::InValid,
 							AllOutputs);
@@ -4272,6 +4283,7 @@ FHoudiniOutputDetails::OnBakeOutputObject(
 	const UObject* OutputOwner,
 	UHoudiniOutput* InOutput,
 	const FString & BakeFolder,
+	const FHoudiniBakeSettings& BakeSettings,
 	const FString & TempCookFolder,
 	const EHoudiniLandscapeOutputBakeType & LandscapeBakeType,
 	const TArray<UHoudiniOutput*>& InAllOutputs)
@@ -4376,7 +4388,7 @@ FHoudiniOutputDetails::OnBakeOutputObject(
 				AActor* BakedActor;
 				USplineComponent* BakedSplineComponent;
 				FHoudiniEngineBakeUtils::BakeCurve(
-					HAC, SplineComponent, GWorld->GetCurrentLevel(), PackageParams, FName(PackageParams.ObjectName), BakedActor, BakedSplineComponent, BakeOutputs);
+					HAC, SplineComponent, GWorld->GetCurrentLevel(), PackageParams, BakeSettings, FName(PackageParams.ObjectName), BakedActor, BakedSplineComponent, BakeOutputs);
 
 				BakedObjectEntry.Actor = FSoftObjectPath(BakedActor).ToString();
 				BakedObjectEntry.BakedComponent = FSoftObjectPath(BakedSplineComponent).ToString();

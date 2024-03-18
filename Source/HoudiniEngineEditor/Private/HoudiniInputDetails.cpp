@@ -4138,12 +4138,15 @@ FHoudiniInputDetails::Helper_CreateCurveWidgetExpanded(
 			PackageParams.ObjectId = Index;
 			PackageParams.ObjectName = OwnerActor->GetActorNameOrLabel() + "InputHoudiniSpline" + FString::FromInt(Index);
 
+			FHoudiniBakeSettings BakeSettings;
+
 			if (bBakeToBlueprint)
 			{
 				FHoudiniEngineBakeUtils::BakeInputHoudiniCurveToBlueprint(
 					OuterHAC,
 					HoudiniSplineComponent,
 					PackageParams,
+					BakeSettings,
 					OwnerActor->GetWorld(), OwnerActor->GetActorTransform());
 			}
 			else
@@ -4152,6 +4155,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidgetExpanded(
 					OuterHAC,
 					HoudiniSplineComponent,
 					PackageParams,
+					BakeSettings,
 					OwnerActor->GetWorld(), OwnerActor->GetActorTransform());
 			}
 		}

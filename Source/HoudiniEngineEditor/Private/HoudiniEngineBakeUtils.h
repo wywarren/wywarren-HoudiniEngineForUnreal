@@ -70,9 +70,13 @@ enum class EHoudiniLandscapeOutputBakeType : uint8;
 // pass each of there individually which was hard to maintain.
 struct FHoudiniBakeSettings
 {
+	void SetFromHAC(UHoudiniAssetComponent * HAC);
+
 	bool bReplaceAssets = false;
 	bool bReplaceActors = false;
 	bool bRecenterBakedActors = false;
+	EHoudiniEngineActorBakeOption ActorBakeOption = EHoudiniEngineActorBakeOption::OneActorPerComponent;
+	FString DefaultBakeName = TEXT("{hda_actor_name}_{guid8}");
 };
 
 // Use this structure to return bake output data. Previously the code would
@@ -259,6 +263,7 @@ public:
 		USplineComponent* InSplineComponent,
 		ULevel* InLevel,
 		const FHoudiniPackageParams &PackageParams,
+		const FHoudiniBakeSettings& BakeSettings,
 		const FName& InActorName,
 		AActor*& OutActor,
 		USplineComponent*& OutSplineComponent,
@@ -285,6 +290,7 @@ public:
 		UHoudiniAssetComponent const* const InHoudiniAssetComponent,
 		UHoudiniSplineComponent * InHoudiniSplineComponent,
 		const FHoudiniPackageParams & PackageParams,
+		const FHoudiniBakeSettings& BakeSettings,
 		UWorld* WorldToSpawn,
 		const FTransform & SpawnTransform);
 
@@ -292,6 +298,7 @@ public:
 		UHoudiniAssetComponent const* const InHoudiniAssetComponent,
 		UHoudiniSplineComponent * InHoudiniSplineComponent,
 		const FHoudiniPackageParams & PackageParams,
+		const FHoudiniBakeSettings& BakeSettings,
 		UWorld* WorldToSpawn,
 		const FTransform & SpawnTransform);
 
@@ -493,10 +500,9 @@ public:
 	// Returns true if the underlying bake function (for example, BakeHoudiniActorToActors, returns true (or a valid UObject*))
 	static bool BakeHoudiniAssetComponent(
 		UHoudiniAssetComponent* InHACToBake,
-		bool bInReplacePreviousBake,
+		FHoudiniBakeSettings & BakeSettings,
 		EHoudiniEngineBakeOption InBakeOption,
-		bool bInRemoveHACOutputOnSuccess,
-		bool bInRecenterBakedActors);
+		bool bInRemoveHACOutputOnSuccess);
 
 	static bool BakeHDAToActors(
 		UHoudiniAssetComponent* HoudiniAssetComponent, 
@@ -742,7 +748,7 @@ public:
 	// it is not set in OutActor
 	// If bRenamePendingKillActor is true, then if a pending kill actor call InBakeActorName is found it is renamed
 	// (uniquely) with a _Pending_Kill suffix (regardless of bInNoPendingKillActors).
-	static bool FindDesiredBakeActorFromBakeActorName(
+	static bool FindBakedActor(
 		const FString& InBakeActorName,
 		const TSubclassOf<AActor>& InBakeActorClass,
 		ULevel* InLevel,
@@ -757,7 +763,7 @@ public:
 	// as OutFoundActor. Otherwise return InFallbackActor as OutFoundActor.
 	// bOutHasBakeActorName indicates if the output has the unreal_bake_actor attribute set.
 	// OutFoundActor is the actor that was found (if one was found)
-	static bool FindUnrealBakeActor(
+	static void FindUnrealBakeActor(
 		const FHoudiniOutputObject& InOutputObject,
 		const FHoudiniBakedOutputObject& InBakedOutputObject,
 		const TArray<FHoudiniEngineBakedActor>& InAllBakedActors,
@@ -1011,17 +1017,35 @@ public:
 	// Helper function for getting the appropriate ActorFactory by unreal_bake_actor_class attribute, failing that by
 	// the specified ActorFactoryClass, and lastly by the asset that would be spawned
 	// OutActorClass is set to the Actor UClass specified by InActorClassName or null if InActorClassName is invalid.
-	static UActorFactory* GetActorFactory(const FName& InActorClassName, TSubclassOf<AActor>& OutActorClass, const TSubclassOf<UActorFactory>& InFactoryClass=nullptr, UObject* InAsset=nullptr);
+	static UActorFactory* GetActorFactory(
+		const FName& InActorClassName,
+		const FHoudiniBakeSettings& BakeSettings,
+		TSubclassOf<AActor>& OutActorClass, 
+		const TSubclassOf<UActorFactory>& InFactoryClass=nullptr, 
+		UObject* InAsset=nullptr);
 
 	// Helper function for getting the appropriate ActorFactory by unreal_bake_actor_class attribute (read from
 	// InOutputObject.CachedAttributes), failing that by the specified ActorFactoryClass, and lastly by the asset that
 	// would be spawned
 	// OutActorClass is set to the Actor UClass specified by unreal_bake_actor_class or null if unreal_bake_actor_class
 	// is not set or invalid.
-	static UActorFactory* GetActorFactory(const FHoudiniOutputObject& InOutputObject, TSubclassOf<AActor>& OutActorClass, const TSubclassOf<UActorFactory>& InFactoryClass=nullptr, UObject* InAsset=nullptr);
+	static UActorFactory* GetActorFactory(
+		const FHoudiniOutputObject& InOutputObject, 
+		const FHoudiniBakeSettings& BakeSettings, 
+		TSubclassOf<AActor>& OutActorClass, 
+		const TSubclassOf<UActorFactory>& InFactoryClass=nullptr, 
+		UObject* InAsset=nullptr);
 
 	// Helper function that spawns an actor via InActorFactory. 
-	static AActor* SpawnBakeActor(UActorFactory* const InActorFactory, UObject* const InAsset, ULevel* const InLevel, const FTransform& InTransform, UHoudiniAssetComponent const* const InHAC, const TSubclassOf<AActor>& InActorClass=nullptr, const FActorSpawnParameters& InSpawnParams=FActorSpawnParameters());
+	static AActor* SpawnBakeActor(
+		UActorFactory* InActorFactory, 
+		UObject* InAsset, 
+		ULevel* InLevel,
+		const FHoudiniBakeSettings& BakeSettings,
+		const FTransform& InTransform, 
+		const UHoudiniAssetComponent * InHAC, 
+		const TSubclassOf<AActor>& InActorClass=nullptr, 
+		const FActorSpawnParameters& InSpawnParams=FActorSpawnParameters());
 
 	// Called by SpawnBakeActor after the actor was successfully spawned. Used to copy any settings we need from the
 	// HAC or its owner to the spawned actor and/or its root component.

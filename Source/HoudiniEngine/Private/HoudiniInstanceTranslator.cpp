@@ -2084,15 +2084,15 @@ FHoudiniInstanceTranslator::CreateOrUpdateInstancer(
 	TArray<USceneComponent*>& NewComponents,
 	TArray<AActor*>& OldActors,
 	TArray<AActor*>& NewActors,
-	const bool InIsSplitMeshInstancer,
-	const bool InIsFoliageInstancer,
+	bool InIsSplitMeshInstancer,
+	bool InIsFoliageInstancer,
 	const TArray<UMaterialInterface *>& InstancerMaterials,
 	const TArray<int32>& OriginalInstancerObjectIndices,
 	int32& FoliageTypeCount,
 	UFoliageType*& FoliageTypeUsed,
 	UWorld*& WorldUsed,
-	const bool bForceHISM,
-	const bool bForceInstancer)
+	bool bForceHISM,
+	bool bForceInstancer)
 {
 	// See if we can reuse the old component
 	InstancerComponentType OldType = GetComponentsType(OldComponents);
