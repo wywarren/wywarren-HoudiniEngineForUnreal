@@ -25,9 +25,13 @@
 */
 
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+#include "GeometryCollection/GeometryCollectionActor.h"
+#include "GeometryCollection/GeometryCollectionComponent.h"
 #include "GeometryCollection/GeometryCollectionObject.h"
 #else
-#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionObject.h"
+#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionActor.h"
+#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionComponent.h"
+#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionObject.h"	
 #endif
 #include "HoudiniEditorTestGeometryCollections.h"
 #include "HoudiniParameterToggle.h"
@@ -78,13 +82,8 @@ bool FHoudiniEditorTestGeometryCollections::RunTest(const FString& Parameters)
 	}));
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Step 1: Bake the output using ungroup components. We should have one actor per outputs (so 2 in this case), and one component per
-	// actor
+	// Bake the geometry actor
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// TODO: Current Geometry Collections are not baking, uncomment this later.
-
-#if 0
 
 	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
 	{
@@ -94,74 +93,27 @@ bool FHoudiniEditorTestGeometryCollections::RunTest(const FString& Parameters)
 
 		TArray<FHoudiniBakedOutput>& BakedOutputs = Context->HAC->GetBakedOutputs();
 		// There should be two outputs as we have two meshes.
-		HOUDINI_TEST_EQUAL_ON_FAIL(BakedOutputs.Num(), 1, return true);
+		HOUDINI_TEST_EQUAL_ON_FAIL(BakedOutputs.Num(), 3, return true);
 
 		// Go through each output and check we have two actors with one mesh component each.
-		TSet<FString> ActorNames;
+		TArray<AGeometryCollectionActor*> GeometryActors;
 		for (auto& BakedOutput : BakedOutputs)
 		{
 			for (auto It : BakedOutput.BakedOutputObjects)
 			{
 				FHoudiniBakedOutputObject& OutputObject = It.Value;
 
-				AActor* Actor = Cast<AActor>(StaticLoadObject(UObject::StaticClass(), nullptr, *OutputObject.Actor));
-				HOUDINI_TEST_NOT_NULL_ON_FAIL(Actor, continue);
-
-				TArray<UStaticMeshComponent*> Components;
-				Actor->GetComponents(Components);
-				HOUDINI_TEST_EQUAL_ON_FAIL(Components.Num(), 1, continue);
-				HOUDINI_TEST_EQUAL_ON_FAIL(Components[0]->IsA<UStaticMeshComponent>(), 1, continue);
-
-				ActorNames.Add(*OutputObject.Actor);
+				AGeometryCollectionActor* Actor = Cast<AGeometryCollectionActor>(StaticLoadObject(UObject::StaticClass(), nullptr, *OutputObject.Actor));
+				if (IsValid(Actor))
+					GeometryActors.Add(Actor);
 			}
 		}
 
-		HOUDINI_TEST_EQUAL_ON_FAIL(ActorNames.Num(), 1, return true);
+		HOUDINI_TEST_EQUAL_ON_FAIL(GeometryActors.Num(), 1, return true);
 
 		return true;
 	}));
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Part 2: Test baking multiple components to a single actor
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
-	{
-		FHoudiniBakeSettings BakeSettings;
-		BakeSettings.ActorBakeOption = EHoudiniEngineActorBakeOption::OneActorPerHDA;
-		FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(Context->HAC, BakeSettings, Context->HAC->HoudiniEngineBakeOption, Context->HAC->bRemoveOutputAfterBake);
-
-		TArray<FHoudiniBakedOutput>& BakedOutputs = Context->HAC->GetBakedOutputs();
-		// There should be two outputs as we have two meshes.
-		HOUDINI_TEST_EQUAL_ON_FAIL(BakedOutputs.Num(), 1, return true);
-
-		// Go through each output and check we have two actors with one mesh component each.
-		TSet<FString> ActorNames;
-		for (auto& BakedOutput : BakedOutputs)
-		{
-			for (auto It : BakedOutput.BakedOutputObjects)
-			{
-				FHoudiniBakedOutputObject& OutputObject = It.Value;
-
-				AActor* Actor = Cast<AActor>(StaticLoadObject(UObject::StaticClass(), nullptr, *OutputObject.Actor));
-				HOUDINI_TEST_NOT_NULL_ON_FAIL(Actor, continue);
-
-				TArray<UStaticMeshComponent*> Components;
-				Actor->GetComponents(Components);
-				HOUDINI_TEST_EQUAL_ON_FAIL(Components.Num(), 1, continue);
-				HOUDINI_TEST_EQUAL_ON_FAIL(Components[0]->IsA<UStaticMeshComponent>(), 1, continue);
-
-				ActorNames.Add(*OutputObject.Actor);
-			}
-		}
-
-		HOUDINI_TEST_EQUAL_ON_FAIL(ActorNames.Num(), 1, return true);
-
-		return true;
-	}));
-
-#endif
 	return true;
 }
 

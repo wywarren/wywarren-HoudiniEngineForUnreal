@@ -33,6 +33,15 @@
 #include "HoudiniOutput.h"
 #include "HoudiniStaticMesh.h"
 #include "HoudiniStaticMeshComponent.h"
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+#include "GeometryCollection/GeometryCollectionActor.h"
+#include "GeometryCollection/GeometryCollectionComponent.h"
+#include "GeometryCollection/GeometryCollectionObject.h"
+#else
+#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionActor.h"
+#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionComponent.h"
+#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionObject.h"	
+#endif
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
@@ -170,16 +179,20 @@ struct FHoudiniEditorUnitTestUtils
 		return  Results;
 	}
 
+	// Finds an actor by name.
 	static AActor* GetActorWithName(UWorld* World, FString& Name);
 
+	// Finds an HAC parameter of a specific class.
 	static UHoudiniParameter * GetTypedParameter(UHoudiniAssetComponent * HAC, UClass * Class, const char* Name);
 
+	// Finds an HAC parameter of a specific class.
 	template <typename TYPED_PARAMETER>
 	static TYPED_PARAMETER*  GetTypedParameter(UHoudiniAssetComponent* HAC, const char * Name)
 	{
 		return Cast<TYPED_PARAMETER>(GetTypedParameter(HAC, TYPED_PARAMETER::StaticClass(), Name));
 	}
 
+	// Returns only components on the exact type
 	template<typename COMPONENT>
 	static TArray<COMPONENT *> FilterComponents(const TArray<UActorComponent*> & Components)
 	{
@@ -188,6 +201,42 @@ struct FHoudiniEditorUnitTestUtils
 		{
 			if (Component->GetClass() == COMPONENT::StaticClass())
 				Results.Add((COMPONENT*)Component);
+		}
+		return Results;
+	}
+
+	// Returns all the output actors in all the outputs.
+	static TArray<AActor*> GetOutputActors(TArray<FHoudiniBakedOutput>& BakedOutputs);
+
+	// Returns only the actors that are based off a given type.
+	template<typename ACTORCLASS>
+	static TArray<ACTORCLASS*> FilterActors(const TArray<AActor*> & Actors)
+	{
+		TArray<ACTORCLASS*> Results;
+		for(AActor * Actor : Actors)
+			if (Actor->IsA<ACTORCLASS>())
+				Results.Add(Cast<ACTORCLASS>(Actor));
+		return Results;
+	}
+
+	// Filters out those actors that have components of the given type.
+	template<typename COMPONENT_CLASS>
+	static TArray<AActor*> FilterActorsWithComponent(TArray<AActor*>& Actors)
+	{
+		TArray<AActor*> Results;
+		for (auto Actor : Actors)
+		{
+
+			TArray<UActorComponent*> Components;
+			Actor->GetComponents(Components);
+			for (auto Component : Components)
+			{
+				if (Component->IsA<COMPONENT_CLASS>())
+				{
+					Results.Add(Actor);
+					break;
+				}
+			}
 		}
 		return Results;
 	}

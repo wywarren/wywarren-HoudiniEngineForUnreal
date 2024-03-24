@@ -708,13 +708,7 @@ FHoudiniOutputTranslator::RemovePreviousOutputs(UHoudiniAssetComponent* HAC)
 {
 	for(auto Output : HAC->Outputs)
 	{
-		auto & InputObjects = Output->OutputObjects;
-		for (auto It : InputObjects)
-		{
-			FHoudiniOutputObject* FoundOutputObject = &It.Value;
-			FoundOutputObject->DestroyCookedData();
-		}
-		InputObjects.Empty();
+			Output->DestroyCookedData();
 	}
 	HAC->Outputs.Empty();
 }
@@ -2726,7 +2720,7 @@ FHoudiniOutputTranslator::ClearAndRemoveOutputs(UHoudiniAssetComponent *InHAC, T
 		}
 		else
 		{
-			ClearOutput(OldOutput);
+			OldOutput->DestroyCookedData();
 		}
 	}
 
@@ -2759,29 +2753,6 @@ FHoudiniOutputTranslator::ClearOutput(UHoudiniOutput* Output)
 				Landscape->UnregisterAllComponents();
 				Landscape->Destroy();
 				LandscapePtr->SetSoftPtr(nullptr);
-				
-				// if (Output->IsLandscapeWorldComposition()) 
-				// {
-				// 	TSoftObjectPtr<ALandscapeProxy> LandscapeSoftPtr = LandscapePtr->GetSoftPtr();
-				//
-				// 	FString SoftPtrPath = LandscapeSoftPtr.ToSoftObjectPath().ToString();
-				//
-				// 	FString FileName = FPaths::GetBaseFilename(SoftPtrPath);
-				// 	FString FileDirectory = FPaths::GetPath(SoftPtrPath);
-				//
-				// 	FString ContentPath = FPaths::ProjectContentDir();
-				// 	FString ContentFullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForWrite(*ContentPath);
-				//
-				// 	FString AbsoluteFilePath = ContentFullPath + FileDirectory.Mid(5, FileDirectory.Len() - 5) + "/" + FPaths::GetBaseFilename(FileName) + ".umap";
-				//
-				// 	FPlatformFileManager::Get().GetPlatformFile().FileExists(*(AbsoluteFilePath));
-				//
-				// 	FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*(AbsoluteFilePath));
-				// }
-				// else 
-				// {
-
-				// }
 			}
 		}
 		break;
@@ -2792,18 +2763,18 @@ FHoudiniOutputTranslator::ClearOutput(UHoudiniOutput* Output)
 			{
 				// Note: don't delete the actual components created by Unreal - they are "owned" by Unreal-  instead expcility remove the foliage types.
 
-                if (IsValid(OutputObject.Value.FoliageType))
-                {
-				    if (IsValid(OutputObject.Value.World))
-				    {
+				if (IsValid(OutputObject.Value.FoliageType))
+        {
+				  if (IsValid(OutputObject.Value.World))
+				  {
 						FHoudiniFoliageUtils::RemoveFoliageTypeFromWorld(OutputObject.Value.World, OutputObject.Value.FoliageType);
-				    }
+				  }
 					else
-				    {
-                        HOUDINI_LOG_ERROR(TEXT("Trying to delete Foliage Type, but no World was set. "
+				  {
+						HOUDINI_LOG_ERROR(TEXT("Trying to delete Foliage Type, but no World was set. "
                             "Most likely this foliage was cooked with a previous vertion of the Houdini Plugin, try deleting the foliage manually."));
-				    }
-				}
+				  }
+        }
 			}
 		}
 		break;
