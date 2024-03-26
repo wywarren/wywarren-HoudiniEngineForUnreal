@@ -34,9 +34,18 @@ class FHoudiniEditorTestLandscapes
 {
 public:
 
-    static TArray<FString> CheckHeightFieldValues(TArray<float>& Results, TArray<float>& Expected, const FIntPoint& Size, float AbsError = 0.01f, int MaxErrors = 20);
-    static TArray<float> GetLandscapeValues(ALandscape* LandscapeActor);
-    static TArray<float> CreateExpectedLandscapeValues(const FIntPoint& ExpectedSize, float HeightScale);
+    // Functions for getting and check height values.
+    static TArray<FString> CheckLandscapeValues(TArray<float>& Results, TArray<float>& Expected, const FIntPoint& Size, float AbsError = 0.01f, int MaxErrors = 20);
+    static TArray<float> GetLandscapeHeightValues(ALandscape* LandscapeActor);
+    static TArray<float> CreateExpectedHeightValues(const FIntPoint& ExpectedSize, float HeightScale);
+
+    // Functions for getting and setting paint layers
+    static TArray<float> GetLandscapePaintLayerValues(ALandscape* LandscapeActor, const FString & LayerName);
+    static TArray<float> CreateExpectedPaintLayer1Values(const FIntPoint& ExpectedSize);
+    static TArray<float> CreateExpectedPaintLayer2Values(const FIntPoint& ExpectedSize);
+
+    static ULandscapeLayerInfoObject* GetLayerInfo(ALandscape* LandscapeActor, const FString& LayerName);
+
     static float GetMin(const TArray<float> & Values);
     static float GetMax(const TArray<float> & Values);
     static TArray<float> Resize(TArray<float>& In, const FIntPoint& OriginalSize, const FIntPoint& NewSize);
