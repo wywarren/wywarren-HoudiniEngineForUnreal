@@ -469,6 +469,7 @@ bool FHoudiniEditorTestLandscapes_TargetLayers::RunTest(const FString& Parameter
 		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterFloat, "height_scale", 1.0f, 0);
 		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "paint_layer_1", true, 0);
 		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "paint_layer_2", true, 0);
+		// TODO: Added test for visibility layer too
 		Context->StartCookingHDA();
 		return true;
 	}));

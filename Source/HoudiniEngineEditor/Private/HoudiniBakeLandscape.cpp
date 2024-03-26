@@ -304,7 +304,7 @@ FHoudiniLandscapeBake::BakeLandscape(
 
 TArray<FHoudiniEngineBakedActor>
 FHoudiniLandscapeBake::MoveCookedToBakedLandscapes(
-	const UHoudiniAssetComponent* HoudiniAssetComponent,
+	const UHoudiniAssetComponent* HAC,
 	const FName & InFallbackWorldOutlinerFolder,
 	const TArray<UHoudiniOutput*>& InOutputs,
 	FHoudiniEngineBakeState& InBakeState,
@@ -343,7 +343,7 @@ FHoudiniLandscapeBake::MoveCookedToBakedLandscapes(
 			FHoudiniPackageParams PackageParams;
 			FHoudiniAttributeResolver Resolver;
 			FHoudiniEngineBakeUtils::ResolvePackageParamsWithResolver(
-				HoudiniAssetComponent,
+				HAC,
 				HoudiniOutput,
 				Elem.Key,
 				Elem.Value,
@@ -367,7 +367,7 @@ FHoudiniLandscapeBake::MoveCookedToBakedLandscapes(
 			ProcessedLandscapes.Add(LayerOutput->Landscape);
 
 			//---------------------------------------------------------------------------------------------------------------------------
-			// Bake all the LayerInfoObjects, and patch up the result inside the landscape.
+			// Bake all the LayerInfoObjects, if they were not specified by the user, and patch up the result inside the landscape.
 			//---------------------------------------------------------------------------------------------------------------------------
 
 			ULandscapeInfo* LandscapeInfo = LayerOutput->Landscape->GetLandscapeInfo();
@@ -377,18 +377,23 @@ FHoudiniLandscapeBake::MoveCookedToBakedLandscapes(
 			{
 				ULandscapeLayerInfoObject* CookedLayerInfoObject = LayerOutput->LayerInfoObjects[Index];
 
-				ULandscapeLayerInfoObject * BakedLayerInfo = CreateBakedLandscapeLayerInfoObject(
-					PackageParams,
-					LayerOutput->Landscape,
-					CookedLayerInfoObject,
-					BakedObjectData);
+				FString TempFolder = HAC->GetTemporaryCookFolderOrDefault();
 
-				LandscapeInfo->ReplaceLayer(CookedLayerInfoObject, BakedLayerInfo);
+				if (CookedLayerInfoObject->GetPathName().StartsWith(TempFolder))
+				{
+					ULandscapeLayerInfoObject* BakedLayerInfo = CreateBakedLandscapeLayerInfoObject(
+						PackageParams,
+						LayerOutput->Landscape,
+						CookedLayerInfoObject,
+						BakedObjectData);
 
-				FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
-				LayerSettings.LayerInfoObj = BakedLayerInfo;
+					LandscapeInfo->ReplaceLayer(CookedLayerInfoObject, BakedLayerInfo);
 
-				BakedOutputObject.LandscapeLayers.Emplace(BakedLayerInfo->LayerName, FSoftObjectPath(BakedLayerInfo).ToString());
+					FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
+					LayerSettings.LayerInfoObj = BakedLayerInfo;
+
+					BakedOutputObject.LandscapeLayers.Emplace(BakedLayerInfo->LayerName, FSoftObjectPath(BakedLayerInfo).ToString());
+				}
 			}
 
 			LandscapeInfo->LandscapeActor->ForceLayersFullUpdate();
