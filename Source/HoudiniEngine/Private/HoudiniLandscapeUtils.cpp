@@ -526,15 +526,15 @@ FHoudiniLandscapeUtils::ResolveLandscapes(
 		TArray<UPackage*> CreatedPackages;
 
 		PartForSizing->MaterialInstance = AssignGraphicsMaterialsToLandscape(
-					LandscapeActor, 
-					PartForSizing->Materials, 
-					PackageParams, 
-					CreatedPackages);
+			LandscapeActor, 
+			PartForSizing->Materials, 
+			PackageParams, 
+			CreatedPackages);
 
 		LandscapeActor->CreateLandscapeInfo();
 
 		TArray<ULandscapeLayerInfoObject*> CreateLayerInfoObjects =
-									CreateTargetLayerInfoAssets(LandscapeActor, PackageParams, PartsForLandscape, CreatedPackages);
+			CreateTargetLayerInfoAssets(LandscapeActor, PackageParams, PartsForLandscape, CreatedPackages);
 
 		//---------------------------------------------------------------------------------------------------------------------------------
 		// Create an empty, zeroed height field. The actual height field, if supplied, will be applied after the landscape is created
@@ -806,22 +806,21 @@ TArray<ULandscapeLayerInfoObject*> FHoudiniLandscapeUtils::CreateTargetLayerInfo
 					FString PackagePath = LayerPackageParams.GetPackagePath();
 					UPackage* Package = nullptr;
 					Layer = FindOrCreateLandscapeLayerInfoObject(TargetLayerName, PackagePath, PackageName, Package);
-					if (IsValid(Layer))
-					{
-						Results.Add(Layer);
-						CreatedPackages.Add(Package);
-					}
-
+					CreatedPackages.Add(Package);
 				}
 			}
 
 			if (IsValid(Layer))
 			{
+				Results.Add(Layer);
 				LandscapeProxy->EditorLayerSettings.Add(FLandscapeEditorLayerSettings(Layer));
+				TargetLayerSettings.LayerInfoObj = Layer;
 			}
 
 		}
 	}
+
+	LandscapeInfo->UpdateLayerInfoMap(LandscapeProxy, false);
 
 	return Results;
 }

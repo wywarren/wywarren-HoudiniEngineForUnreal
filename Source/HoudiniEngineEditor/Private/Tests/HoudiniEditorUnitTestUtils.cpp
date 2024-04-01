@@ -48,6 +48,14 @@ UHoudiniAssetComponent* FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(
 	return HAC;
 }
 
+
+bool FHoudiniEditorUnitTestUtils::IsTemporary(UHoudiniAssetComponent* HAC, const FString& ObjectPath)
+{
+	FString TempFolder = HAC->GetTemporaryCookFolderOrDefault();
+	bool bIsTempAsset = ObjectPath.StartsWith(TempFolder);
+	return bIsTempAsset;
+}
+
 AActor* FHoudiniEditorUnitTestUtils::GetActorWithName(UWorld* World, FString& Name)
 {
 	if (!IsValid(World))

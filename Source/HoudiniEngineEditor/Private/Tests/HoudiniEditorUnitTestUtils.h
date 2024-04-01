@@ -240,6 +240,9 @@ struct FHoudiniEditorUnitTestUtils
 		}
 		return Results;
 	}
+
+	// Checks if an object was saved to the HAC's temp folder.
+	static bool IsTemporary(UHoudiniAssetComponent * HAC, const FString & ObjectPath);
 };
 
 
