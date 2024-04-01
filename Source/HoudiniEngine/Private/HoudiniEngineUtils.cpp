@@ -5630,6 +5630,12 @@ bool FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(const HAPI_NodeId& GeoId
 		GeoId, PartId,
 		TCHAR_TO_UTF8(*AttribName), AttributeOwner, &OutAttributeInfo), false);
 
+	if (!OutAttributeInfo.exists)
+	{
+		OutData.SetNum(0);
+		return false;
+	}
+
 	if (OutAttributeInfo.storage == HAPI_STORAGETYPE_INT)
 	{
 		OutData.SetNumZeroed(1);

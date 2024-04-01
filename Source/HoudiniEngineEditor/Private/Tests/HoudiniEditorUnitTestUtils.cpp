@@ -244,5 +244,24 @@ bool FHoudiniTestContext::IsValid()
 	return HAC != nullptr;
 }
 
+TArray<AActor*> FHoudiniEditorUnitTestUtils::GetOutputActors(TArray<FHoudiniBakedOutput>& BakedOutputs)
+{
+	TArray<AActor*> Results;
+	for(auto & BakeOutput : BakedOutputs)
+	{
+		for(auto & OutputObject : BakeOutput.BakedOutputObjects)
+		{
+			if (!OutputObject.Value.Actor.IsEmpty())
+			{
+				AActor* Actor = Cast<AActor>(StaticLoadObject(UObject::StaticClass(), nullptr, *OutputObject.Value.Actor));
+				if (IsValid(Actor))
+				{
+					Results.Add(Actor);
+				}
+			}
+		}
+	}
+	return Results;
+}
 
 #endif

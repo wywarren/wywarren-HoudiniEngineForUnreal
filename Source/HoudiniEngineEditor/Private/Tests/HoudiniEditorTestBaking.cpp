@@ -171,74 +171,59 @@ bool FHoudiniEditorTestBakingGrouped::RunTest(const FString& Parameters)
 	Context->HAC->bOverrideGlobalProxyStaticMeshSettings = true;
 	Context->HAC->bEnableProxyStaticMeshOverride = false;
 
-		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
-		{
-			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "meshes", true, 0);
-			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "instance_meshes", true, 0);
-			SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "instance_actors", true, 0);
+	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+	{
+		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "meshes", true, 0);
+		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "instance_meshes", true, 0);
+		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "instance_actors", true, 0);
+		SET_HDA_PARAMETER(Context->HAC, UHoudiniParameterToggle, "geometry_collections", true, 0);
+		Context->StartCookingHDA();
+		return true;
+	}));
 
-			Context->StartCookingHDA();
-			return true;
-		}));
+	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+	{
+		TArray<UHoudiniOutput*> Outputs;
+		Context->HAC->GetOutputs(Outputs);
 
-		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
-		{
-			TArray<UHoudiniOutput*> Outputs;
-			Context->HAC->GetOutputs(Outputs);
-
-			// We should have two outputs, two meshes
-			HOUDINI_TEST_EQUAL_ON_FAIL(Outputs.Num(), 4, return true);
-			TArray<UStaticMeshComponent*> StaticMeshOutputs = FHoudiniEditorUnitTestUtils::GetOutputsWithComponent<UStaticMeshComponent>(Outputs);
-			HOUDINI_TEST_EQUAL_ON_FAIL(StaticMeshOutputs.Num(), 2, return true);
-			TArray<UInstancedStaticMeshComponent*> InstancedStaticMeshOutputs = FHoudiniEditorUnitTestUtils::GetOutputsWithComponent<UInstancedStaticMeshComponent>(Outputs);
-			HOUDINI_TEST_EQUAL_ON_FAIL(InstancedStaticMeshOutputs.Num(), 1, return true);
-
-			return true;
-		}));
+		// We should have two outputs, two meshes
+		HOUDINI_TEST_EQUAL(Outputs.Num(), 7);
+		TArray<UStaticMeshComponent*> StaticMeshOutputs = FHoudiniEditorUnitTestUtils::GetOutputsWithComponent<UStaticMeshComponent>(Outputs);
+		HOUDINI_TEST_EQUAL(StaticMeshOutputs.Num(), 2);
+		TArray<UInstancedStaticMeshComponent*> InstancedStaticMeshOutputs = FHoudiniEditorUnitTestUtils::GetOutputsWithComponent<UInstancedStaticMeshComponent>(Outputs);
+		HOUDINI_TEST_EQUAL(InstancedStaticMeshOutputs.Num(), 1);
+		auto GeometryCollections = FHoudiniEditorUnitTestUtils::GetOutputsWithActor<AGeometryCollectionActor>(Outputs);
+		HOUDINI_TEST_EQUAL(GeometryCollections.Num(), 1);
+		return true;
+	}));
 
 
+	AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
+	{
+		FHoudiniBakeSettings BakeSettings;
+		BakeSettings.ActorBakeOption = EHoudiniEngineActorBakeOption::OneActorPerHDA;
+		FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(Context->HAC, BakeSettings, Context->HAC->HoudiniEngineBakeOption, Context->HAC->bRemoveOutputAfterBake);
 
-		AddCommand(new FHoudiniLatentTestCommand(Context, [this, Context]()
-		{
-			FHoudiniBakeSettings BakeSettings;
-			BakeSettings.ActorBakeOption = EHoudiniEngineActorBakeOption::OneActorPerHDA;
-			FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(Context->HAC, BakeSettings, Context->HAC->HoudiniEngineBakeOption, Context->HAC->bRemoveOutputAfterBake);
+		TArray<FHoudiniBakedOutput>& BakedOutputs = Context->HAC->GetBakedOutputs();
+		// There should be two outputs as we have two meshes.
+		HOUDINI_TEST_EQUAL_ON_FAIL(BakedOutputs.Num(), 7, return true);
 
-			TArray<FHoudiniBakedOutput>& BakedOutputs = Context->HAC->GetBakedOutputs();
-			// There should be two outputs as we have two meshes.
-			HOUDINI_TEST_EQUAL_ON_FAIL(BakedOutputs.Num(), 4, return true);
+		// Gather outputs
 
-			// Go through each output and check we have two actors with one mesh component each.
-			TSet<FString> ActorNames;
-			for (auto& BakedOutput : BakedOutputs)
-			{
-				for (auto It : BakedOutput.BakedOutputObjects)
-				{
-					FHoudiniBakedOutputObject& OutputObject = It.Value;
+		TArray<AActor*> Actors = FHoudiniEditorUnitTestUtils::GetOutputActors(BakedOutputs);
 
-					AActor* Actor = Cast<AActor>(StaticLoadObject(UObject::StaticClass(), nullptr, *OutputObject.Actor));
-					HOUDINI_TEST_NOT_NULL_ON_FAIL(Actor, continue);
+		// There should be one geometry collection actor.
+		TArray<AGeometryCollectionActor*> GeometryCollectionActors = FHoudiniEditorUnitTestUtils::FilterActors<AGeometryCollectionActor>(Actors);
+		HOUDINI_TEST_EQUAL_ON_FAIL(GeometryCollectionActors.Num(), 1, return true);
 
-					TArray<UActorComponent*> Components;
-					Actor->GetComponents(Components);
+		TArray<AActor*> StaticMeshActors = FHoudiniEditorUnitTestUtils::FilterActorsWithComponent<UStaticMeshComponent>(Actors);
+		HOUDINI_TEST_EQUAL_ON_FAIL(StaticMeshActors.Num(), 4, return true);
 
-					TArray<UStaticMeshComponent*> MeshComponents = FHoudiniEditorUnitTestUtils::FilterComponents<UStaticMeshComponent>(Components);
-					HOUDINI_TEST_EQUAL_ON_FAIL(MeshComponents.Num(), 2, continue);
-					HOUDINI_TEST_EQUAL_ON_FAIL(MeshComponents[0]->IsA<UStaticMeshComponent>(), true, continue);
-					HOUDINI_TEST_EQUAL_ON_FAIL(MeshComponents[1]->IsA<UStaticMeshComponent>(), true, continue);
+		TArray<AActor*> InstancedStaticMeshActors = FHoudiniEditorUnitTestUtils::FilterActorsWithComponent<UInstancedStaticMeshComponent>(Actors);
+		HOUDINI_TEST_EQUAL_ON_FAIL(InstancedStaticMeshActors.Num(), 4, return true);
 
-					TArray<UInstancedStaticMeshComponent*> InstancedComponents = FHoudiniEditorUnitTestUtils::FilterComponents<UInstancedStaticMeshComponent>(Components);;
-					HOUDINI_TEST_EQUAL_ON_FAIL(InstancedComponents.Num(), 1, continue);
-					HOUDINI_TEST_EQUAL_ON_FAIL(InstancedComponents[0]->IsA<UInstancedStaticMeshComponent>(), true, continue);
-
-					ActorNames.Add(*OutputObject.Actor);
-				}
-			}
-
-			HOUDINI_TEST_EQUAL_ON_FAIL(ActorNames.Num(), 1, return true);
-
-			return true;
-		}));
+		return true;
+	}));
 
 	return true;
 }

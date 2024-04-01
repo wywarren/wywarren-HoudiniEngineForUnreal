@@ -234,8 +234,9 @@ FHoudiniGeometryCollectionTranslator::SetupGeometryCollectionComponentFromOutput
 		OutputObject.OutputComponents.Empty();
 		if (IsValid(GeometryCollectionComponent))
 		{
-			OutputObject.OutputComponents.Add(GeometryCollectionComponent);
+			OutputObject.OutputActors.Add(GeometryCollectionComponent->GetOwner());
 		}
+
 
 		// See if we need to force the generation of convex hull data for the GC
 		if (GeometryCollection::SizeSpecific::UsesImplicitCollisionType(GeometryCollection->SizeSpecificData, EImplicitTypeEnum::Chaos_Implicit_Convex)
@@ -553,8 +554,7 @@ FHoudiniGeometryCollectionTranslator::GetGeometryCollectionNameAttribute(
 	TArray<FString> StrData;
 	StrData.Empty();
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(GeoId, PartId,
-	HAPI_UNREAL_ATTRIB_GC_NAME, AttriInfo, StrData, 1))
+	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_NAME, AttriInfo, StrData, 1))
 	{
 		if (StrData.Num() > 0)
 		{

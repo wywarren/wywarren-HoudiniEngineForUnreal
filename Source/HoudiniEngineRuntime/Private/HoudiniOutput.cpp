@@ -1321,7 +1321,9 @@ void FHoudiniOutputObject::DestroyCookedData()
 	for (auto Component : OutputComponents)
 	{
 		if (IsValid(Component))
+		{
 			ComponentsToDestroy.Add(Component);
+		}
 	}
 	OutputComponents.Empty();
 
@@ -1366,8 +1368,19 @@ void FHoudiniOutputObject::DestroyCookedData()
 
 	for (auto Actor : OutputActors)
 	{
+		Actor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 		Actor->Destroy();
 	}
 	OutputActors.Empty();
 }
 
+
+void UHoudiniOutput::DestroyCookedData()
+{
+	for (auto It : OutputObjects)
+	{
+		FHoudiniOutputObject* FoundOutputObject = &It.Value;
+		FoundOutputObject->DestroyCookedData();
+	}
+	OutputObjects.Empty();
+}
