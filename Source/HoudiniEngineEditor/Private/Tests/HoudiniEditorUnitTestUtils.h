@@ -31,6 +31,8 @@
 #include "HoudiniEditorTestUtils.h"
 #include "HoudiniEngineBakeUtils.h"
 #include "HoudiniOutput.h"
+#include "HoudiniStaticMesh.h"
+#include "HoudiniStaticMeshComponent.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
@@ -79,6 +81,26 @@ struct FHoudiniEditorUnitTestUtils
 						COMPONENT_TYPE* Out = Cast<COMPONENT_TYPE>(OutputObject.Value.OutputComponents[0]);
 						Results.Add(Out);
 					}
+				}
+			}
+		}
+		return  Results;
+	}
+
+	// Helper function to returns proxy mesh components from an output.
+	static inline TArray<UHoudiniStaticMeshComponent*>  GetOutputsWithProxyComponent(const TArray<UHoudiniOutput*>& Outputs)
+	{
+		TArray<UHoudiniStaticMeshComponent*> Results;
+
+		for (UHoudiniOutput* Output : Outputs)
+		{
+			for (auto& OutputObject : Output->GetOutputObjects())
+			{
+				if (OutputObject.Value.ProxyComponent != nullptr)
+				{
+					UObject * Ptr = OutputObject.Value.ProxyComponent;
+					UHoudiniStaticMeshComponent* ProxyMesh = Cast<UHoudiniStaticMeshComponent>(Ptr);
+					Results.Add(ProxyMesh);
 				}
 			}
 		}
