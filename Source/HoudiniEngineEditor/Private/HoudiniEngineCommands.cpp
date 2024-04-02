@@ -31,6 +31,7 @@
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineBakeUtils.h"
+#include "HoudiniEngineEditor.h"
 #include "HoudiniEngineEditorUtils.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniEngineRuntimeUtils.h"
@@ -62,6 +63,9 @@
 //#include "UObject/ObjectSaveContext.h"
 #include "LevelEditor.h"
 #include "UObject/UObjectIterator.h"
+
+#include "IContentBrowserSingleton.h"
+#include "ContentBrowserModule.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
@@ -104,7 +108,10 @@ FHoudiniEngineCommands::RegisterCommands()
 
 	UI_COMMAND(_OpenInHoudini, "Open scene in Houdini...", "Opens the current Houdini scene in Houdini.", EUserInterfaceActionType::Button, FInputChord(EKeys::O, EModifierKey::Control | EModifierKey::Alt));
 	UI_COMMAND(_SaveHIPFile, "Save Houdini scene (HIP)", "Saves a .hip file of the current Houdini scene.", EUserInterfaceActionType::Button, FInputChord());
-		
+	
+	UI_COMMAND(_ContentExampleGit, "Content Example...", "Opens the GitHub repository that contains the plugin's content examples.", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(_ContentExampleBrowseTo, "Browse Content Examples...", "Browse to the installed content example folder in the current project (if installed).", EUserInterfaceActionType::Button, FInputChord());
+	
 	UI_COMMAND(_OnlineDoc, "Online Documentation...", "Go to the plugin's online documentation.", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(_OnlineForum, "Online Forum...", "Go to the plugin's online forum.", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(_ReportBug, "Report a bug...", "Report a bug for Houdini Engine for Unreal plugin.", EUserInterfaceActionType::Button, FInputChord());
@@ -265,6 +272,46 @@ void
 FHoudiniEngineCommands::ShowPluginEditorSettings()
 {
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer(FName("Editor"), FName("Plugins"), FName("HoudiniEngine"));
+}
+
+void
+FHoudiniEngineCommands::OpenContentExampleGit()
+{
+	FPlatformProcess::LaunchURL(HAPI_UNREAL_CONTENT_EXAMPLES_URL, nullptr, nullptr);
+}
+
+void
+FHoudiniEngineCommands::BrowseToContentExamples()
+{
+	// TODO: Finish me!
+	//GEditor->SyncBrowserToObjects(Results);
+	/*
+	bool bAllowLockedBrowsers = false;
+	bool bFocusContentBrowser = true;
+	FName InstanceName = FName("ContentBrowser");
+	bool bNewSpawnBrowser = true;
+	*/
+	//
+	FString CEFolder = FHoudiniEngineEditor::GetHoudiniEnginePluginDir() + "/Content/Examples";
+	FString CEFolder2 = FHoudiniEngineEditor::GetHoudiniEnginePluginDir() + "/Content/ContentExamples";
+	FString CEFolder3 = "/Content/ContentExamples";
+	FString CEFolder4 = "/Content/HoudiniEngine";
+
+	TArray<FString> FolderList;
+	FolderList.Add(CEFolder);
+	FolderList.Add(CEFolder2);	
+	FolderList.Add(CEFolder3);
+	FolderList.Add(CEFolder4);
+
+	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+	ContentBrowserModule.Get().SyncBrowserToFolders(FolderList);// , bAllowLockedBrowsers, bFocusContentBrowser, InstanceName, bNewSpawnBrowser);
+}
+
+bool
+FHoudiniEngineCommands::HasContentExamples()
+{
+	// TODO: Finish me!
+	return false;
 }
 
 void

@@ -52,6 +52,10 @@
 #define HAPI_UNREAL_ONLINE_DOC_URL								TEXT("https://www.sidefx.com/docs/unreal/")
 #define HAPI_UNREAL_ONLINE_FORUM_URL							TEXT("https://www.sidefx.com/forum/51/")
 
+// URL used for the content examples
+#define HAPI_UNREAL_CONTENT_EXAMPLES_URL                        TEXT("https://github.com/sideeffects/HoudiniEngineForUnreal-ContentExamples")
+#define HAPI_UNREAL_CONTENT_EXAMPLES__RELEASE_URL               TEXT("https://github.com/sideeffects/HoudiniEngineForUnreal-ContentExamples/releases")
+
 
 // UI Category Names
 
