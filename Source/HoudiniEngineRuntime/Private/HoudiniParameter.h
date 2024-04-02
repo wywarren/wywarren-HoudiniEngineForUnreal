@@ -62,7 +62,24 @@ enum class EHoudiniParameterType : uint8
 	Toggle,
 };
 
+UENUM()
+enum class EHoudiniParameterChoiceListType : uint8
+{
+	/** Parameter is not a menu */
+	None = 0,
 
+	/** Menu Only, Single Selection */
+	Normal,
+
+	/** Mini Menu Only, Single Selection */
+	Mini,
+
+	/** Field + Single Selection Menu */
+	Replace,
+
+	/** Field + Multiple Selection Menu */
+	Toggle
+};
 
 UCLASS(DefaultToInstanced)
 class HOUDINIENGINERUNTIME_API UHoudiniParameter : public UObject
@@ -97,6 +114,7 @@ public:
 	virtual const FString GetParameterHelp() const { return Help; };
 
 	virtual EHoudiniParameterType GetParameterType() const { return ParmType; };
+	virtual EHoudiniParameterChoiceListType GetChoiceListType() const { return ChoiceListType; };
 	virtual int32 GetTupleSize() const { return TupleSize; };
 	virtual int32 GetNodeId() const { return NodeId; };
 	virtual int32 GetParmId() const { return ParmId; };
@@ -138,6 +156,7 @@ public:
 	virtual void SetParameterHelp(const FString& InHelp) { Help = InHelp; };
 
 	virtual void SetParameterType(const EHoudiniParameterType& InType) { ParmType = InType; };
+	virtual void SetChoiceListType(const EHoudiniParameterChoiceListType& InType) { ChoiceListType = InType; };
 	virtual void SetTupleSize(const uint32& InTupleSize) { TupleSize = InTupleSize; };
 	virtual void SetNodeId(const int32& InNodeId) { NodeId = InNodeId; };
 	virtual void SetParmId(const int32& InParmId) { ParmId = InParmId; };
@@ -216,6 +235,10 @@ protected:
 	// Unreal type of the parameter
 	UPROPERTY()
 	EHoudiniParameterType ParmType;
+
+	// The menu type of this parameter, None if it is not a menu.
+	UPROPERTY()
+	EHoudiniParameterChoiceListType ChoiceListType;
 
 	// Tuple size. For scalar parameters this value is 1, but for vector parameters this value can be greater.
 	UPROPERTY()

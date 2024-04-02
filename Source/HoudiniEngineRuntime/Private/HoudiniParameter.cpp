@@ -29,6 +29,7 @@
 UHoudiniParameter::UHoudiniParameter(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 	, ParmType(EHoudiniParameterType::Invalid)
+	, ChoiceListType(EHoudiniParameterChoiceListType::None)
 	, TupleSize(0)
 	, NodeId(-1)
 	, ParmId(-1)

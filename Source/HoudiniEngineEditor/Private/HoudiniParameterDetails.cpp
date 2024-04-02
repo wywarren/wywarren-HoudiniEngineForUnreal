@@ -2891,7 +2891,6 @@ FHoudiniParameterDetails::CreateWidgetButtonStrip(
 
 	for (uint32 Idx = 0; Idx < MainParam->GetNumValues(); ++Idx) 
 	{
-		bool bPressed = MainParam->GetValueAt(Idx);
 		const FString* LabelString = MainParam->GetStringLabelAt(Idx);
 		FText LabelText = LabelString ? FText::FromString(*LabelString) : FText();
 
@@ -2901,7 +2900,18 @@ FHoudiniParameterDetails::CreateWidgetButtonStrip(
 		[
 			SAssignNew(Button, SCheckBox)
 			.Style(_GetEditorStyle(), "Property.ToggleButton.Middle")
-			.IsChecked(bPressed ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+			.IsChecked(TAttribute<ECheckBoxState>::CreateLambda(
+				[MainParam, Idx]() -> ECheckBoxState
+				{
+					if (!IsValidWeakPointer(MainParam))
+					{
+						return ECheckBoxState::Undetermined;
+					}
+
+					return MainParam->GetValueAt(Idx)
+						? ECheckBoxState::Checked
+						: ECheckBoxState::Unchecked;
+				}))
 			.OnCheckStateChanged_Lambda([OnButtonStateChanged, Idx](ECheckBoxState NewState)
 			{
 				OnButtonStateChanged(NewState, Idx);
