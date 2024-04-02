@@ -136,6 +136,7 @@ protected:
 	TOptional<int32> GetNumCurveKeys() const override;
 	TOptional<float> GetCurveKeyPosition(const int32 Index) const override;
 	TOptional<ValueType> GetCurveKeyValue(const int32 Index) const override;
+	TOptional<ERichCurveInterpMode> GetCurveKeyInterpolationType(const int32 Index) const override;
 
 private:
 

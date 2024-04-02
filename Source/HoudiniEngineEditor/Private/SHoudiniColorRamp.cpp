@@ -117,7 +117,8 @@ SHoudiniColorRampCurveEditor::OnUpdateCurve(UCurveBase*, EPropertyChangeType::Ty
 	OnCurveChanged();
 }
 
-void SHoudiniColorRampCurveEditor::RefreshCurveKeys()
+void
+SHoudiniColorRampCurveEditor::RefreshCurveKeys()
 {
 	if (!RampView.IsValid())
 	{
@@ -151,7 +152,8 @@ void SHoudiniColorRampCurveEditor::RefreshCurveKeys()
 	}
 }
 
-TOptional<int32> SHoudiniColorRampCurveEditor::GetNumCurveKeys() const
+TOptional<int32>
+SHoudiniColorRampCurveEditor::GetNumCurveKeys() const
 {
 	if (!Curve)
 	{
@@ -161,7 +163,8 @@ TOptional<int32> SHoudiniColorRampCurveEditor::GetNumCurveKeys() const
 	return Curve->FloatCurves[0].GetNumKeys();
 }
 
-TOptional<float> SHoudiniColorRampCurveEditor::GetCurveKeyPosition(const int32 Index) const
+TOptional<float>
+SHoudiniColorRampCurveEditor::GetCurveKeyPosition(const int32 Index) const
 {
 	if (!Curve)
 	{
@@ -176,7 +179,8 @@ TOptional<float> SHoudiniColorRampCurveEditor::GetCurveKeyPosition(const int32 I
 	return Curve->FloatCurves[0].Keys[Index].Time;
 }
 
-TOptional<FLinearColor> SHoudiniColorRampCurveEditor::GetCurveKeyValue(const int32 Index) const
+TOptional<FLinearColor>
+SHoudiniColorRampCurveEditor::GetCurveKeyValue(const int32 Index) const
 {
 	if (!Curve)
 	{
@@ -194,7 +198,24 @@ TOptional<FLinearColor> SHoudiniColorRampCurveEditor::GetCurveKeyValue(const int
 		Curve->FloatCurves[2].Keys[Index].Value);
 }
 
-TSharedRef<SWidget> SHoudiniColorRamp::ConstructRampPointValueWidget(const int32 Index)
+TOptional<ERichCurveInterpMode>
+SHoudiniColorRampCurveEditor::GetCurveKeyInterpolationType(const int32 Index) const
+{
+	if (!Curve)
+	{
+		return {};
+	}
+
+	if (!Curve->FloatCurves[0].Keys.IsValidIndex(Index))
+	{
+		return {};
+	}
+
+	return Curve->FloatCurves[0].Keys[Index].InterpMode.GetValue();
+}
+
+TSharedRef<SWidget>
+SHoudiniColorRamp::ConstructRampPointValueWidget(const int32 Index)
 {
 	if (!RampView.IsValid())
 	{

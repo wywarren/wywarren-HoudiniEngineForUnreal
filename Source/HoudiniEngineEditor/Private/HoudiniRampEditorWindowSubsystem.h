@@ -43,6 +43,8 @@ class UHoudiniRampEditorWindowSubsystem : public UEditorSubsystem
 
 public:
 
+	DECLARE_DELEGATE(FOnValueCommitted);
+
 	void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	void Deinitialize() override;
@@ -62,17 +64,21 @@ public:
 	 *
 	 * @param RampView The ramp which this window will edit.
 	 * @param ParentWidget The parent for the new float ramp curve editor window.
+	 * @param OnValueCommittedDelegate Delegate to execute when ramp curve editor changes.
 	 *
 	 * @returns true if the window is created successfully, false otherwise.
 	 */
 	template<typename EditorWidgetType, typename RampViewType>
 	bool
-	OpenEditor(TSharedPtr<RampViewType> RampView, TSharedPtr<const SWidget> ParentWidget)
+	OpenEditor(
+		TSharedPtr<RampViewType> RampView,
+		TSharedPtr<const SWidget> ParentWidget,
+		FOnValueCommitted OnValueCommittedDelegate)
 	{
 #if WITH_EDITOR
 	
 		// A default window size for the ramp which looks nice
-		static const FVector2D DefaultWindowSize(800, 600);
+		static const FVector2D DefaultWindowSize(800, 400);
 	
 		// Determine the position of the window so that it will spawn near the mouse, but not go off
 		// the screen.
@@ -105,7 +111,8 @@ public:
 			];
 	
 		TSharedRef<EditorWidgetType> CreatedCurveEditor = SNew(EditorWidgetType)
-			.RampView(RampView);
+			.RampView(RampView)
+			.OnCurveChanged_Lambda([=]() { OnValueCommittedDelegate.ExecuteIfBound(); });
 	
 		WindowContent->SetContent(CreatedCurveEditor);
 	

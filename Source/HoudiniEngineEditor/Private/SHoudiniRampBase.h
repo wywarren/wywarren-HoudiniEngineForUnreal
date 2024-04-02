@@ -84,6 +84,8 @@ protected:
 	virtual TOptional<int32> GetNumCurveKeys() const = 0;
 	virtual TOptional<float> GetCurveKeyPosition(const int32 Index) const = 0;
 	virtual TOptional<ValueType> GetCurveKeyValue(const int32 Index) const = 0;
+	virtual TOptional<ERichCurveInterpMode> GetCurveKeyInterpolationType(
+		const int32 Index) const = 0;
 
 	void OnCurveChanged()
 	{
@@ -123,8 +125,15 @@ protected:
 
 				const float CurvePosition = GetCurveKeyPosition(CurveIndex).GetValue();
 				const ValueType CurveValue = GetCurveKeyValue(CurveIndex).GetValue();
+				const ERichCurveInterpMode CurveInterpolationType =
+					GetCurveKeyInterpolationType(CurveIndex).GetValue();
 
-				if (CurvePosition == PointPosition && CurveValue == PointValue)
+				const bool bIsInterpolationEquivalent =
+					IsInterpolationEquivalent(CurveInterpolationType, PointInterpolationType);
+
+				if (CurvePosition == PointPosition
+					&& CurveValue == PointValue
+					&& bIsInterpolationEquivalent)
 				{
 					++PointIndex;
 					++CurveIndex;
@@ -136,7 +145,7 @@ protected:
 						ModifiedIndices.Add(PointIndex);
 						NewPositions.Add(CurvePosition);
 						NewValues.Add(CurveValue);
-						NewInterpolationTypes.Add(EHoudiniRampInterpolationType::LINEAR);
+						NewInterpolationTypes.Add(TranslateInterpolation(CurveInterpolationType));
 						++CurveIndex;
 					}
 					else if (bIsDeletingPoints)
@@ -149,7 +158,21 @@ protected:
 						ModifiedIndices.Add(PointIndex);
 						NewPositions.Add(CurvePosition);
 						NewValues.Add(CurveValue);
-						NewInterpolationTypes.Add(PointInterpolationType);
+
+						// Interpolation is a special case - since Unreal and Houdini interpolation
+						// types are different, we do our best to convert the Unreal type to the
+						// Houdini type. But, in the case that we consider the two equivalent, to
+						// prevent loss of current setting, we re-use the old interpolation type.
+						if (bIsInterpolationEquivalent)
+						{
+							NewInterpolationTypes.Add(PointInterpolationType);
+						}
+						else
+						{
+							NewInterpolationTypes.Add(
+								TranslateInterpolation(CurveInterpolationType));
+						}
+
 						++CurveIndex;
 						++PointIndex;
 					}
@@ -206,6 +229,60 @@ protected:
 		}
 
 		OnCurveChangedDelegate.ExecuteIfBound();
+	}
+
+private:
+
+	/** 
+	 * Since there are fewer Unreal interpolation types than Houdini interpolation types, we map
+	 * multiple Houdini interpolation types to Unreal's cubic interpolation type. Use this to check
+	 * if we consider the two equivalent.
+	 */
+	static bool 
+	IsInterpolationEquivalent(
+		const ERichCurveInterpMode UnrealInterpolation,
+		const EHoudiniRampInterpolationType HoudiniInterpolation)
+	{
+		switch (UnrealInterpolation)
+		{
+		case RCIM_Linear:
+			return HoudiniInterpolation == EHoudiniRampInterpolationType::LINEAR;
+		case RCIM_Constant:
+			return HoudiniInterpolation == EHoudiniRampInterpolationType::CONSTANT;
+		case RCIM_Cubic:
+			switch (HoudiniInterpolation)
+			{
+			case EHoudiniRampInterpolationType::BEZIER:
+			case EHoudiniRampInterpolationType::BSPLINE:
+			case EHoudiniRampInterpolationType::CATMULL_ROM:
+			case EHoudiniRampInterpolationType::HERMITE:
+			case EHoudiniRampInterpolationType::MONOTONE_CUBIC:
+				return true;
+			default:
+				return false;
+			}
+		case RCIM_None:
+		default:
+			return HoudiniInterpolation == EHoudiniRampInterpolationType::InValid;
+		}
+	}
+
+	/** Converts Unreal interpolation type to the most appropriate Houdini interpolation type. */
+	static EHoudiniRampInterpolationType
+	TranslateInterpolation(const ERichCurveInterpMode InterpMode)
+	{
+		switch (InterpMode)
+		{
+		case RCIM_Linear:
+			return EHoudiniRampInterpolationType::LINEAR;
+		case RCIM_Constant:
+			return EHoudiniRampInterpolationType::CONSTANT;
+		case RCIM_Cubic:
+			return EHoudiniRampInterpolationType::CATMULL_ROM;
+		case RCIM_None:
+		default:
+			return EHoudiniRampInterpolationType::InValid;
+		}
 	}
 };
 
@@ -353,7 +430,16 @@ protected:
 			if (auto RampEditorWindowSubsystem =
 				GEditor->GetEditorSubsystem<UHoudiniRampEditorWindowSubsystem>())
 			{
-				return RampEditorWindowSubsystem->OpenEditor<CurveEditorWidgetType>(RampView, AsShared());
+				// We want a copy of the OnValueCommitted delegate inside the lambda as the created
+				// window (and the lambda it will own) can outlive this widget's lifetime.
+				return RampEditorWindowSubsystem->OpenEditor<CurveEditorWidgetType>(
+					RampView,
+					AsShared(),
+					UHoudiniRampEditorWindowSubsystem::FOnValueCommitted::CreateLambda(
+						[OnValueCommitted = OnValueCommitted]()
+						{
+							OnValueCommitted.ExecuteIfBound();
+						}));
 			}
 		}
 		return false;

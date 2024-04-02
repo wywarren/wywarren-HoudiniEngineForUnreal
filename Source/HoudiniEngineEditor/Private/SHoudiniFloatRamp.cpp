@@ -194,6 +194,22 @@ SHoudiniFloatRampCurveEditor::GetCurveKeyValue(const int32 Index) const
 	return Curve->FloatCurve.Keys[Index].Value;
 }
 
+TOptional<ERichCurveInterpMode>
+SHoudiniFloatRampCurveEditor::GetCurveKeyInterpolationType(const int32 Index) const
+{
+	if (!Curve)
+	{
+		return {};
+	}
+
+	if (!Curve->FloatCurve.Keys.IsValidIndex(Index))
+	{
+		return {};
+	}
+
+	return Curve->FloatCurve.Keys[Index].InterpMode.GetValue();
+}
+
 FReply
 SHoudiniFloatRampCurveEditor::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
