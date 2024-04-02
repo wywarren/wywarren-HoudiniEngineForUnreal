@@ -30,18 +30,9 @@
 
 #include "CoreMinimal.h"
 
-#include "Widgets/Layout/SUniformGridPanel.h"
-#include "SCurveEditor.h"
-#include "Editor/CurveEditor/Public/CurveEditorSettings.h"
 #include "HoudiniParameterTranslator.h"
-#include "Curves/CurveFloat.h"
-#include "SColorGradientEditor.h"
-#include "Curves/CurveLinearColor.h"
-
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SButton.h"
-
-#include "HoudiniParameterDetails.generated.h"
 
 class UHoudiniAssetComponent;
 class UHoudiniParameter;
@@ -61,12 +52,6 @@ class UHoudiniParameterMultiParm;
 class UHoudiniParameterRampFloat;
 class UHoudiniParameterRampColor;
 class UHoudiniParameterOperatorPath;
-
-class UHoudiniParameterRampColorPoint;
-class UHoudiniParameterRampFloatPoint;
-
-class UHoudiniColorRampCurve;
-class UHoudiniFloatRampCurve;
 
 class IDetailCategoryBuilder;
 class FDetailWidgetRow;
@@ -116,159 +101,6 @@ public:
 	void SetHoudiniParameter(const TArray<TWeakObjectPtr<UHoudiniParameter>>& InParams);
 };
 
-class SHoudiniFloatRampCurveEditor : public SCurveEditor
-{
-public:
-	SLATE_BEGIN_ARGS(SHoudiniFloatRampCurveEditor)
-		: _ViewMinInput(0.0f)
-		, _ViewMaxInput(10.0f)
-		, _ViewMinOutput(0.0f)
-		, _ViewMaxOutput(1.0f)
-		, _InputSnap(0.1f)
-		, _OutputSnap(0.05f)
-		, _InputSnappingEnabled(false)
-		, _OutputSnappingEnabled(false)
-		, _ShowTimeInFrames(false)
-		, _TimelineLength(5.0f)
-		, _DesiredSize(FVector2D::ZeroVector)
-		, _DrawCurve(true)
-		, _HideUI(true)
-		, _AllowZoomOutput(true)
-		, _AlwaysDisplayColorCurves(false)
-		, _ZoomToFitVertical(true)
-		, _ZoomToFitHorizontal(true)
-		, _ShowZoomButtons(true)
-		, _XAxisName()
-		, _YAxisName()
-		, _ShowInputGridNumbers(true)
-		, _ShowOutputGridNumbers(true)
-		, _ShowCurveSelector(true)
-		, _GridColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.3f))
-	{
-		_Clipping = EWidgetClipping::ClipToBounds;
-	}
-
-		SLATE_ATTRIBUTE(float, ViewMinInput)
-		SLATE_ATTRIBUTE(float, ViewMaxInput)
-		SLATE_ATTRIBUTE(TOptional<float>, DataMinInput)
-		SLATE_ATTRIBUTE(TOptional<float>, DataMaxInput)
-		SLATE_ATTRIBUTE(float, ViewMinOutput)
-		SLATE_ATTRIBUTE(float, ViewMaxOutput)
-		SLATE_ATTRIBUTE(float, InputSnap)
-		SLATE_ATTRIBUTE(float, OutputSnap)
-		SLATE_ATTRIBUTE(bool, InputSnappingEnabled)
-		SLATE_ATTRIBUTE(bool, OutputSnappingEnabled)
-		SLATE_ATTRIBUTE(bool, ShowTimeInFrames)
-		SLATE_ATTRIBUTE(float, TimelineLength)
-		SLATE_ATTRIBUTE(FVector2D, DesiredSize)
-		SLATE_ATTRIBUTE(bool, AreCurvesVisible)
-		SLATE_ARGUMENT(bool, DrawCurve)
-		SLATE_ARGUMENT(bool, HideUI)
-		SLATE_ARGUMENT(bool, AllowZoomOutput)
-		SLATE_ARGUMENT(bool, AlwaysDisplayColorCurves)
-		SLATE_ARGUMENT(bool, ZoomToFitVertical)
-		SLATE_ARGUMENT(bool, ZoomToFitHorizontal)
-		SLATE_ARGUMENT(bool, ShowZoomButtons)
-		SLATE_ARGUMENT(TOptional<FString>, XAxisName)
-		SLATE_ARGUMENT(TOptional<FString>, YAxisName)
-		SLATE_ARGUMENT(bool, ShowInputGridNumbers)
-		SLATE_ARGUMENT(bool, ShowOutputGridNumbers)
-		SLATE_ARGUMENT(bool, ShowCurveSelector)
-		SLATE_ARGUMENT(FLinearColor, GridColor)
-		SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
-		SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)
-		SLATE_EVENT(FOnSetAreCurvesVisible, OnSetAreCurvesVisible)
-		SLATE_EVENT(FSimpleDelegate, OnCreateAsset)
-		SLATE_END_ARGS()
-
-	public:
-		TWeakObjectPtr<UHoudiniFloatRampCurve> HoudiniFloatRampCurve;
-
-		/** Widget construction. **/
-		void Construct(const FArguments & InArgs);
-
-		virtual FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
-
-		virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
-
-};
-
-
-class SHoudiniColorRampCurveEditor : public SColorGradientEditor 
-{
-
-public:
-	SLATE_BEGIN_ARGS(SHoudiniColorRampCurveEditor)
-		: _ViewMinInput(0.0f)
-		, _ViewMaxInput(10.0f)
-		, _InputSnap(0.1f)
-		, _OutputSnap(0.05f)
-		, _InputSnappingEnabled(false)
-		, _OutputSnappingEnabled(false)
-		, _ShowTimeInFrames(false)
-		, _TimelineLength(5.0f)
-		, _DesiredSize(FVector2D::ZeroVector)
-		, _DrawCurve(true)
-		, _HideUI(true)
-		, _AllowZoomOutput(true)
-		, _AlwaysDisplayColorCurves(false)
-		, _ZoomToFitVertical(true)
-		, _ZoomToFitHorizontal(true)
-		, _ShowZoomButtons(true)
-		, _XAxisName()
-		, _YAxisName()
-		, _ShowInputGridNumbers(true)
-		, _ShowOutputGridNumbers(true)
-		, _ShowCurveSelector(true)
-		, _GridColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.3f))
-	{
-		_Clipping = EWidgetClipping::ClipToBounds;
-	}
-
-	SLATE_ATTRIBUTE(float, ViewMinInput)
-		SLATE_ATTRIBUTE(float, ViewMaxInput)
-		SLATE_ATTRIBUTE(TOptional<float>, DataMinInput)
-		SLATE_ATTRIBUTE(TOptional<float>, DataMaxInput)
-		SLATE_ATTRIBUTE(float, InputSnap)
-		SLATE_ATTRIBUTE(float, OutputSnap)
-		SLATE_ATTRIBUTE(bool, InputSnappingEnabled)
-		SLATE_ATTRIBUTE(bool, OutputSnappingEnabled)
-		SLATE_ATTRIBUTE(bool, ShowTimeInFrames)
-		SLATE_ATTRIBUTE(float, TimelineLength)
-		SLATE_ATTRIBUTE(FVector2D, DesiredSize)
-		SLATE_ATTRIBUTE(bool, AreCurvesVisible)
-		SLATE_ARGUMENT(bool, DrawCurve)
-		SLATE_ARGUMENT(bool, HideUI)
-		SLATE_ARGUMENT(bool, AllowZoomOutput)
-		SLATE_ARGUMENT(bool, AlwaysDisplayColorCurves)
-		SLATE_ARGUMENT(bool, ZoomToFitVertical)
-		SLATE_ARGUMENT(bool, ZoomToFitHorizontal)
-		SLATE_ARGUMENT(bool, ShowZoomButtons)
-		SLATE_ARGUMENT(TOptional<FString>, XAxisName)
-		SLATE_ARGUMENT(TOptional<FString>, YAxisName)
-		SLATE_ARGUMENT(bool, ShowInputGridNumbers)
-		SLATE_ARGUMENT(bool, ShowOutputGridNumbers)
-		SLATE_ARGUMENT(bool, ShowCurveSelector)
-		SLATE_ARGUMENT(FLinearColor, GridColor)
-		SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
-		SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)
-		SLATE_EVENT(FOnSetAreCurvesVisible, OnSetAreCurvesVisible)
-		SLATE_EVENT(FSimpleDelegate, OnCreateAsset)
-		SLATE_END_ARGS()
-
-	public:
-		/** Widget construction. **/
-		void Construct(const FArguments & InArgs);
-
-		TWeakObjectPtr<UHoudiniColorRampCurve> HoudiniColorRampCurve;
-
-		virtual FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
-
-		virtual FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
-
-		virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
-};
-
 /**
  * Widget used to wrap parameter controls, optionally with content attached to the name slot.
  * 
@@ -301,36 +133,6 @@ private:
 	// Current padding used on the content slot.
 	TAttribute<FMargin> ContentPadding;
 };
-
-UCLASS()
-class UHoudiniFloatRampCurve : public UCurveFloat 
-{
-	GENERATED_BODY()
-
-	public:
-
-		TArray<TWeakObjectPtr<UHoudiniParameterRampFloat>> FloatRampParameters;
-
-		virtual void OnCurveChanged(const TArray<FRichCurveEditInfo>& ChangedCurveEditInfos) override;
-};
-
-
-UCLASS()
-class UHoudiniColorRampCurve : public UCurveLinearColor
-{
-	GENERATED_BODY()
-
-	public:
-		bool bEditing = false;
-
-		TArray<TWeakObjectPtr<UHoudiniParameterRampColor>> ColorRampParameters;
-
-		virtual void OnCurveChanged(const TArray< FRichCurveEditInfo > & ChangedCurveEditInfos) override;
-
-		void OnColorRampCurveChanged(bool bModificationOnly = false);
-
-};
-
 
 //class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails>, public TNumericUnitTypeInterface<float>, public TNumericUnitTypeInterface<int32>
 class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails, ESPMode::NotThreadSafe>
@@ -417,45 +219,9 @@ class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails
 			IDetailCategoryBuilder & HouParameterCategory,
 			const TArray<TArray<TWeakObjectPtr<UHoudiniParameter>>>& InJoinedParams);
 
-
 		static FText GetParameterTooltip(const TWeakObjectPtr<UHoudiniParameter>& InParam);
 
 		static FString GetParameterTypeString(const EHoudiniParameterType& InType, const int32& InTupleSize);
-
-		static void SyncCachedColorRampPoints(UHoudiniParameterRampColor* ColorRampParameter);
-
-		//static void SyncCachedFloatRampPoints(UHoudiniParameterRampFloat* FloatRampParameter);
-
-		// replace the children parameter values of all (multi-selected) float ramp parameters with the main parameter (weak object pointer version)
-		static void ReplaceAllFloatRampParameterPointsWithMainParameter(const TArray<TWeakObjectPtr<UHoudiniParameterRampFloat>>& FloatRampParameters);
-		// raw pointer version
-		static void ReplaceAllFloatRampParameterPointsWithMainParameter(const TArray<UHoudiniParameterRampFloat*>& FloatRampParameters);
-		// helper
-		static void ReplaceFloatRampParameterPointsWithMainParameter(UHoudiniParameterRampFloat* Param, UHoudiniParameterRampFloat* MainParam);
-
-
-		// replace the children parameter values of all (multi-selected) color ramp parameters with the main parameter (weak object pointer version)
-		static void ReplaceAllColorRampParameterPointsWithMainParameter(const TArray<TWeakObjectPtr<UHoudiniParameterRampColor>>& ColorRampParameters);
-		// raw pointer version
-		static void ReplaceAllColorRampParameterPointsWithMainParameter(const TArray<UHoudiniParameterRampColor*>& ColorRampParameters);
-		// helper
-		static void ReplaceColorRampParameterPointsWithMainParameter(UHoudiniParameterRampColor* Param, UHoudiniParameterRampColor* MainParame);
-
-
-
-		// Create an insert event for a float ramp parameter
-		static void CreateFloatRampParameterInsertEvent(UHoudiniParameterRampFloat* InParam, 
-			const float& InPosition, const float& InValue, const EHoudiniRampInterpolationType &InInterp);
-
-		// Create an insert event for a color ramp parameter
-		static void CreateColorRampParameterInsertEvent(UHoudiniParameterRampColor* InParam, 
-			const float& InPosition, const FLinearColor& InColor, const EHoudiniRampInterpolationType &InInterp);
-
-		// Create a delete event for a float ramp parameter
-		static void CreateFloatRampParameterDeleteEvent(UHoudiniParameterRampFloat* InParam, const int32 &InDeleteIndex);
-
-		// Create a delete event for a color ramp parameter
-		static void CreateColorRampParameterDeleteEvent(UHoudiniParameterRampColor* InParam, const int32 &InDeleteIndex);
 
 		/** Determines if @ref CreateWidget expects this parameter to be joined. */
 		static bool ShouldJoinNext(const UHoudiniParameter& InParam);
@@ -511,14 +277,9 @@ class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails
 
 		void CreateWidgetMultiParmObjectButtons(TSharedPtr<SHorizontalBox> HorizontalBox, const TArray<TWeakObjectPtr<UHoudiniParameter>>& InParams); //
 	
-		// Create the UI for ramp's curve editor.
-		FDetailWidgetRow* CreateWidgetRampCurveEditor(
+		FDetailWidgetRow* CreateWidgetRamp(
 			IDetailCategoryBuilder& HouParameterCategory,
 			const TArray<TArray<TWeakObjectPtr<UHoudiniParameter>>>& InJoinedParams);
-
-		// Create the UI for ramp's stop points.
-		void CreateWidgetRampPoints(IDetailCategoryBuilder& CategoryBuilder, FDetailWidgetRow* Row, UHoudiniParameter* InParameter,
-								    const TArray<TWeakObjectPtr<UHoudiniParameter>>& InParams); //
 
 		void PruneStack();
 
@@ -539,17 +300,6 @@ class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails
 			const FString& UniqueName, 
 			uint32& Index);
 
-	public:
-		// Stores the created ramp curves
-		// In order to avoid being grabage collected, curves are added to root, thus need to handle GC manually.
-		// These points are for releasing the memory when the detail class are destroyed
-		TArray<UHoudiniFloatRampCurve*> CreatedFloatRampCurves;
-		TArray<UHoudiniColorRampCurve*> CreatedColorRampCurves;
-		// The curve editors reference the UHoudini*Curves as "CurveOwners" as raw (non UObject) pointers, so we have
-		// to set their owners to null here before we destroy the Created*RampCuvers
-		TArray<TSharedPtr<SHoudiniColorRampCurveEditor>> CreatedColorGradientEditors;
-		TArray<TSharedPtr<SHoudiniFloatRampCurveEditor>> CreatedFloatCurveEditors;
-
 	private:
 		// The parameter directory is flattened with BFS inside of DFS.
 		// When a folderlist is encountered, it goes 'one step' of DFS, otherwise BFS.
@@ -561,23 +311,6 @@ class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails
 
 		// Color Ramp currently being processed
 		UHoudiniParameterRampColor* CurrentRampColor;
-
-		TArray<UHoudiniParameter*> CurrentRampParameterList;
-
-		// Cached curve points of float ramp which being processed
-		TArray<UHoudiniParameterRampFloatPoint*> CurrentRampFloatPointsArray;
-
-		// Cached curve points of color ramp which being processed
-		TArray<UHoudiniParameterRampColorPoint*> CurrentRampColorPointsArray;
-
-		// Cached color ramp curve which being processed
-		UHoudiniColorRampCurve* CurrentRampParameterColorCurve;
-
-		// Cached float ramp curve which being processed
-		UHoudiniFloatRampCurve* CurrentRampParameterFloatCurve;
-
-		FDetailWidgetRow * CurrentRampRow;
-
 
 		/* Variables for keeping expansion state after adding multiparm instance*/
 		TMap<int32, TWeakObjectPtr<UHoudiniParameterMultiParm>> AllMultiParms;
