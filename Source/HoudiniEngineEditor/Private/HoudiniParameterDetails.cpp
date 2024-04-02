@@ -2335,9 +2335,34 @@ FHoudiniParameterDetails::CreateWidgetString(
 
 		if (bIsUnrealRef)
 		{
+			TArray<const UClass*> AllowedClasses;
+			if (UnrealRefClass != UObject::StaticClass())
+			{
+				// Use the class specified by the user
+				AllowedClasses.Add(UnrealRefClass);
+			}
+			else
+			{
+				// Using UObject would list way too many assets, and take a long time to open the menu,
+				// so we need to reestrict the classes a bit
+				AllowedClasses.Add(UStaticMesh::StaticClass());
+				AllowedClasses.Add(UHoudiniAsset::StaticClass());
+				AllowedClasses.Add(USkeletalMesh::StaticClass());
+				AllowedClasses.Add(UBlueprint::StaticClass());
+				AllowedClasses.Add(UMaterialInterface::StaticClass());
+				AllowedClasses.Add(UTexture::StaticClass());
+				AllowedClasses.Add(ULevel::StaticClass());
+				AllowedClasses.Add(UStreamableRenderAsset::StaticClass());
+				AllowedClasses.Add(USoundBase::StaticClass());
+				AllowedClasses.Add(UParticleSystem::StaticClass());
+				AllowedClasses.Add(UFoliageType::StaticClass());
+			}
+
 			TSharedPtr<SEditableTextBox> EditableTextBox;
 			TSharedPtr<SHorizontalBox> HorizontalBox;
-			VerticalBox->AddSlot().Padding(2, 2, 5, 2)
+			VerticalBox->AddSlot()
+			.Padding(2, 2, 5, 2)
+			.AutoHeight()
 			[
 				SNew(SAssetDropTarget)
 				.OnAreAssetsAcceptableForDrop_Lambda([UnrealRefClass](TArrayView<FAssetData> InAssets)
@@ -2379,48 +2404,70 @@ FHoudiniParameterDetails::CreateWidgetString(
 #endif
 			}
 			
+			constexpr int32 ThumbnailSize = 46;
+
 			TSharedPtr< FAssetThumbnail > StaticMeshThumbnail = MakeShareable(
-				new FAssetThumbnail(AssetData, 64, 64, AssetThumbnailPool));
+				new FAssetThumbnail(AssetData, ThumbnailSize, ThumbnailSize, AssetThumbnailPool));
 
 			TSharedPtr<SBorder> ThumbnailBorder;
-			HorizontalBox->AddSlot().Padding(0.f, 0.f, 2.f, 0.f).AutoWidth()
+			HorizontalBox->AddSlot()
+			.Padding(0, 3, 5, 0)
+			.AutoWidth()
+			.VAlign(VAlign_Center)
 			[
-				SAssignNew(ThumbnailBorder, SBorder)
-				.OnMouseDoubleClick_Lambda([EditObject, Idx](const FGeometry&, const FPointerEvent&)
-				{
-					if (EditObject && GEditor) 
-						GEditor->EditObject(EditObject);
-					
-					return FReply::Handled();
-				})
-				.Padding(5.f)
+				SNew(SBorder)
+				.Visibility(EVisibility::SelfHitTestInvisible)
+				.Padding(FMargin(0, 0, 4, 4))
+				.BorderImage(FAppStyle::Get().GetBrush("PropertyEditor.AssetTileItem.DropShadow"))
 				[
-					SNew(SBox)
-					.WidthOverride(64)
-					.HeightOverride(64)
+					SNew(SOverlay)
+					+ SOverlay::Slot()
+					.Padding(1)
 					[
-						StaticMeshThumbnail->MakeThumbnailWidget()
+						SAssignNew(ThumbnailBorder, SBorder)
+						.Padding(0)
+						.OnMouseDoubleClick_Lambda(
+							[EditObject, Idx](const FGeometry&, const FPointerEvent&)
+							{
+								if (EditObject && GEditor) 
+									GEditor->EditObject(EditObject);
+							
+								return FReply::Handled();
+							})
+						[
+							SNew(SBox)
+							.WidthOverride(ThumbnailSize)
+							.HeightOverride(ThumbnailSize)
+							[
+								StaticMeshThumbnail->MakeThumbnailWidget()
+							]
+						]
+					]
+					+ SOverlay::Slot()
+					[
+						SNew(SImage)
+							.Image(TAttribute<const FSlateBrush*>::Create(
+								TAttribute<const FSlateBrush*>::FGetter::CreateLambda(
+									[WeakThumbnailBorder = TWeakPtr<SBorder>(ThumbnailBorder)]()
+									{
+										TSharedPtr<SBorder> ThumbnailBorderPtr = WeakThumbnailBorder.Pin();
+										if (ThumbnailBorderPtr.IsValid() && ThumbnailBorderPtr->IsHovered())
+											return _GetEditorStyle().GetBrush(
+												"PropertyEditor.AssetThumbnailBorderHovered");
+										else
+											return _GetEditorStyle().GetBrush(
+												"PropertyEditor.AssetThumbnailBorder");
+									}
+								)
+							))
+							.Visibility(EVisibility::SelfHitTestInvisible)
 					]
 				]
 			];
 
-			TWeakPtr<SBorder> WeakThumbnailBorder(ThumbnailBorder);
-			ThumbnailBorder->SetBorderImage(TAttribute<const FSlateBrush *>::Create(
-				TAttribute<const FSlateBrush *>::FGetter::CreateLambda(
-					[WeakThumbnailBorder]()
-					{
-						TSharedPtr<SBorder> ThumbnailBorderPtr = WeakThumbnailBorder.Pin();
-						if (ThumbnailBorderPtr.IsValid() && ThumbnailBorderPtr->IsHovered())
-							return _GetEditorStyle().GetBrush("PropertyEditor.AssetThumbnailLight");
-						else
-							return _GetEditorStyle().GetBrush("PropertyEditor.AssetThumbnailShadow");
-					}
-				)
-			));
-
 			FText MeshNameText = FText::GetEmpty();
-			//if (InputObject)
-			//	MeshNameText = FText::FromString(InputObject->GetName());
+			if (EditObject)
+				MeshNameText = FText::FromString(EditObject->GetName());
 
 			TSharedPtr<SComboButton> StaticMeshComboButton;
 
@@ -2431,54 +2478,94 @@ FHoudiniParameterDetails::CreateWidgetString(
 			[
 				SNew(SVerticalBox)
 				+ SVerticalBox::Slot()
-				.HAlign(HAlign_Fill)
+				.VAlign(VAlign_Center)
+				.AutoHeight()
 				[
-					SAssignNew(ButtonBox, SHorizontalBox)
-					+ SHorizontalBox::Slot()
+					SAssignNew(StaticMeshComboButton, SComboButton)
+					.ButtonContent()
 					[
-						SAssignNew(StaticMeshComboButton, SComboButton)
-						.ButtonStyle(_GetEditorStyle(), "PropertyEditor.AssetComboStyle")
-						.ForegroundColor(_GetEditorStyle().GetColor("PropertyEditor.AssetName.ColorAndOpacity"))
-						.ContentPadding(2.0f)
-						.ButtonContent()
-						[
-							SNew(STextBlock)
-							.TextStyle(_GetEditorStyle(), "PropertyEditor.AssetClass")
-							.Font(_GetEditorStyle().GetFontStyle(FName(TEXT("PropertyWindow.NormalFont"))))
-							.Text(FText::FromName(AssetData.AssetName))
-							.ToolTipText(FText::FromString(MainParam->GetValueAt(Idx)))
-						]
+						SNew(STextBlock)
+						.Font(_GetEditorStyle().GetFontStyle(FName(TEXT("PropertyWindow.NormalFont"))))
+						.Text(FText::FromName(AssetData.AssetName))
+						.ToolTipText(FText::FromString(MainParam->GetValueAt(Idx)))
 					]
 				]
+				+ SVerticalBox::Slot()
+				.VAlign(VAlign_Center)
+				.AutoHeight()
+				[
+					SAssignNew(ButtonBox, SHorizontalBox)
+				]
 			];
+
+			// Create tooltip.
+			FFormatNamedArguments Args;
+			Args.Add(TEXT("Asset"), MeshNameText);
+			FText StaticMeshTooltip = FText::Format(
+				LOCTEXT(
+					"BrowseToSpecificAssetInContentBrowser",
+					"Browse to '{Asset}' in the content browser."),
+				Args);
 			
+			// Button : Use selected in content browser
+			ButtonBox->AddSlot()
+			.AutoWidth()
+			.Padding(1, 0, 3, 0)
+			.VAlign(VAlign_Center)
+			[
+				PropertyCustomizationHelpers::MakeUseSelectedButton(
+					FSimpleDelegate::CreateLambda(
+						[AllowedClasses, ChangeStringValueAt, Idx, StringParams]()
+						{
+							if (GEditor)
+							{
+								TArray<FAssetData> CBSelections;
+								GEditor->GetContentBrowserSelections(CBSelections);
+
+								if (CBSelections.IsEmpty())
+								{
+									return;
+								}
+
+								UObject* Object = CBSelections[0].GetAsset();
+							
+								if (!IsValid(Object))
+								{
+									return;
+								}
+
+								FString ReferenceStr = UHoudiniParameterString::GetAssetReference(Object);
+
+								ChangeStringValueAt(ReferenceStr, Object, Idx, true, StringParams);
+							}
+						}),
+					TAttribute<FText>(LOCTEXT(
+						"GeometryInputUseSelectedAssetFromCB",
+						"Use the currently selected asset from the content browser.")))
+			];
+
+			// Button : Browse Static Mesh
+			ButtonBox->AddSlot()
+			.AutoWidth()
+			.Padding(1, 0, 3, 0)
+			.VAlign(VAlign_Center)
+			[
+				PropertyCustomizationHelpers::MakeBrowseButton(
+					FSimpleDelegate::CreateLambda([EditObject]()
+					{
+						if (GEditor && EditObject)
+						{
+							TArray<UObject*> Objects;
+							Objects.Add(EditObject);
+							GEditor->SyncBrowserToObjects(Objects);
+						}
+					}),
+					TAttribute<FText>(StaticMeshTooltip))
+			];
 			TWeakPtr<SComboButton> WeakStaticMeshComboButton(StaticMeshComboButton);
 			StaticMeshComboButton->SetOnGetMenuContent(FOnGetContent::CreateLambda(
-				[UnrealRefClass, WeakStaticMeshComboButton, ChangeStringValueAt, Idx, StringParams]()
+				[AllowedClasses, WeakStaticMeshComboButton, ChangeStringValueAt, Idx, StringParams]()
 			{
-				TArray<const UClass *> AllowedClasses;
-				if (UnrealRefClass != UObject::StaticClass())
-				{
-					// Use the class specified by the user
-					AllowedClasses.Add(UnrealRefClass);
-				}
-				else
-				{
-					// Using UObject would list way too many assets, and take a long time to open the menu,
-					// so we need to reestrict the classes a bit
-					AllowedClasses.Add(UStaticMesh::StaticClass());
-					AllowedClasses.Add(UHoudiniAsset::StaticClass());
-					AllowedClasses.Add(USkeletalMesh::StaticClass());
-					AllowedClasses.Add(UBlueprint::StaticClass());
-					AllowedClasses.Add(UMaterialInterface::StaticClass());
-					AllowedClasses.Add(UTexture::StaticClass());
-					AllowedClasses.Add(ULevel::StaticClass());
-					AllowedClasses.Add(UStreamableRenderAsset::StaticClass());
-					AllowedClasses.Add(USoundBase::StaticClass());
-					AllowedClasses.Add(UParticleSystem::StaticClass());
-					AllowedClasses.Add(UFoliageType::StaticClass());
-				}
-
 				TArray<UFactory *> NewAssetFactories;
 				return PropertyCustomizationHelpers::MakeAssetPickerWithMenu(
 					FAssetData(nullptr),
