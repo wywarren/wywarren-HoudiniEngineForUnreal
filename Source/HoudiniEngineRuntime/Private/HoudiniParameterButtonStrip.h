@@ -45,10 +45,7 @@ public:
 		const FString& InParamName);
 
 	// Accessor
-	bool GetValueAt(const uint32 Index) const
-	{
-		return Labels.IsValidIndex(Index) ? (Value >> Index) & 1 : false;
-	}
+	bool GetValueAt(const uint32 Index) const;
 
 	FString* GetStringLabelAt(const uint32 Index)
 	{
@@ -67,6 +64,12 @@ public:
 	// Mutators
 	bool SetValueAt(const bool InValue, const uint32 Index);
 
+	/**
+	 * @warning Depending on this parameters choice list type, the value is interpreted differently
+	 *          by Houdini. That is, if it is single selection, then the value is an index of the
+	 *          current selection. If it is multiple selection, then the value is a bitmask of the
+	 *          selected values.
+	 */
 	void SetValue(const uint32 InValue) { Value = InValue; }
 
 	void SetNumberOfValues(const uint32 InNumValues) { Labels.SetNum(InNumValues); }
@@ -80,7 +83,7 @@ protected:
 	UPROPERTY()
 	TArray<FString> Labels;
 
-	// Values of this property - implemented as int bitmasks.
+	/** See @ref SetValue */
 	UPROPERTY()
 	uint32 Value;
 

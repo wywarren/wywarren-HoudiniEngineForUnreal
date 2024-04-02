@@ -1325,6 +1325,9 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 	HoudiniParameter->SetTagCount(ParmInfo.tagCount);
 	HoudiniParameter->SetTupleSize(ParmInfo.size);
 
+	HoudiniParameter->SetChoiceListType(
+		static_cast<EHoudiniParameterChoiceListType>(ParmInfo.choiceListType));
+
 	HoudiniParameter->SetVisible(!ParmInfo.invisible);
 	HoudiniParameter->SetDisabled(ParmInfo.disabled);
 	HoudiniParameter->SetSpare(ParmInfo.spare);
