@@ -34,6 +34,13 @@ class UHoudiniInputLandscape;
 class FUnrealObjectInputHandle;
 class UHoudiniInput;
 
+struct FHoudiniLandscapeExportOptions
+{
+	bool bExportHeightDataPerEditLayer;
+	bool bExportPaintLayersPerEditLayer;
+	bool bExportMergedPaintLayers;
+};
+
 struct HOUDINIENGINE_API FUnrealLandscapeTranslator 
 {
 	public:
@@ -43,8 +50,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 		// ------------------------------------------------------------------------------------------
 		static bool CreateHeightfieldFromLandscape(
 			ALandscapeProxy* LandcapeProxy,
-			bool bExportEditLayers,
-			bool bExportPaintLayers,
+			const FHoudiniLandscapeExportOptions & Options,
 			HAPI_NodeId& CreatedHeightfieldNodeId,
 			const FString &InputNodeNameStr,
 			HAPI_NodeId ParentNodeId,
@@ -53,7 +59,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 		static bool CreateHeightfieldFromLandscapeComponentArray(
 			ALandscapeProxy* LandscapeProxy,
 			const TSet< ULandscapeComponent * > & SelectedComponents,
-			bool bExportEditLayers,
+			const FHoudiniLandscapeExportOptions& Options,
 			HAPI_NodeId& CreatedHeightfieldNodeId,
 			const FString &InputNodeNameStr,
 			const HAPI_NodeId& ParentNodeId,
@@ -66,7 +72,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			HAPI_NodeId& HeightFieldId,
 			HAPI_NodeId& MergeId,
 			int32& MergeInputIndex,
-			bool bExportPerLayerData,
+			const FHoudiniLandscapeExportOptions& Options,
 			const FString& InputNodeNameStr,
 			const FTransform & ParentTransform,
 			const HAPI_NodeId& ParentNodeId);
@@ -325,7 +331,7 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			HAPI_PartId PartId,
 			HAPI_NodeId MergeId,
 			HAPI_NodeId MaskId,
-			bool bExportPerLayerData,
+			const FHoudiniLandscapeExportOptions& Options,
 			const HAPI_VolumeInfo& HeightfieldVolumeInfo,
 			int32 XSize,
 			int32 YSize,
