@@ -2016,7 +2016,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForObject(const FString& InObjNodeNa
 	// with a single point, with an attribute pointing to the input object's path
 	HAPI_NodeId InputNodeId = -1;
 	HOUDINI_CHECK_ERROR_RETURN( FHoudiniApi::CreateInputNode(
-		FHoudiniEngine::Get().GetSession(), &InputNodeId, TCHAR_TO_UTF8(*NodeName)), false);
+		FHoudiniEngine::Get().GetSession(), -1, &InputNodeId, TCHAR_TO_UTF8(*NodeName)), false);
 
 	// Update this input object's NodeId and ObjectNodeId
 	InObject->SetInputNodeId((int32)InputNodeId);
@@ -4654,7 +4654,7 @@ FHoudiniInputTranslator::CreateInputNodeForReference(
 	else
 	{
 		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CreateInputNode(
-			FHoudiniEngine::Get().GetSession(), &NewNodeId, TCHAR_TO_UTF8(*InputNodeName)), false);
+			FHoudiniEngine::Get().GetSession(), -1, &NewNodeId, TCHAR_TO_UTF8(*InputNodeName)), false);
 	}
 
 	/*

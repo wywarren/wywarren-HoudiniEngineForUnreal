@@ -2317,14 +2317,14 @@ FHoudiniApi::CreateInProcessSessionEmptyStub(HAPI_Session * session, const HAPI_
 
 
 HAPI_Result
-FHoudiniApi::CreateInputCurveNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId * node_id, const char * name)
+FHoudiniApi::CreateInputCurveNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId parent_node_id, HAPI_NodeId * node_id, const char * name)
 {
 	return HAPI_RESULT_FAILURE;
 }
 
 
 HAPI_Result
-FHoudiniApi::CreateInputNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId * node_id, const char * name)
+FHoudiniApi::CreateInputNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId parent_node_id, HAPI_NodeId * node_id, const char * name)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -2345,7 +2345,7 @@ FHoudiniApi::CreateThriftNamedPipeSessionEmptyStub(HAPI_Session * session, const
 
 
 HAPI_Result
-FHoudiniApi::CreateThriftSharedMemorySessionEmptyStub(HAPI_Session * session, const char * shared_mem_name)
+FHoudiniApi::CreateThriftSharedMemorySessionEmptyStub(HAPI_Session * session, const char * shared_mem_name, const HAPI_SessionInfo * session_info)
 {
 	return HAPI_RESULT_FAILURE;
 }

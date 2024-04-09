@@ -1504,7 +1504,7 @@ FHoudiniSplineTranslator::HapiCreateCurveInputNode(
 	else
 	{
 		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CreateInputCurveNode(
-			FHoudiniEngine::Get().GetSession(), &NewNodeId, TCHAR_TO_UTF8(*InputNodeName)), false);
+			FHoudiniEngine::Get().GetSession(), -1, &NewNodeId, TCHAR_TO_UTF8(*InputNodeName)), false);
 
 		OutCurveNodeId = NewNodeId;
 
