@@ -36,8 +36,12 @@
 #include "UObject/Object.h"
 #include "Logging/LogMacros.h"
 
+#include "HoudiniParameterInt.h"
 #include "HoudiniParameterFloat.h"
+#include "HoudiniParameterString.h"
+#include "HoudiniParameterColor.h"
 #include "HoudiniParameterToggle.h"
+#include "HoudiniParameterFile.h"
 #include "HoudiniInput.h"
 
 #if WITH_EDITOR
@@ -1941,9 +1945,31 @@ UHoudiniAssetBlueprintComponent::HasParameter(FString Name)
 }
 
 void 
+UHoudiniAssetBlueprintComponent::SetIntParameter(FString Name, int Value, int Index)
+{
+	SetTypedValueAt<UHoudiniParameterInt>(Name, Value, Index);
+}
+
+void 
 UHoudiniAssetBlueprintComponent::SetFloatParameter(FString Name, float Value, int Index)
 {
 	SetTypedValueAt<UHoudiniParameterFloat>(Name, Value, Index);
+}
+
+void 
+UHoudiniAssetBlueprintComponent::SetStringParameter(FString Name, FString Value, int Index)
+{
+	SetTypedValueAt<UHoudiniParameterString>(Name, Value, Index);
+}
+
+void 
+UHoudiniAssetBlueprintComponent::SetColorParameter(FString Name, FLinearColor Value)
+{
+	UHoudiniParameterColor* Parameter = Cast<UHoudiniParameterColor>(FindParameterByName(Name));
+	if (!Parameter)
+		return;
+
+	Parameter->SetColorValue(Value);
 }
 
 void 
@@ -1954,6 +1980,12 @@ UHoudiniAssetBlueprintComponent::SetToggleValueAt(FString Name, bool Value, int 
 		return;
 
 	Parameter->SetValueAt(Value, Index);
+}
+
+void 
+UHoudiniAssetBlueprintComponent::SetFileParameter(FString Name, FString Value, int Index)
+{
+	SetTypedValueAt<UHoudiniParameterFile>(Name, Value, Index);
 }
 
 //void UHoudiniAssetBlueprintComponent::OnPostCookHandler(UHoudiniAssetComponent* InComponent)
