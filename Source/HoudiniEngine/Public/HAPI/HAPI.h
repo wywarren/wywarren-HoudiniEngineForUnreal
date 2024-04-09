@@ -2382,7 +2382,7 @@ HAPI_DECL HAPI_CreateNode( const HAPI_Session * session,
                            HAPI_NodeId * new_node_id );
 
 /// @brief  Creates a simple geometry SOP node that can accept geometry input.
-///         This will create a dummy OBJ node with a Null SOP inside that
+///         Inside the specified parent node, this will create a Null SOP
 ///         you can set the geometry of using the geometry SET APIs.
 ///         You can then connect this node to any other node as a geometry
 ///         input.
@@ -2399,6 +2399,13 @@ HAPI_DECL HAPI_CreateNode( const HAPI_Session * session,
 ///                 Pass NULL to just use the default in-process session.
 ///                 <!-- default NULL -->
 ///
+/// @param[in]      parent_node_id
+///                 The node id of the parent OBJ node or SOP subnetwork node in
+///                 which the input node should be created, or -1 to create a
+///                 new dummy parent OBJ node for this input node.
+///                 <!-- min -1 -->
+///                 <!-- default -1 -->
+///
 /// @param[out]     node_id
 ///                 Newly created node's id. Use ::HAPI_GetNodeInfo()
 ///                 to get more information about the node.
@@ -2412,11 +2419,12 @@ HAPI_DECL HAPI_CreateNode( const HAPI_Session * session,
 ///                 <!-- default NULL -->
 ///
 HAPI_DECL HAPI_CreateInputNode( const HAPI_Session * session,
+                                HAPI_NodeId parent_node_id,
                                 HAPI_NodeId * node_id,
                                 const char * name );
 
 /// @brief  Helper for creating specifically creating a curve input geometry SOP.
-///         This will create a dummy OBJ node with a Null SOP inside that
+///         Inside the specified parent node, this will create a Null SOP that
 ///         contains the the HAPI_ATTRIB_INPUT_CURVE_COORDS attribute.
 ///         It will setup the node as a curve part with no points.
 ///         In addition to creating the input node, it will also commit and cook
@@ -2434,6 +2442,13 @@ HAPI_DECL HAPI_CreateInputNode( const HAPI_Session * session,
 ///                 Pass NULL to just use the default in-process session.
 ///                 <!-- default NULL -->
 ///
+/// @param[in]      parent_node_id
+///                 The node id of the parent OBJ node or SOP subnetwork node in
+///                 which the input node should be created, or -1 to create a
+///                 new dummy parent OBJ node for this input node.
+///                 <!-- min -1 -->
+///                 <!-- default -1 -->
+///
 /// @param[out]     node_id
 ///                 Newly created node's id. Use ::HAPI_GetNodeInfo()
 ///                 to get more information about the node.
@@ -2447,8 +2462,9 @@ HAPI_DECL HAPI_CreateInputNode( const HAPI_Session * session,
 ///                 <!-- default NULL -->
 ///
 HAPI_DECL HAPI_CreateInputCurveNode( const HAPI_Session * session,
-                                HAPI_NodeId * node_id,
-                                const char * name );
+                                     HAPI_NodeId parent_node_id,
+                                     HAPI_NodeId * node_id,
+                                     const char * name );
 
 
 /// @defgroup HeightFields Height Fields
