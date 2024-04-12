@@ -1994,4 +1994,48 @@ FHoudiniEngineCommands::SetAllowPlayInEditorRefinement(
 #endif
 }
 
+
+void
+FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
+{
+	if (Args.Num() < 1)
+	{
+		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute takes a class name as argument! ie: DumpGenericAttribute StaticMesh"));
+		return;
+	}
+
+	// Get the class name
+	FString ClassName = Args[0];
+
+	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+	HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
+	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+		
+	// Make sure we can find the class
+	//UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+	// UE5.1 deprecated ANY_PACKAGE, using a null outer doesn't work so use FindFirstObject instead
+	UClass* FoundClass = FindFirstObject<UClass>(*ClassName, EFindFirstObjectOptions::NativeFirst);
+#else
+	UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+#endif
+
+	if(!IsValid(FoundClass))
+	{
+		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+		return;
+	}
+
+	// Reuse the find property function used by the generic attribute system
+	FProperty* FoundProperty = nullptr;
+	UObject* FoundPropertyObject = nullptr;
+	void* Container = nullptr;
+	FEditPropertyChain FoundPropertyChain;
+	
+	FHoudiniGenericAttribute::FindPropertyOnObject(FoundClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
+
+	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+}
+
 #undef LOCTEXT_NAMESPACE
