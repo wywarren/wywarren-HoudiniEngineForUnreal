@@ -2098,6 +2098,7 @@ FHoudiniEngineUtils::TryToFindInArrayProperty(
 bool 
 FHoudiniGenericAttribute::DumpGenericAttributeForProperty(FProperty* InProperty)
 {
+#if WITH_EDITOR
 	if (!InProperty)
 		return false;
 
@@ -2237,6 +2238,7 @@ FHoudiniGenericAttribute::DumpGenericAttributeForProperty(FProperty* InProperty)
 	}
 
 	HOUDINI_LOG_MESSAGE(TEXT("unreal_uproperty_%s : %s (%s) - UE TYPE: %s%s - H TYPE: %s%s."), *Name, *Name, *DisplayName, *UnrealType, *ArrayString, *HoudiniType, *TupleString);
+#endif
 
 	return true;
 }
