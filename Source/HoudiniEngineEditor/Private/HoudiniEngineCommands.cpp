@@ -1994,7 +1994,6 @@ FHoudiniEngineCommands::SetAllowPlayInEditorRefinement(
 #endif
 }
 
-
 void
 FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
 {
@@ -2010,15 +2009,21 @@ FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
 	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
 	HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
 	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-		
+	
+	HOUDINI_LOG_MESSAGE(TEXT(" "));
+	HOUDINI_LOG_MESSAGE(TEXT("Format: "));
+	HOUDINI_LOG_MESSAGE(TEXT("unreal_uproperty_XXXX : NAME (DISPLAY_NAME) - UE TYPE: UETYPE - H TYPE: HTYPE TUPLE."));
+	HOUDINI_LOG_MESSAGE(TEXT(" "));
+	HOUDINI_LOG_MESSAGE(TEXT(" "));
+
 	// Make sure we can find the class
-	//UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-	// UE5.1 deprecated ANY_PACKAGE, using a null outer doesn't work so use FindFirstObject instead
-	UClass* FoundClass = FindFirstObject<UClass>(*ClassName, EFindFirstObjectOptions::NativeFirst);
-#else
-	UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-#endif
+	UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(ClassName);
+	if (!IsValid(FoundClass) && (ClassName.StartsWith("U") || ClassName.StartsWith("F")))
+	{
+		// Try again after removing the starting U/F character
+		FString ChoppedName = ClassName.RightChop(1);
+		FoundClass = FHoudiniEngineUtils::GetClassByName(ChoppedName);
+	}
 
 	if(!IsValid(FoundClass))
 	{
@@ -2031,9 +2036,27 @@ FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
 	FProperty* FoundProperty = nullptr;
 	UObject* FoundPropertyObject = nullptr;
 	void* Container = nullptr;
-	FEditPropertyChain FoundPropertyChain;
-	
+	FEditPropertyChain FoundPropertyChain;	
 	FHoudiniGenericAttribute::FindPropertyOnObject(FoundClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
+
+	if (ClassName.Equals("StaticMesh", ESearchCase::IgnoreCase))
+	{
+		// For static meshes - we also manually look at the BodySetup, AssetImportData and NavCollision classes
+		UClass* BSClass = FHoudiniEngineUtils::GetClassByName("BodySetup");
+		FoundProperty = nullptr; FoundPropertyObject = nullptr; Container = nullptr;
+		HOUDINI_LOG_MESSAGE(TEXT("------------ BODY SETUP ------------------------------------------------------------------------------------"));
+		FHoudiniGenericAttribute::FindPropertyOnObject(BSClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
+
+		UClass* AIClass = FHoudiniEngineUtils::GetClassByName("AssetImportData");
+		FoundProperty = nullptr;FoundPropertyObject = nullptr;Container = nullptr;
+		HOUDINI_LOG_MESSAGE(TEXT("------------ ASSET IMPORT DATA -----------------------------------------------------------------------------"));
+		FHoudiniGenericAttribute::FindPropertyOnObject(AIClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
+
+		UClass* NavClass = FHoudiniEngineUtils::GetClassByName("NavCollision");
+		FoundProperty = nullptr; FoundPropertyObject = nullptr; Container = nullptr;
+		HOUDINI_LOG_MESSAGE(TEXT("------------ NAV COLLISION ---------------------------------------------------------------------------------"));
+		FHoudiniGenericAttribute::FindPropertyOnObject(NavClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
+	}
 
 	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
 }

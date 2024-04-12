@@ -197,7 +197,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniGenericAttribute
 
 	// Helper function for dumping generic property attributre details for a given property
 	// returns true if the property is supported
-	static bool DumpGenericAttributeForProperty(FProperty* InProperty);
+	static bool DumpGenericAttributeForProperty(FProperty* InProperty, int32 InPropChainNumber);
 
 
 };
