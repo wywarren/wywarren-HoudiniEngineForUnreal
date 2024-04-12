@@ -709,81 +709,6 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 		OutContainer,
 		bDumpAttributes);
 
-	/*
-	// TODO: Parsing needs to be made recursively!
-	// Iterate manually on the properties, in order to handle StructProperties correctly
-	for (TFieldIterator<FProperty> PropIt(ObjectClass, EFieldIteratorFlags::IncludeSuper); PropIt; ++PropIt)
-	{
-		FProperty* CurrentProperty = *PropIt;
-		if (!CurrentProperty)
-			continue;
-
-		FString DisplayName = CurrentProperty->GetDisplayNameText().ToString().Replace(TEXT(" "), TEXT(""));
-		FString Name = CurrentProperty->GetName();
-
-		// If the property name contains the uprop attribute name, we have a candidate
-		if (Name.Contains(InPropertyName) || DisplayName.Contains(InPropertyName))
-		{
-			OutFoundProperty = CurrentProperty;
-
-			// If it's an equality, we dont need to keep searching
-			if ((Name == InPropertyName) || (DisplayName == InPropertyName))
-			{
-				bPropertyHasBeenFound = true;
-				break;
-			}
-		}
-
-		// StructProperty need to be a nested struct
-		//if (UStructProperty* StructProperty = Cast< UStructProperty >(CurrentProperty))
-		//	bPropertyHasBeenFound = TryToFindInStructProperty(InObject, InPropertyName, StructProperty, OutFoundProperty, OutStructContainer);
-		//else if (UArrayProperty* ArrayProperty = Cast< UArrayProperty >(CurrentProperty))
-		//	bPropertyHasBeenFound = TryToFindInArrayProperty(InObject, InPropertyName, ArrayProperty, OutFoundProperty, OutStructContainer);
-
-		// Handle StructProperty
-		FStructProperty* StructProperty = CastField<FStructProperty>(CurrentProperty);
-		if (StructProperty)
-		{
-			// Walk the structs' properties and try to find the one we're looking for
-			UScriptStruct* Struct = StructProperty->Struct;
-			if (!IsValid(Struct))
-				continue;
-
-			for (TFieldIterator<FProperty> It(Struct); It; ++It)
-			{
-				FProperty* Property = *It;
-				if (!Property)
-					continue;
-
-				DisplayName = Property->GetDisplayNameText().ToString().Replace(TEXT(" "), TEXT(""));
-				Name = Property->GetName();
-
-				// If the property name contains the uprop attribute name, we have a candidate
-				if (Name.Contains(InPropertyName) || DisplayName.Contains(InPropertyName))
-				{
-					// We found the property in the struct property, we need to keep the ValuePtr in the object
-					// of the structProp in order to be able to access the property value afterwards...
-					OutFoundProperty = Property;
-					OutStructContainer = StructProperty->ContainerPtrToValuePtr< void >(InObject, 0);
-
-					// If it's an equality, we dont need to keep searching
-					if ((Name == InPropertyName) || (DisplayName == InPropertyName))
-					{
-						bPropertyHasBeenFound = true;
-						break;
-					}
-				}
-			}
-		}
-
-		if (bPropertyHasBeenFound)
-			break;
-	}
-
-	if (bPropertyHasBeenFound)
-		return true;
-	*/
-
 	// Try with FindField??
 	if (!OutFoundProperty)
 		OutFoundProperty = FindFProperty<FProperty>(ObjectClass, *InPropertyName);
@@ -916,6 +841,11 @@ FHoudiniGenericAttribute::TryToFindProperty(
 
 		if (StructProperty)
 		{
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT("-------- STRUCT %s BEGIN "), *StructProperty->GetName());
+			}
+
 			// Walk the structs' properties and try to find the one we're looking for
 			UScriptStruct* Struct = StructProperty->Struct;
 			if (!IsValid(Struct))
@@ -931,6 +861,12 @@ FHoudiniGenericAttribute::TryToFindProperty(
 				bOutPropertyHasBeenFound,
 				OutContainer,
 				bDumpAttributes);
+
+
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT("-------- STRUCT %s END "), *StructProperty->GetName());
+			}
 
 			if (!bOutPropertyHasBeenFound)
 				InPropertyChain.RemoveNode(InPropertyChain.GetTail());
@@ -1317,6 +1253,60 @@ FHoudiniGenericAttribute::ModifyPropertyValueOnObject(
 				// Found a vector property, fill it with up to 3 tuple values
 				FVector3f& Vector = *static_cast<FVector3f*>(PropertyValue);
 				FVector3f NewVector = FVector3f::ZeroVector;
+				NewVector.X = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 0);
+				if (InGenericAttribute.AttributeTupleSize > 1)
+					NewVector.Y = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 1);
+				if (InGenericAttribute.AttributeTupleSize > 2)
+					NewVector.Z = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 2);
+
+				if (NewVector != Vector)
+				{
+					OnPrePropertyChanged(StructProperty);
+					Vector = NewVector;
+					OnPropertyChanged(StructProperty);
+				}
+			}
+			else if (PropertyName == NAME_Rotator || PropertyName == NAME_Rotator3d)
+			{
+				// Found a Rotator property, fill it with up to 3 tuple values
+				FRotator& Rotator = *static_cast<FRotator*>(PropertyValue);
+				FRotator NewRotator = FRotator::ZeroRotator;
+				NewRotator.Roll = InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 0);
+				if (InGenericAttribute.AttributeTupleSize > 1)
+					NewRotator.Pitch = InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 1);
+				if (InGenericAttribute.AttributeTupleSize > 2)
+					NewRotator.Yaw = InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 2);
+
+				if (NewRotator != Rotator)
+				{
+					OnPrePropertyChanged(StructProperty);
+					Rotator = NewRotator;
+					OnPropertyChanged(StructProperty);
+				}
+			}
+			else if (PropertyName == NAME_Rotator3f)
+			{
+				// Found a Rotator property, fill it with up to 3 tuple values
+				FRotator3f& Rotator = *static_cast<FRotator3f*>(PropertyValue);
+				FRotator3f NewRotator = FRotator3f::ZeroRotator;
+				NewRotator.Roll = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 0);
+				if (InGenericAttribute.AttributeTupleSize > 1)
+					NewRotator.Pitch = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 1);
+				if (InGenericAttribute.AttributeTupleSize > 2)
+					NewRotator.Yaw = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 2);
+
+				if (NewRotator != Rotator)
+				{
+					OnPrePropertyChanged(StructProperty);
+					Rotator = NewRotator;
+					OnPropertyChanged(StructProperty);
+				}
+			}
+			else if (PropertyName == "Vector_NetQuantize100")
+			{
+				// Found a vector property, fill it with up to 3 tuple values
+				FVector_NetQuantize100& Vector = *static_cast<FVector_NetQuantize100*>(PropertyValue);
+				FVector_NetQuantize100 NewVector = FVector_NetQuantize100::ZeroVector;
 				NewVector.X = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 0);
 				if (InGenericAttribute.AttributeTupleSize > 1)
 					NewVector.Y = (float)InGenericAttribute.GetDoubleValue(AtIndex + TupleIndex + 1);
@@ -1949,13 +1939,34 @@ FHoudiniGenericAttribute::GetAttributeTupleSizeAndStorageFromProperty(
 		{
 			OutAttributeStorageType = EAttribStorageType::STRING;
 		}
+		else if (PropertyClass->IsChildOf(FEnumProperty::StaticClass()))
+		{
+			OutAttributeStorageType = EAttribStorageType::INT;
+		}
 	}
 	else if (FStructProperty* StructProperty = CastField<FStructProperty>(InnerProperty))
 	{
 		// struct properties
 
 		const FName PropertyName = StructProperty->Struct->GetFName();
-		if (PropertyName == NAME_Vector)
+		if (PropertyName == NAME_Vector 
+			|| PropertyName == NAME_Vector3d 
+			|| PropertyName == NAME_Vector3f
+			|| PropertyName == "Vector_NetQuantize100")
+		{
+			OutAttributeTupleSize = 3;
+			OutAttributeStorageType = EAttribStorageType::FLOAT;
+		}
+		else if (PropertyName == NAME_Vector2D
+			|| PropertyName == NAME_Vector2d
+			|| PropertyName == NAME_Vector2f)
+		{
+			OutAttributeTupleSize = 2;
+			OutAttributeStorageType = EAttribStorageType::FLOAT;
+		}
+		else if (PropertyName == NAME_Rotator
+			|| PropertyName == NAME_Rotator3d
+			|| PropertyName == NAME_Rotator3f)
 		{
 			OutAttributeTupleSize = 3;
 			OutAttributeStorageType = EAttribStorageType::FLOAT;
