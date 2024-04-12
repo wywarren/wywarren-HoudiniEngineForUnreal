@@ -1613,6 +1613,11 @@ FHoudiniEngineEditor::RegisterConsoleCommands()
 		TEXT("Clears all entries from the input manager."),
 		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::ClearInputManager));
 #endif
+
+	static FAutoConsoleCommand CCmdDumpGenericAttribute = FAutoConsoleCommand(
+		TEXT("Houdini.DumpGenericAttribute"),
+		TEXT("Outputs a list of all the generic property attribute for a given class."),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&FHoudiniEngineCommands::DumpGenericAttribute));
 }
 
 void

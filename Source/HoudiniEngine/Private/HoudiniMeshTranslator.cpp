@@ -6690,7 +6690,7 @@ FHoudiniMeshTranslator::TryToFindPropertyOnSourceModel(
 {
 	bool bFoundProperty = false;
 	FHoudiniGenericAttribute::TryToFindProperty(
-		&InSourceModel, InSourceModel.StaticStruct(), InPropertyName, InPropertyChain, OutFoundProperty, bFoundProperty, OutContainer);
+		&InSourceModel, InSourceModel.StaticStruct(), InPropertyName, InPropertyChain, OutFoundProperty, bFoundProperty, OutContainer, false);
 	return bFoundProperty;
 }
 

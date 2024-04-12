@@ -133,6 +133,8 @@ public:
 
 	static void OnlineForum();
 
+	static void DumpGenericAttribute(const TArray<FString>& Args);
+
 	// Helper function for building static meshes for all assets using HoudiniStaticMesh
 	// If bSilent is false, show a progress dialog.
 	// If bRefineAll is true, then all components with HoudiniStaticMesh meshes will be
