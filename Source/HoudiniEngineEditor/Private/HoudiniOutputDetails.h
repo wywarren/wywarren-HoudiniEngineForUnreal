@@ -50,6 +50,7 @@ class ALandscapeSplineActor;
 class SBorder;
 class SComboButton;
 class USkeletalMesh;
+class USkeleton;
 
 struct FHoudiniGeoPartObject;
 struct FHoudiniOutputObjectIdentifier;

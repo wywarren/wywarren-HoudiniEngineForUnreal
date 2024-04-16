@@ -123,6 +123,7 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "RawMesh.h"
+#include "SkeletalMeshTypes.h"
 #include "Sound/SoundBase.h"
 #include "UObject/MetaData.h"
 #include "UObject/Package.h"
