@@ -1999,66 +1999,60 @@ FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
 {
 	if (Args.Num() < 1)
 	{
+		HOUDINI_LOG_ERROR(TEXT(" "));
 		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute takes a class name as argument! ie: DumpGenericAttribute StaticMesh"));
+		HOUDINI_LOG_ERROR(TEXT(" "));
 		return;
 	}
 
-	// Get the class name
-	FString ClassName = Args[0];
-
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-	HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-	
-	HOUDINI_LOG_MESSAGE(TEXT(" "));
-	HOUDINI_LOG_MESSAGE(TEXT("Format: "));
-	HOUDINI_LOG_MESSAGE(TEXT("unreal_uproperty_XXXX : NAME (DISPLAY_NAME) - UE TYPE: UETYPE - H TYPE: HTYPE TUPLE."));
-	HOUDINI_LOG_MESSAGE(TEXT(" "));
-	HOUDINI_LOG_MESSAGE(TEXT(" "));
-
-	// Make sure we can find the class
-	UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(ClassName);
-	if (!IsValid(FoundClass) && (ClassName.StartsWith("U") || ClassName.StartsWith("F")))
+	for (int32 Idx = 0; Idx < Args.Num(); Idx++)
 	{
-		// Try again after removing the starting U/F character
-		FString ChoppedName = ClassName.RightChop(1);
-		FoundClass = FHoudiniEngineUtils::GetClassByName(ChoppedName);
-	}
+		// Get the class name
+		FString ClassName = Args[Idx];
 
-	if(!IsValid(FoundClass))
-	{
-		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
 		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-		return;
+		HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+		HOUDINI_LOG_MESSAGE(TEXT("Format: "));
+		HOUDINI_LOG_MESSAGE(TEXT("unreal_uproperty_XXXX : NAME (DISPLAY_NAME) - UE TYPE: UETYPE - H TYPE: HTYPE TUPLE."));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+
+		// Make sure we can find the class
+		UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(ClassName);
+		if (!IsValid(FoundClass) && (ClassName.StartsWith("U") || ClassName.StartsWith("F")))
+		{
+			// Try again after removing the starting U/F character
+			FString ChoppedName = ClassName.RightChop(1);
+			FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(ChoppedName);
+		}
+
+		if (!IsValid(FoundClass))
+		{
+			HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
+			HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+			return;
+		}
+
+		UObject* ObjectToParse = FoundClass->GetDefaultObject();
+		if (!IsValid(ObjectToParse))
+		{
+			// Use the class directly if we failed to get a DCO
+			ObjectToParse = FoundClass;
+		}
+
+		// Reuse the find property function used by the generic attribute system
+		FProperty* FoundProperty = nullptr;
+		UObject* FoundPropertyObject = nullptr;
+		void* Container = nullptr;
+		FEditPropertyChain FoundPropertyChain;
+		FHoudiniGenericAttribute::FindPropertyOnObject(ObjectToParse, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container, true);
+
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
 	}
-
-	// Reuse the find property function used by the generic attribute system
-	FProperty* FoundProperty = nullptr;
-	UObject* FoundPropertyObject = nullptr;
-	void* Container = nullptr;
-	FEditPropertyChain FoundPropertyChain;	
-	FHoudiniGenericAttribute::FindPropertyOnObject(FoundClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
-
-	if (ClassName.Equals("StaticMesh", ESearchCase::IgnoreCase))
-	{
-		// For static meshes - we also manually look at the BodySetup, AssetImportData and NavCollision classes
-		UClass* BSClass = FHoudiniEngineUtils::GetClassByName("BodySetup");
-		FoundProperty = nullptr; FoundPropertyObject = nullptr; Container = nullptr;
-		HOUDINI_LOG_MESSAGE(TEXT("------------ BODY SETUP ------------------------------------------------------------------------------------"));
-		FHoudiniGenericAttribute::FindPropertyOnObject(BSClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
-
-		UClass* AIClass = FHoudiniEngineUtils::GetClassByName("AssetImportData");
-		FoundProperty = nullptr;FoundPropertyObject = nullptr;Container = nullptr;
-		HOUDINI_LOG_MESSAGE(TEXT("------------ ASSET IMPORT DATA -----------------------------------------------------------------------------"));
-		FHoudiniGenericAttribute::FindPropertyOnObject(AIClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
-
-		UClass* NavClass = FHoudiniEngineUtils::GetClassByName("NavCollision");
-		FoundProperty = nullptr; FoundPropertyObject = nullptr; Container = nullptr;
-		HOUDINI_LOG_MESSAGE(TEXT("------------ NAV COLLISION ---------------------------------------------------------------------------------"));
-		FHoudiniGenericAttribute::FindPropertyOnObject(NavClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
-	}
-
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
 }
 
 #undef LOCTEXT_NAMESPACE

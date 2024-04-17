@@ -876,3 +876,17 @@ FHoudiniEngineRuntimeUtils::SetHoudiniHomeEnvironmentVariable()
 
 	FPlatformMisc::SetEnvironmentVar(TEXT("HOME"), CustomHoudiniHomeLocationPath.GetCharArray().GetData());
 }
+
+UClass*
+FHoudiniEngineRuntimeUtils::GetClassByName(const FString& InName)
+{
+	if (InName.IsEmpty())
+		return nullptr;
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+	// UE5.1 deprecated ANY_PACKAGE, using a null outer doesn't work so use FindFirstObject instead
+	return FindFirstObject<UClass>(*InName, EFindFirstObjectOptions::NativeFirst);
+#else
+	return FindObject<UClass>(ANY_PACKAGE, *InName);
+#endif
+}

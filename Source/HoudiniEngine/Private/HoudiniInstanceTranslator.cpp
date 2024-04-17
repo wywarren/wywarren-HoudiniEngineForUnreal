@@ -1601,7 +1601,7 @@ FHoudiniInstanceTranslator::GetAttributeInstancerObjectsAndTransforms(
 		if (!AttributeObject)
 		{
 			// See if the ref is a class that we can instantiate
-			UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(AssetName);
+			UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(AssetName);
 
 			if (FoundClass != nullptr)
 			{
@@ -1685,7 +1685,7 @@ FHoudiniInstanceTranslator::GetAttributeInstancerObjectsAndTransforms(
 
 				if (!AttributeObject)
 				{
-					UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(Iter);
+					UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(Iter);
 					if (FoundClass != nullptr)
 					{
 						// TODO: ensure we'll be able to create an actor from this class!

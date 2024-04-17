@@ -311,7 +311,8 @@ FUnrealFoliageTypeTranslator::CreateHoudiniFoliageTypeAttributes(UFoliageType* I
 				FoundPropertyChain,
 				FoundProperty,
 				FoundPropertyObject,
-				Container))
+				Container,
+				false))
 			continue;
 
 		if (!FHoudiniGenericAttribute::GetAttributeTupleSizeAndStorageFromProperty(
