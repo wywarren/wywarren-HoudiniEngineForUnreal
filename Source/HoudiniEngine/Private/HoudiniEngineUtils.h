@@ -1045,9 +1045,6 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		static FString GetHoudiniEnginePluginDir();
 
-		// Helper function for returning a class from its name
-		static UClass* GetClassByName(const FString& InName);
-
 		// -------------------------------------------------
 		// UWorld and UPackage utilities
 		// -------------------------------------------------

@@ -1953,42 +1953,60 @@ FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
 {
 	if (Args.Num() < 1)
 	{
+		HOUDINI_LOG_ERROR(TEXT(" "));
 		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute takes a class name as argument! ie: DumpGenericAttribute StaticMesh"));
+		HOUDINI_LOG_ERROR(TEXT(" "));
 		return;
 	}
 
-	// Get the class name
-	FString ClassName = Args[0];
-
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-	HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-		
-	// Make sure we can find the class
-	//UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-	// UE5.1 deprecated ANY_PACKAGE, using a null outer doesn't work so use FindFirstObject instead
-	UClass* FoundClass = FindFirstObject<UClass>(*ClassName, EFindFirstObjectOptions::NativeFirst);
-#else
-	UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-#endif
-
-	if(!IsValid(FoundClass))
+	for (int32 Idx = 0; Idx < Args.Num(); Idx++)
 	{
-		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
+		// Get the class name
+		FString ClassName = Args[Idx];
+
 		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-		return;
+		HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+		HOUDINI_LOG_MESSAGE(TEXT("Format: "));
+		HOUDINI_LOG_MESSAGE(TEXT("unreal_uproperty_XXXX : NAME (DISPLAY_NAME) - UE TYPE: UETYPE - H TYPE: HTYPE TUPLE."));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+
+		// Make sure we can find the class
+		UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(ClassName);
+		if (!IsValid(FoundClass) && (ClassName.StartsWith("U") || ClassName.StartsWith("F")))
+		{
+			// Try again after removing the starting U/F character
+			FString ChoppedName = ClassName.RightChop(1);
+			FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(ChoppedName);
+		}
+
+		if (!IsValid(FoundClass))
+		{
+			HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
+			HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+			return;
+		}
+
+		UObject* ObjectToParse = FoundClass->GetDefaultObject();
+		if (!IsValid(ObjectToParse))
+		{
+			// Use the class directly if we failed to get a DCO
+			ObjectToParse = FoundClass;
+		}
+
+		// Reuse the find property function used by the generic attribute system
+		FProperty* FoundProperty = nullptr;
+		UObject* FoundPropertyObject = nullptr;
+		void* Container = nullptr;
+		FEditPropertyChain FoundPropertyChain;
+		FHoudiniGenericAttribute::FindPropertyOnObject(ObjectToParse, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container, true);
+
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
 	}
-
-	// Reuse the find property function used by the generic attribute system
-	FProperty* FoundProperty = nullptr;
-	UObject* FoundPropertyObject = nullptr;
-	void* Container = nullptr;
-	FEditPropertyChain FoundPropertyChain;
-	
-	FHoudiniGenericAttribute::FindPropertyOnObject(FoundClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
-
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
 }
 
 #undef LOCTEXT_NAMESPACE

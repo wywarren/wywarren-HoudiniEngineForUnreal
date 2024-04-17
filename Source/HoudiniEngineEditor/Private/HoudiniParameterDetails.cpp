@@ -2257,7 +2257,7 @@ FHoudiniParameterDetails::CreateWidgetString(
 
 		if (Tags.Contains(HOUDINI_PARAMETER_STRING_REF_CLASS_TAG))
 		{
-			UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(Tags[HOUDINI_PARAMETER_STRING_REF_CLASS_TAG]);			
+			UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(Tags[HOUDINI_PARAMETER_STRING_REF_CLASS_TAG]);
 			if (FoundClass != nullptr)
 			{
 				UnrealRefClass = FoundClass;
