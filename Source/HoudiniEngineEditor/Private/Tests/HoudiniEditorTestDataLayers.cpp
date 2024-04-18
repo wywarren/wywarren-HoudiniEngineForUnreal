@@ -32,7 +32,7 @@
 #include "HoudiniPublicAPIInputTypes.h"
 #include "HoudiniAssetActor.h"
 #include "HoudiniEngineEditorUtils.h"
-
+#include "HoudiniEngineEditorPrivatePCH.h"
 #include "HoudiniPDGManager.h"
 #include "HoudiniParameterString.h"
 #include "HoudiniPDGAssetLink.h"
