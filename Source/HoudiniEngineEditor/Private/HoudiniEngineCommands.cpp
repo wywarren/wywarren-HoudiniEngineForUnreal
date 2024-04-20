@@ -58,6 +58,7 @@
 #include "Misc/FeedbackContext.h"
 #include "HAL/FileManager.h"
 #include "Modules/ModuleManager.h"
+#include "Interfaces/IPluginManager.h"
 #include "ISettingsModule.h"
 #include "UObject/ObjectSaveContext.h"
 //#include "UObject/ObjectSaveContext.h"
@@ -283,35 +284,35 @@ FHoudiniEngineCommands::OpenContentExampleGit()
 void
 FHoudiniEngineCommands::BrowseToContentExamples()
 {
-	// TODO: Finish me!
-	//GEditor->SyncBrowserToObjects(Results);
-	/*
-	bool bAllowLockedBrowsers = false;
-	bool bFocusContentBrowser = true;
-	FName InstanceName = FName("ContentBrowser");
-	bool bNewSpawnBrowser = true;
-	*/
-	//
-	FString CEFolder = FHoudiniEngineEditor::GetHoudiniEnginePluginDir() + "/Content/Examples";
-	FString CEFolder2 = FHoudiniEngineEditor::GetHoudiniEnginePluginDir() + "/Content/ContentExamples";
-	FString CEFolder3 = "/Content/ContentExamples";
-	FString CEFolder4 = "/Content/HoudiniEngine";
+	TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngineExamples"));
+	if (!Plugin.IsValid())// || !Plugin->IsEnabled())
+		return;
+
+	// Get the ContentExample's folder
+	//FString CEFolder = Plugin->GetContentDir() + "/ContentExamples/Maps";
+	FString CEFolder = "/HoudiniEngineExamples/ContentExamples/Maps";
 
 	TArray<FString> FolderList;
-	FolderList.Add(CEFolder);
-	FolderList.Add(CEFolder2);	
-	FolderList.Add(CEFolder3);
-	FolderList.Add(CEFolder4);
+	FolderList.Push(CEFolder);
 
 	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-	ContentBrowserModule.Get().SyncBrowserToFolders(FolderList);// , bAllowLockedBrowsers, bFocusContentBrowser, InstanceName, bNewSpawnBrowser);
+	ContentBrowserModule.Get().FocusPrimaryContentBrowser(false);
+	ContentBrowserModule.Get().ForceShowPluginContent(true);
+	//ContentBrowserModule.Get().SetSelectedPaths(FolderList, true);
+	ContentBrowserModule.Get().SyncBrowserToFolders(FolderList, true, true);
 }
 
 bool
 FHoudiniEngineCommands::HasContentExamples()
 {
-	// TODO: Finish me!
-	return false;
+	TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngineExamples"));
+	if (!Plugin.IsValid())
+		return false;
+	
+	if (!Plugin->IsEnabled())
+		return false;
+
+	return true;
 }
 
 void
