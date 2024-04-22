@@ -51,7 +51,13 @@ public:
 	virtual void PostSpawnActor(UObject * Asset, AActor * NewActor) override;
 	// Called after a blueprint is created by this factory to update the blueprint's CDO properties
 	// with state from the asset for this factory.
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	//TODO:5.4 ?? FIX ME ??
+	virtual void PostCreateBlueprint(UObject* Asset, AActor* CDO);
+#else
 	virtual void PostCreateBlueprint(UObject * Asset, AActor * CDO) override;
+#endif
+
 
 protected:
 	bool AddHoudiniLogoToComponent(UHoudiniAssetComponent* HAC);

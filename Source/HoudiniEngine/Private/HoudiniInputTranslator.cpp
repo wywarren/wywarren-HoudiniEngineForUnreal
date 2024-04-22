@@ -3055,12 +3055,13 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSceneComponent(
 	// Get the parent Actor's transform
 	FTransform ParentTransform = InObject->ActorTransform;
 
-	// Dont do that!
+	// Don't do that!
 	return false;
-
+	/*
 	// TODO
 	// Support this type of input object
 	return HapiCreateInputNodeForObject(InObjNodeName, InObject);
+	*/
 }
 
 bool

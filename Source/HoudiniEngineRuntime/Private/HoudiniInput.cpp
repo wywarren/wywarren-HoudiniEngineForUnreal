@@ -1750,7 +1750,7 @@ UHoudiniInput::GetHoudiniInputObjectArray(const EHoudiniInputType& InType)
 		return nullptr;
 	}
 
-	return nullptr;
+	//return nullptr;
 }
 
 TArray<AActor*>*
@@ -1765,7 +1765,7 @@ UHoudiniInput::GetBoundSelectorObjectArray()
 			return nullptr;
 	}
 
-	return nullptr;
+	//return nullptr;
 }
 
 const TArray<AActor*>*
@@ -1780,7 +1780,7 @@ UHoudiniInput::GetBoundSelectorObjectArray() const
 			return nullptr;
 	}
 	
-	return nullptr;
+	//return nullptr;
 }
 
 const TArray<UHoudiniInputObject*>*
@@ -1815,7 +1815,7 @@ UHoudiniInput::GetHoudiniInputObjectArray(const EHoudiniInputType& InType) const
 			return nullptr;
 	}
 
-	return nullptr;
+	//return nullptr;
 }
 
 UHoudiniInputObject*

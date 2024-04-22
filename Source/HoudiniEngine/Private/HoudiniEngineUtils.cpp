@@ -8593,7 +8593,7 @@ FHoudiniEngineUtils::CreateInputNode(const FString& InNodeLabel, HAPI_NodeId& Ou
 
 	if (InParentNodeId < 0)
 	{
-		const HAPI_Result Result = FHoudiniApi::CreateInputNode(Session, -1, &NodeId, TCHAR_TO_ANSI(*InNodeLabel));
+		const HAPI_Result Result = FHoudiniApi::CreateInputNode(Session, -1, &NodeId, TCHAR_TO_UTF8(*InNodeLabel));
 		if (Result != HAPI_RESULT_SUCCESS)
 		{
 			HOUDINI_LOG_WARNING(TEXT("[FHoudiniEngineUtils::CreateInputNode]: CreateInputNode failed: %s"), *FHoudiniEngineUtils::GetErrorDescription());

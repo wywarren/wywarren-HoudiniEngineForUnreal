@@ -655,7 +655,11 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 			}
 			else
 			{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+				HOUDINI_LOG_ERROR(TEXT("Bone '%s' is missing from bone tracks."), *Bone.ToString());
+#else
 				HOUDINI_LOG_ERROR(TEXT("Bone '%s' is missing from bone tracks."), Bone);
+#endif
 			}
 		}
 

@@ -1080,6 +1080,8 @@ FUnrealSkeletalMeshTranslator::SetSkeletalMeshDataOnNodeFromMeshDescription(
 			SkeletalMeshModel->LODModels[LODIndex].GetMeshDescription(MeshDescription, SkeletalMesh);
 		}
 	}
+#elif ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	MeshDescription = SkeletalMesh->GetMeshDescription(LODIndex) ? *SkeletalMesh->GetMeshDescription(LODIndex) : FMeshDescription();
 #else
 	SkeletalMesh->GetMeshDescription(LODIndex, MeshDescription);
 #endif
