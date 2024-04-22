@@ -313,10 +313,12 @@ bool FHoudiniEditorEquivalenceUtils::IsEquivalent(const UHoudiniParameter* A, co
 		Result &= TestExpressionError(IsEquivalent(Cast<UHoudiniParameterMultiParm>(A), Cast<UHoudiniParameterMultiParm>(B)), Header, "Object cast");
 	else if (A->IsA(UHoudiniParameterOperatorPath::StaticClass()))
 		Result &= TestExpressionError(IsEquivalent(Cast<UHoudiniParameterOperatorPath>(A), Cast<UHoudiniParameterOperatorPath>(B)), Header, "Object cast");
+	/*
 	else if (A->IsA(UHoudiniParameterRampFloatPoint::StaticClass()))
 		Result &= TestExpressionError(IsEquivalent(Cast<UHoudiniParameterRampFloatPoint>(A), Cast<UHoudiniParameterRampFloatPoint>(B)), Header, "Object cast");
 	else if (A->IsA(UHoudiniParameterRampColorPoint::StaticClass()))
 		Result &= TestExpressionError(IsEquivalent(Cast<UHoudiniParameterRampColorPoint>(A), Cast<UHoudiniParameterRampColorPoint>(B)), Header, "Object cast");
+	*/
 	else if (A->IsA(UHoudiniParameterRampFloat::StaticClass()))
 		Result &= TestExpressionError(IsEquivalent(Cast<UHoudiniParameterRampFloat>(A), Cast<UHoudiniParameterRampFloat>(B)), Header, "Object cast");
 	else if (A->IsA(UHoudiniParameterRampColor::StaticClass()))

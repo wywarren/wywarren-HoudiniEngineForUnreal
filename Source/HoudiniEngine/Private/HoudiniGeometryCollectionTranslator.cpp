@@ -1412,11 +1412,20 @@ FHoudiniGeometryCollectionTranslator::AppendStaticMesh(
 		}
 
 		// Geometry transform
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+		TManagedArray<FTransform3f>& Transform = GeometryCollection->Transform;
+#else
 		TManagedArray<FTransform>& Transform = GeometryCollection->Transform;
+#endif
 
 		int32 TransformIndex1 = GeometryCollection->AddElements(1, FGeometryCollection::TransformGroup);
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+		Transform[TransformIndex1] = FTransform3f(StaticMeshTransform);
+		Transform[TransformIndex1].SetScale3D(FVector3f::OneVector);
+#else
 		Transform[TransformIndex1] = StaticMeshTransform;
 		Transform[TransformIndex1].SetScale3D(FVector::OneVector);
+#endif
 
 		// Bone Hierarchy - Added at root with no common parent
 		TManagedArray<int32>& Parent = GeometryCollection->Parent;

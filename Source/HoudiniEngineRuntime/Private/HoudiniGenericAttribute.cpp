@@ -1033,8 +1033,9 @@ FHoudiniGenericAttribute::HandlePostEditChangeProperty(UObject* InObject, FEditP
 		return true;
 	}
 	return false;
-#endif
+#else
 	return true;
+#endif
 }
 
 bool

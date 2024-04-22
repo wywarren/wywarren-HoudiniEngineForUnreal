@@ -74,7 +74,11 @@ void FHoudiniDataLayerUtils::AddActorToLayer(
 {
 	// Find the Data Layer Instance for this actor.
 	UDataLayerInstance* TargetDataLayerInstance = nullptr;
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	WorldDataLayers->ForEachDataLayerInstance([&](UDataLayerInstance* DataLayer)
+#else
 	WorldDataLayers->ForEachDataLayer([&](UDataLayerInstance* DataLayer)
+#endif
 		{
 			FString DataLayerName = DataLayer->GetDataLayerShortName();
 			if (DataLayerName != Layer.Name)

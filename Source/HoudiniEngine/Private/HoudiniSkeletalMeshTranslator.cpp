@@ -169,11 +169,14 @@ AddChildren(
 void
 SortBonesByParent(FSkeletalMeshImportData & SkeletalMeshImportData)
 {
+	/*
+	// DEBUG ONLY - Print orginal bones
 	for (int32 i = 0; i < SkeletalMeshImportData.RefBonesBinary.Num(); i++)
 	{
-		SkeletalMeshImportData::FBone Bone = SkeletalMeshImportData.RefBonesBinary[i];
-		// UE_LOG(LogTemp, Log, TEXT("Bone %i %s parent %i children %i"), i, *Bone.Name, Bone.ParentIndex, Bone.NumChildren);
+		SkeletalMeshImportData::FBone Bone = SkeletalMeshImportData.RefBonesBinary[i];		
+		UE_LOG(LogTemp, Log, TEXT("Bone %i %s parent %i number of children %i"), i, *Bone.Name, Bone.ParentIndex, Bone.NumChildren);
 	}
+	*/
 
 	TArray <SkeletalMeshImportData::FBone>& RefBonesBinary = SkeletalMeshImportData.RefBonesBinary;
 	TArray<FBoneTracker> SortedBones;
@@ -195,11 +198,14 @@ SortBonesByParent(FSkeletalMeshImportData & SkeletalMeshImportData)
 		}
 	}
 
+	/*
+	// DEBUG ONLY - Print sorted bones
 	for (int32 i = 0; i < SortedBones.Num(); i++)
 	{
 		SkeletalMeshImportData::FBone Bone = SortedBones[i].Bone;
-		// UE_LOG(LogTemp, Log, TEXT("SORTED Bone %i %s parent %i children %i"), i, *Bone.Name, Bone.ParentIndex, Bone.NumChildren);
+		UE_LOG(LogTemp, Log, TEXT("SORTED Bone %i %s parent %i children %i"), i, *Bone.Name, Bone.ParentIndex, Bone.NumChildren);
 	}
+	*/
 
 	//store back in proper order 
 	for (int32 b = 0; b < SortedBones.Num(); b++)
@@ -236,8 +242,12 @@ SortBonesByParent(FSkeletalMeshImportData & SkeletalMeshImportData)
 		}
 		int32 NewIndex = BoneTracker->NewIndex;
 		SkeletalMeshImportData.Influences[i].BoneIndex = NewIndex;
+
+		/*
+		// DEBUG ONLY - Print sorted bones
 		float weight = SkeletalMeshImportData.Influences[i].Weight;
-		//UE_LOG(LogTemp, Log, TEXT("Old BoneIndex %i NewBoneIndex %i %s %f %i"), OldIndex, NewIndex, *SkeletalMeshImportData.RefBonesBinary[NewIndex].Name,weight, SkeletalMeshImportData.RefBonesBinary[NewIndex].ParentIndex);
+		UE_LOG(LogTemp, Log, TEXT("Old BoneIndex %i NewBoneIndex %i - %s - weight %f - parent %i"), OldIndex, NewIndex, *SkeletalMeshImportData.RefBonesBinary[NewIndex].Name,weight, SkeletalMeshImportData.RefBonesBinary[NewIndex].ParentIndex);
+		*/
 	}
 }
 
@@ -265,7 +275,18 @@ FHoudiniSkeletalMeshTranslator::BuildSKFromImportData(SKBuildSettings& BuildSett
 		SortBonesByParent(SkeletalMeshImportData);//only sort if new skeleton
 	}
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	// TODO:5.4 ?? CHECK ME
+	FMeshDescription MeshDescription;
+	if (SkeletalMeshImportData.GetMeshDescription(nullptr, &BuildSettings.SKMesh->GetLODInfo(0)->BuildSettings, MeshDescription))
+	{
+		BuildSettings.SKMesh->CreateMeshDescription(0, MoveTemp(MeshDescription));
+		BuildSettings.SKMesh->CommitMeshDescription(0);
+	}
+
+#else
 	BuildSettings.SKMesh->SaveLODImportedData(0, SkeletalMeshImportData);  //Import the ImportData
+#endif
 
 	int32 SkeletalDepth = 0;
 	FReferenceSkeleton& RefSkeleton = BuildSettings.SKMesh->GetRefSkeleton();
@@ -1187,10 +1208,8 @@ FHoudiniSkeletalMeshTranslator::FillSkeletalMeshImportData(SKBuildSettings& Buil
 		}
 
 		// Now that we have the total weight, we can set normalized influences for the skeletal mesh.
-		
 		for (int CaptureDataOffset = 0; CaptureDataOffset < MaxInfluencesPerVertex; CaptureDataOffset++)
 		{
-			
 			const int CaptureDataIndex =  PointIndex * MaxInfluencesPerVertex + CaptureDataOffset;
 			const FBoneCaptureData& BoneCaptureDataEntry = BoneCaptureDataArray[ CaptureDataIndex ];
 			float Weight = 0.f;
@@ -1215,7 +1234,7 @@ FHoudiniSkeletalMeshTranslator::FillSkeletalMeshImportData(SKBuildSettings& Buil
 				continue;
 			}
 
-			int CapturePoseBoneIndex =  CapturePoseBoneIndices.FindChecked(BoneName);
+			int CapturePoseBoneIndex = CapturePoseBoneIndices.FindChecked(BoneName);
 			
 			SkeletalMeshImportData::FRawBoneInfluence Influence;
 			Influence.VertexIndex = PointIndex;
@@ -1227,9 +1246,10 @@ FHoudiniSkeletalMeshTranslator::FillSkeletalMeshImportData(SKBuildSettings& Buil
 	}
 	
 	SkeletalMeshImportData.bHasVertexColors = ColorInfo.exists;
-
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 4
 	SkeletalMeshImportData.bDiffPose = false;
 	SkeletalMeshImportData.bUseT0AsRefPose = false;
+#endif
 
 	SkeletalMeshImportData.bHasNormals = true;
 	SkeletalMeshImportData.bHasTangents = false;

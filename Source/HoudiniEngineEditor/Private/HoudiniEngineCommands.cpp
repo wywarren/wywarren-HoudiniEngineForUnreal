@@ -359,7 +359,17 @@ FHoudiniEngineCommands::CleanUpTempFolder()
 					continue;
 
 				FReferencerInformationList ReferencesIncludingUndo;
-				bool bReferencedInMemoryOrUndoStack = IsReferenced(AssetInPackage, GARBAGE_COLLECTION_KEEPFLAGS, EInternalObjectFlags::GarbageCollectionKeepFlags, true, &ReferencesIncludingUndo);
+				bool bReferencedInMemoryOrUndoStack = IsReferenced(
+					AssetInPackage,
+					GARBAGE_COLLECTION_KEEPFLAGS,
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+					EInternalObjectFlags_GarbageCollectionKeepFlags,
+#else
+					EInternalObjectFlags::GarbageCollectionKeepFlags,
+#endif
+					true,
+					&ReferencesIncludingUndo);
+
 				if (!bReferencedInMemoryOrUndoStack)
 					continue;
 
