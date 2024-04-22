@@ -464,7 +464,7 @@ void FHoudiniEditorTestUtils::TakeScreenshotEditor(FHoudiniAutomationTest* Test,
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
 		Data.ScreenShotName = ScreenshotName;
 #else
-		Data.Screenshotname = ScreenshotName;
+		Data.ScreenshotName = ScreenshotName;
 #endif
 
 		// Sometimes errors on 4.25 if not offscreen
