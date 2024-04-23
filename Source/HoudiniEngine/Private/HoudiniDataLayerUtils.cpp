@@ -29,7 +29,7 @@
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
 #include "LevelEditorMenuContext.h"
-#include "NaniteSceneProxy.h"
+//#include "NaniteSceneProxy.h"
 #include "HAPI/HAPI_Common.h"
 #include "WorldPartition/DataLayer/WorldDataLayers.h"
 #include "HoudiniPackageParams.h"
