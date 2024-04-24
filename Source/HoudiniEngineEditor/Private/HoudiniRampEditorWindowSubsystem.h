@@ -28,6 +28,11 @@
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Layout/WidgetPath.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/SWindow.h"
 
 #include "HoudiniRampEditorWindowSubsystem.generated.h"
 
