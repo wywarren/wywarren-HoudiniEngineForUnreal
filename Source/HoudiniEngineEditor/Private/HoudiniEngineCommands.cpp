@@ -31,6 +31,7 @@
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineBakeUtils.h"
+#include "HoudiniEngineEditor.h"
 #include "HoudiniEngineEditorUtils.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniEngineRuntimeUtils.h"
@@ -57,11 +58,15 @@
 #include "Misc/FeedbackContext.h"
 #include "HAL/FileManager.h"
 #include "Modules/ModuleManager.h"
+#include "Interfaces/IPluginManager.h"
 #include "ISettingsModule.h"
 #include "UObject/ObjectSaveContext.h"
 //#include "UObject/ObjectSaveContext.h"
 #include "LevelEditor.h"
 #include "UObject/UObjectIterator.h"
+
+#include "IContentBrowserSingleton.h"
+#include "ContentBrowserModule.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
@@ -104,7 +109,10 @@ FHoudiniEngineCommands::RegisterCommands()
 
 	UI_COMMAND(_OpenInHoudini, "Open scene in Houdini...", "Opens the current Houdini scene in Houdini.", EUserInterfaceActionType::Button, FInputChord(EKeys::O, EModifierKey::Control | EModifierKey::Alt));
 	UI_COMMAND(_SaveHIPFile, "Save Houdini scene (HIP)", "Saves a .hip file of the current Houdini scene.", EUserInterfaceActionType::Button, FInputChord());
-		
+	
+	UI_COMMAND(_ContentExampleGit, "Content Example...", "Opens the GitHub repository that contains the plugin's content examples.", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(_ContentExampleBrowseTo, "Browse Content Examples...", "Browse to the installed content example folder in the current project (if installed).", EUserInterfaceActionType::Button, FInputChord());
+	
 	UI_COMMAND(_OnlineDoc, "Online Documentation...", "Go to the plugin's online documentation.", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(_OnlineForum, "Online Forum...", "Go to the plugin's online forum.", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(_ReportBug, "Report a bug...", "Report a bug for Houdini Engine for Unreal plugin.", EUserInterfaceActionType::Button, FInputChord());
@@ -268,6 +276,46 @@ FHoudiniEngineCommands::ShowPluginEditorSettings()
 }
 
 void
+FHoudiniEngineCommands::OpenContentExampleGit()
+{
+	FPlatformProcess::LaunchURL(HAPI_UNREAL_CONTENT_EXAMPLES_URL, nullptr, nullptr);
+}
+
+void
+FHoudiniEngineCommands::BrowseToContentExamples()
+{
+	TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngineExamples"));
+	if (!Plugin.IsValid())// || !Plugin->IsEnabled())
+		return;
+
+	// Get the ContentExample's folder
+	//FString CEFolder = Plugin->GetContentDir() + "/ContentExamples/Maps";
+	FString CEFolder = "/HoudiniEngineExamples/ContentExamples/Maps";
+
+	TArray<FString> FolderList;
+	FolderList.Push(CEFolder);
+
+	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+	ContentBrowserModule.Get().FocusPrimaryContentBrowser(false);
+	ContentBrowserModule.Get().ForceShowPluginContent(true);
+	//ContentBrowserModule.Get().SetSelectedPaths(FolderList, true);
+	ContentBrowserModule.Get().SyncBrowserToFolders(FolderList, true, true);
+}
+
+bool
+FHoudiniEngineCommands::HasContentExamples()
+{
+	TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngineExamples"));
+	if (!Plugin.IsValid())
+		return false;
+	
+	if (!Plugin->IsEnabled())
+		return false;
+
+	return true;
+}
+
+void
 FHoudiniEngineCommands::OnlineDocumentation()
 {
 	FPlatformProcess::LaunchURL(HAPI_UNREAL_ONLINE_DOC_URL, nullptr, nullptr);
@@ -359,7 +407,17 @@ FHoudiniEngineCommands::CleanUpTempFolder()
 					continue;
 
 				FReferencerInformationList ReferencesIncludingUndo;
-				bool bReferencedInMemoryOrUndoStack = IsReferenced(AssetInPackage, GARBAGE_COLLECTION_KEEPFLAGS, EInternalObjectFlags::GarbageCollectionKeepFlags, true, &ReferencesIncludingUndo);
+				bool bReferencedInMemoryOrUndoStack = IsReferenced(
+					AssetInPackage,
+					GARBAGE_COLLECTION_KEEPFLAGS,
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+					EInternalObjectFlags_GarbageCollectionKeepFlags,
+#else
+					EInternalObjectFlags::GarbageCollectionKeepFlags,
+#endif
+					true,
+					&ReferencesIncludingUndo);
+
 				if (!bReferencedInMemoryOrUndoStack)
 					continue;
 
@@ -1953,42 +2011,60 @@ FHoudiniEngineCommands::DumpGenericAttribute(const TArray<FString>& Args)
 {
 	if (Args.Num() < 1)
 	{
+		HOUDINI_LOG_ERROR(TEXT(" "));
 		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute takes a class name as argument! ie: DumpGenericAttribute StaticMesh"));
+		HOUDINI_LOG_ERROR(TEXT(" "));
 		return;
 	}
 
-	// Get the class name
-	FString ClassName = Args[0];
-
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-	HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-		
-	// Make sure we can find the class
-	//UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-	// UE5.1 deprecated ANY_PACKAGE, using a null outer doesn't work so use FindFirstObject instead
-	UClass* FoundClass = FindFirstObject<UClass>(*ClassName, EFindFirstObjectOptions::NativeFirst);
-#else
-	UClass* FoundClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-#endif
-
-	if(!IsValid(FoundClass))
+	for (int32 Idx = 0; Idx < Args.Num(); Idx++)
 	{
-		HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
+		// Get the class name
+		FString ClassName = Args[Idx];
+
 		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
-		return;
+		HOUDINI_LOG_MESSAGE(TEXT("        Dumping GenericAttribute for Class %s"), *ClassName);
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+		HOUDINI_LOG_MESSAGE(TEXT("Format: "));
+		HOUDINI_LOG_MESSAGE(TEXT("unreal_uproperty_XXXX : NAME (DISPLAY_NAME) - UE TYPE: UETYPE - H TYPE: HTYPE TUPLE."));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
+
+		// Make sure we can find the class
+		UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(ClassName);
+		if (!IsValid(FoundClass) && (ClassName.StartsWith("U") || ClassName.StartsWith("F")))
+		{
+			// Try again after removing the starting U/F character
+			FString ChoppedName = ClassName.RightChop(1);
+			FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(ChoppedName);
+		}
+
+		if (!IsValid(FoundClass))
+		{
+			HOUDINI_LOG_ERROR(TEXT("DumpGenericAttribute wasn't able to find a UClass that matches %s!"), *ClassName);
+			HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+			return;
+		}
+
+		UObject* ObjectToParse = FoundClass->GetDefaultObject();
+		if (!IsValid(ObjectToParse))
+		{
+			// Use the class directly if we failed to get a DCO
+			ObjectToParse = FoundClass;
+		}
+
+		// Reuse the find property function used by the generic attribute system
+		FProperty* FoundProperty = nullptr;
+		UObject* FoundPropertyObject = nullptr;
+		void* Container = nullptr;
+		FEditPropertyChain FoundPropertyChain;
+		FHoudiniGenericAttribute::FindPropertyOnObject(ObjectToParse, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container, true);
+
+		HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
+		HOUDINI_LOG_MESSAGE(TEXT(" "));
 	}
-
-	// Reuse the find property function used by the generic attribute system
-	FProperty* FoundProperty = nullptr;
-	UObject* FoundPropertyObject = nullptr;
-	void* Container = nullptr;
-	FEditPropertyChain FoundPropertyChain;
-	
-	FHoudiniGenericAttribute::FindPropertyOnObject(FoundClass, FString(), FoundPropertyChain, FoundProperty, FoundPropertyObject, Container);
-
-	HOUDINI_LOG_MESSAGE(TEXT("------------------------------------------------------------------------------------------------------------"));
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -625,6 +625,15 @@ FHoudiniEngineEditor::BindMenuCommands()
 		FCanExecuteAction::CreateLambda([]() { return true; }));
 
 	// Help and support
+	HEngineCommands->MapAction(
+		Commands._ContentExampleGit,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::OpenContentExampleGit(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._ContentExampleBrowseTo,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::BrowseToContentExamples(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::HasContentExamples(); }));
 
 	HEngineCommands->MapAction(
 		Commands._ReportBug,
@@ -733,12 +742,7 @@ FHoudiniEngineEditor::AddHoudiniFileMenuExtension(FMenuBuilder & MenuBuilder)
 	// Icons used by the commands are defined in the HoudiniEngineStyle
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenInHoudini);
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._SaveHIPFile);
-	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ReportBug);
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CleanUpTempFolder);
-	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._BakeAll);
-	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._PauseAssetCooking);
-	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RestartSession);
-	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RefineAll);
 
 	MenuBuilder.EndSection();
 }
@@ -757,20 +761,6 @@ FHoudiniEngineEditor::AddHoudiniEditorMenu(FMenuBarBuilder& MenuBarBuilder)
 void
 FHoudiniEngineEditor::AddHoudiniMainMenuExtension(FMenuBuilder & MenuBuilder)
 {
-	/*
-	MenuBuilder.BeginSection("Houdini", LOCTEXT("HoudiniLabel", "Houdini Engine"));
-	// Icons used by the commands are defined in the HoudiniEngineStyle
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenInHoudini);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._SaveHIPFile);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ReportBug);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CleanUpTempFolder);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._BakeAll);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._PauseAssetCooking);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RestartSession);
-	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RefineAll);
-	MenuBuilder.EndSection();
-	*/
-
 	MenuBuilder.BeginSection("Session", LOCTEXT("SessionLabel", "Session"));
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CreateSession);
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ConnectSession);
@@ -837,6 +827,9 @@ FHoudiniEngineEditor::AddHoudiniMainMenuExtension(FMenuBuilder & MenuBuilder)
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OnlineDoc);
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OnlineForum);
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ReportBug);
+
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ContentExampleGit);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ContentExampleBrowseTo);
 	MenuBuilder.EndSection();
 
 	MenuBuilder.BeginSection("Actions", LOCTEXT("ActionsLabel", "Actions"));

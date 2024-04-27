@@ -1050,10 +1050,18 @@ FHoudiniLandscapeSplineTranslator::CreateOutputLandscapeSplinesFromHoudiniGeoPar
 					ThisControlPoint->ConnectedSegments.Add(FLandscapeSplineConnection(Segment, 1));
 
 					// Auto-calculate rotation if we didn't receive rotation attributes
-					if (!Attributes.bHasPointRotationAttribute || !Attributes.PointRotations.IsValidIndex(PreviousControlPointArrayIdx)) 
+					if (!Attributes.bHasPointRotationAttribute || !Attributes.PointRotations.IsValidIndex(PreviousControlPointArrayIdx))
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+						PreviousControlPoint->AutoCalcRotation(true);
+#else
 						PreviousControlPoint->AutoCalcRotation();
+#endif
 					if (!Attributes.bHasPointRotationAttribute || !Attributes.PointRotations.IsValidIndex(CurvePointArrayIdx)) 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+						ThisControlPoint->AutoCalcRotation(true);
+#else
 						ThisControlPoint->AutoCalcRotation();
+#endif
 
 					// Add the segment to the appropriate LayerOutput. Will create create the LayerOutput if necessary.
 					AddSegmentToOutputObject(Segment, Attributes, CurvePointArrayIdx, InHAC, SplineInfo.LayerPackageParams, *SplineInfo.SplinesOutputObject);

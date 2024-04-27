@@ -303,7 +303,11 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 	TManagedArray<int32>& MaterialID = GeometryCollection->MaterialID;
 	TManagedArray<int32>& MaterialIndex = GeometryCollection->MaterialIndex;
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	TManagedArray<FTransform3f>& Transform = GeometryCollection->Transform;
+#else
 	TManagedArray<FTransform>& Transform = GeometryCollection->Transform;
+#endif
 	TManagedArray<int32>& Parent = GeometryCollection->Parent;
 	TManagedArray<int32>& SimulationType = GeometryCollection->SimulationType;
 	

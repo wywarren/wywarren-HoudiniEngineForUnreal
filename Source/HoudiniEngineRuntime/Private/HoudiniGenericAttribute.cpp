@@ -28,16 +28,18 @@
 
 #include "HoudiniEngineRuntimePrivatePCH.h"
 #include "HoudiniAssetComponent.h"
+//#include "HoudiniEngineUtils.h"
 
-#include "Engine/StaticMesh.h"
+#include "AI/Navigation/NavCollisionBase.h"
 #include "Components/ActorComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Landscape.h"
-
-#include "PhysicsEngine/BodySetup.h"
 #include "EditorFramework/AssetImportData.h"
-#include "AI/Navigation/NavCollisionBase.h"
+#include "Engine/StaticMesh.h"
+#include "Landscape.h"
+#include "PhysicsEngine/BodySetup.h"
+
+
 
 FHoudiniGenericAttributeChangedProperty::FHoudiniGenericAttributeChangedProperty()
 	: Object()
@@ -647,7 +649,7 @@ FHoudiniGenericAttribute::UpdatePropertyAttributeOnObject(
 // 	}
 // #endif
 
-	if (!FoundProperty && !FindPropertyOnObject(InObject, PropertyName, FoundPropertyChain, FoundProperty, FoundPropertyObject, OutContainer))
+	if (!FoundProperty && !FindPropertyOnObject(InObject, PropertyName, FoundPropertyChain, FoundProperty, FoundPropertyObject, OutContainer, false))
 		return false;
 
 	// Set the member and active properties on the chain
@@ -674,22 +676,22 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 	FEditPropertyChain& InPropertyChain,
 	FProperty*& OutFoundProperty,
 	UObject*& OutFoundPropertyObject,
-	void*& OutContainer)
+	void*& OutContainer,
+	bool bDumpAttributes)
 {
 #if WITH_EDITOR
 	if (!IsValid(InObject))
 		return false;
 
-	bool bDumpAttributes = false;
 	if (InPropertyName.IsEmpty())
 	{
 		if (InObject->IsA<UClass>())
 			bDumpAttributes = true;
-		else
+		else if (!bDumpAttributes)
 			return false;
 	}
 
-	UClass* ObjectClass = (bDumpAttributes ? Cast<UClass>(InObject) : InObject->GetClass());
+	UClass* ObjectClass = (InObject->IsA<UClass>() ? Cast<UClass>(InObject) : InObject->GetClass());
 	if (!IsValid(ObjectClass))
 		return false;
 
@@ -698,14 +700,14 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 	OutFoundProperty = nullptr;
 	OutFoundPropertyObject = InObject;
 
-	bool bPropertyHasBeenFound = false;
+	bool bExactPropertyHasBeenFound = false;
 	FHoudiniGenericAttribute::TryToFindProperty(
 		InObject,
 		ObjectClass,
 		InPropertyName,
 		InPropertyChain,
 		OutFoundProperty,
-		bPropertyHasBeenFound,
+		bExactPropertyHasBeenFound,
 		OutContainer,
 		bDumpAttributes);
 
@@ -717,31 +719,89 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 	if (!OutFoundProperty)
 		OutFoundProperty = ObjectClass->FindPropertyByName(*InPropertyName);
 
-	// We found the Property we were looking for
-	if (OutFoundProperty)
+	// We found exactly the Property we were looking for
+	if (OutFoundProperty && bExactPropertyHasBeenFound)
 		return true;
+
+	// We may have found a property that matches what we're looking for
+	// but not exactly - see if we can find a better match on some nested classes
+	FProperty* SecondaryFoundProperty = nullptr ;
+	UObject* SecondaryPropertyObject = InObject;
+	void* SecondaryContainer = nullptr;
+	bool bSecondaryFound = false;
 
 	// Handle common properties nested in classes
 	// Static Meshes
 	UStaticMesh* SM = Cast<UStaticMesh>(InObject);
 	if (IsValid(SM))
 	{
-		if (SM->GetBodySetup() && FindPropertyOnObject(
-			SM->GetBodySetup(), InPropertyName, InPropertyChain, OutFoundProperty, OutFoundPropertyObject, OutContainer))
+		UObject* BS = SM->GetBodySetup();
+		if (bDumpAttributes)
 		{
-			return true;
+			HOUDINI_LOG_MESSAGE(TEXT(" "));
+			HOUDINI_LOG_MESSAGE(TEXT("\n------------ BODY SETUP ------------------------------------------------------------------------------------"));
+
+			if (!IsValid(BS))
+				BS = FHoudiniEngineRuntimeUtils::GetClassByName("BodySetup");
 		}
 
-		if (SM->AssetImportData && FindPropertyOnObject(
-			SM->AssetImportData, InPropertyName, InPropertyChain, OutFoundProperty, OutFoundPropertyObject, OutContainer))
+		if (BS && FindPropertyOnObject(
+			BS, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
 		{
-			return true;
+			bSecondaryFound = true;
 		}
 
-		if (SM->GetNavCollision() && FindPropertyOnObject(
-			SM->GetNavCollision(), InPropertyName, InPropertyChain, OutFoundProperty, OutFoundPropertyObject, OutContainer))
+		if (bDumpAttributes)
 		{
-			return true;
+			HOUDINI_LOG_MESSAGE(TEXT("\n------------ BODY SETUP END --------------------------------------------------------------------------------"));
+		}
+		
+		if (!bSecondaryFound || bDumpAttributes)
+		{
+			UObject* AID = SM->GetAssetImportData();
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT(" "));
+				HOUDINI_LOG_MESSAGE(TEXT("------------ ASSET IMPORT DATA -----------------------------------------------------------------------------"));
+
+				if (!IsValid(AID))
+					AID = FHoudiniEngineRuntimeUtils::GetClassByName("AssetImportData");
+			}
+
+			if (AID && FindPropertyOnObject(
+				AID, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
+			{
+				bSecondaryFound = true;
+			}
+
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT("\n------------ ASSET IMPORT DATA END -------------------------------------------------------------------------"));
+			}
+		}
+		
+		if (!bSecondaryFound || bDumpAttributes)
+		{
+			UObject* NC = SM->GetNavCollision();
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT(" "));
+				HOUDINI_LOG_MESSAGE(TEXT("------------ NAV COLLISION ---------------------------------------------------------------------------------"));
+
+				if (!IsValid(NC))
+					NC = FHoudiniEngineRuntimeUtils::GetClassByName("AssetImportData");
+			}
+
+			if (NC && FindPropertyOnObject(
+				NC, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
+			{
+				bSecondaryFound = true;
+			}
+
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT("\n------------ NAV COLLISION END -----------------------------------------------------------------------------"));
+			}
 		}
 	}
 
@@ -752,17 +812,59 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 		TArray<USceneComponent*> AllComponents;
 		Actor->GetComponents<USceneComponent>(AllComponents, true);
 
+		if (bDumpAttributes && AllComponents.Num() > 0)
+		{
+			HOUDINI_LOG_MESSAGE(TEXT(" "));
+			HOUDINI_LOG_MESSAGE(TEXT("------------ ACTOR COMPONENTS ------------------------------------------------------------------------------"));
+		}
+
 		int32 CompIdx = 0;
 		for (USceneComponent * SceneComponent : AllComponents)
 		{
 			if (!IsValid(SceneComponent))
 				continue;
 
-			if (FindPropertyOnObject(
-				SceneComponent, InPropertyName, InPropertyChain, OutFoundProperty, OutFoundPropertyObject, OutContainer))
+			if (bDumpAttributes)
 			{
-				return true;
+				HOUDINI_LOG_MESSAGE(TEXT(" "));
+				HOUDINI_LOG_MESSAGE(TEXT("------------ %s"), *SceneComponent->GetClass()->GetName());
 			}
+
+			if (FindPropertyOnObject(
+				SceneComponent, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
+			{
+				bSecondaryFound = true;
+			}
+
+			if (bDumpAttributes)
+			{
+				HOUDINI_LOG_MESSAGE(TEXT("------------ %s END"), *SceneComponent->GetClass()->GetName());
+				HOUDINI_LOG_MESSAGE(TEXT(" "));
+			}
+		}
+	}
+
+	// If we found a secondary option for our property 
+	// See if it's a better match than the previous one
+	if (bSecondaryFound && SecondaryFoundProperty)
+	{
+		bool bUseSecondaryProperty = false;
+
+		// See if we have a perfect match for the secondary
+		FString DisplayName = SecondaryFoundProperty->GetDisplayNameText().ToString().Replace(TEXT(" "), TEXT(""));
+		FString Name = SecondaryFoundProperty->GetName();
+		if ((Name == InPropertyName) || (DisplayName == InPropertyName))
+			bUseSecondaryProperty = true;
+
+		// If we didn't find a property the first time, then use the secondary
+		if (!OutFoundProperty)
+			bUseSecondaryProperty = true;
+		
+		if(bUseSecondaryProperty)
+		{
+			OutFoundProperty = SecondaryFoundProperty;
+			OutFoundPropertyObject = SecondaryPropertyObject;
+			OutContainer = SecondaryContainer;
 		}
 	}
 
@@ -782,7 +884,7 @@ FHoudiniGenericAttribute::TryToFindProperty(
 	const FString& InPropertyName,
 	FEditPropertyChain& InPropertyChain,
 	FProperty*& OutFoundProperty,
-	bool& bOutPropertyHasBeenFound,
+	bool& bOutExactPropertyHasBeenFound,
 	void*& OutContainer,
 	bool bDumpAttributes)
 {
@@ -812,10 +914,10 @@ FHoudiniGenericAttribute::TryToFindProperty(
 			OutFoundProperty = CurrentProperty;
 			OutContainer = InContainer;
 
-			// If it's an equality, we dont need to keep searching anymore
+			// Stop if we found a property that perfectly match the name we're looking for
 			if ((Name == InPropertyName) || (DisplayName == InPropertyName))
 			{
-				bOutPropertyHasBeenFound = true;
+				bOutExactPropertyHasBeenFound = true;
 				InPropertyChain.AddTail(OutFoundProperty);
 				break;
 			}
@@ -836,13 +938,14 @@ FHoudiniGenericAttribute::TryToFindProperty(
 			}
 
 			// Make sure we never find the property (unnecessary?)
-			//bOutPropertyHasBeenFound = false;
+			//bOutExactPropertyHasBeenFound = false;
 		}
 
 		if (StructProperty)
 		{
 			if (bDumpAttributes)
 			{
+				HOUDINI_LOG_MESSAGE(TEXT(" "));
 				HOUDINI_LOG_MESSAGE(TEXT("-------- STRUCT %s BEGIN "), *StructProperty->GetName());
 			}
 
@@ -858,7 +961,7 @@ FHoudiniGenericAttribute::TryToFindProperty(
 				InPropertyName,
 				InPropertyChain,
 				OutFoundProperty,
-				bOutPropertyHasBeenFound,
+				bOutExactPropertyHasBeenFound,
 				OutContainer,
 				bDumpAttributes);
 
@@ -866,17 +969,23 @@ FHoudiniGenericAttribute::TryToFindProperty(
 			if (bDumpAttributes)
 			{
 				HOUDINI_LOG_MESSAGE(TEXT("-------- STRUCT %s END "), *StructProperty->GetName());
+				HOUDINI_LOG_MESSAGE(TEXT(" "));
 			}
 
-			if (!bOutPropertyHasBeenFound)
+			if (!bOutExactPropertyHasBeenFound)
 				InPropertyChain.RemoveNode(InPropertyChain.GetTail());
 		}
 
-		if (bOutPropertyHasBeenFound && !bDumpAttributes)
-			break;
+		if (!bDumpAttributes)
+		{
+			// Stop if we found a property that perfectly match the name we're looking for
+			if (bOutExactPropertyHasBeenFound)
+				break;
+		}
+		
 	}
 
-	if (bOutPropertyHasBeenFound)
+	if (bOutExactPropertyHasBeenFound)
 		return true;
 
 	// We found the Property we were looking for
@@ -924,8 +1033,9 @@ FHoudiniGenericAttribute::HandlePostEditChangeProperty(UObject* InObject, FEditP
 		return true;
 	}
 	return false;
-#endif
+#else
 	return true;
+#endif
 }
 
 bool

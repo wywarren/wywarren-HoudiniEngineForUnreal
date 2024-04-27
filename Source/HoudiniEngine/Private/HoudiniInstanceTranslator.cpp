@@ -1601,7 +1601,7 @@ FHoudiniInstanceTranslator::GetAttributeInstancerObjectsAndTransforms(
 		if (!AttributeObject)
 		{
 			// See if the ref is a class that we can instantiate
-			UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(AssetName);
+			UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(AssetName);
 
 			if (FoundClass != nullptr)
 			{
@@ -1685,7 +1685,7 @@ FHoudiniInstanceTranslator::GetAttributeInstancerObjectsAndTransforms(
 
 				if (!AttributeObject)
 				{
-					UClass* FoundClass = FHoudiniEngineUtils::GetClassByName(Iter);
+					UClass* FoundClass = FHoudiniEngineRuntimeUtils::GetClassByName(Iter);
 					if (FoundClass != nullptr)
 					{
 						// TODO: ensure we'll be able to create an actor from this class!
@@ -4082,8 +4082,13 @@ FHoudiniInstanceTranslator::UpdateChangedPerInstanceCustomData(
 
 	// Force recreation of the render data when proxy is created
 	//NewISMC->InstanceUpdateCmdBuffer.Edit();
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	// TODO:5.4 ?? fix me!!
+#else
 	// Cant call the edit function above because the function is defined in a different cpp file than the .h it is declared in...
 	ISMC->InstanceUpdateCmdBuffer.NumEdits++;
+#endif
 	
 	ISMC->MarkRenderStateDirty();
 	

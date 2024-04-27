@@ -1430,7 +1430,7 @@ FHoudiniToolsEditor::GetHoudiniToolDescriptionFromJSON(const FString& JsonFilePa
 	if (JSONObject->HasField(TEXT("target")))
 	{
 		IsCompatible = false;
-		TArray<TSharedPtr<FJsonValue> >TargetArray = JSONObject->GetArrayField("target");
+		TArray<TSharedPtr<FJsonValue> >TargetArray = JSONObject->GetArrayField(TEXT("target"));
 		for (TSharedPtr<FJsonValue> TargetValue : TargetArray)
 		{
 			if ( !TargetValue.IsValid() )

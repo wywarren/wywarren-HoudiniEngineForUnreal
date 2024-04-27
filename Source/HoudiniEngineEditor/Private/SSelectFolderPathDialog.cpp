@@ -70,54 +70,54 @@ SSelectFolderPathDialog::Construct(const FArguments& InArgs)
 		.Padding(2)
 		[
 			SNew(SBorder)
-				.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+			.BorderImage(_GetBrush("ToolPanel.GroupBorder"))
 			[
 				SNew(SVerticalBox)
 				+ SVerticalBox::Slot()
-			.AutoHeight()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("SelectPath", "Select Path"))
-			.Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
+				.AutoHeight()
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("SelectPath", "Select Path"))
+					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
+				]
+
+				+ SVerticalBox::Slot()
+				.FillHeight(1)
+				.Padding(3)
+				[
+					ContentBrowserModule.Get().CreatePathPicker(PathPickerConfig)
+				]
 			]
+		]
 
 		+ SVerticalBox::Slot()
-			.FillHeight(1)
-			.Padding(3)
-			[
-				ContentBrowserModule.Get().CreatePathPicker(PathPickerConfig)
-			]
-			]
-			]
-
-		+ SVerticalBox::Slot()
-			.AutoHeight()
-			.HAlign(HAlign_Right)
-			.Padding(5)
-			[
-				SNew(SUniformGridPanel)
-				.SlotPadding(FAppStyle::GetMargin("StandardDialog.SlotPadding"))
-			.MinDesiredSlotWidth(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
-			.MinDesiredSlotHeight(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
+		.AutoHeight()
+		.HAlign(HAlign_Right)
+		.Padding(5)
+		[
+			SNew(SUniformGridPanel)
+			.SlotPadding(_GetMargin("StandardDialog.SlotPadding"))
+			.MinDesiredSlotWidth(_GetFloat("StandardDialog.MinDesiredSlotWidth"))
+			.MinDesiredSlotHeight(_GetFloat("StandardDialog.MinDesiredSlotHeight"))
 			+ SUniformGridPanel::Slot(0, 0)
 			[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
-			.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
-			.Text(LOCTEXT("OK", "OK"))
-			.OnClicked(this, &SSelectFolderPathDialog::OnButtonClick, EAppReturnType::Ok)
+				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
+				.Text(LOCTEXT("OK", "OK"))
+				.OnClicked(this, &SSelectFolderPathDialog::OnButtonClick, EAppReturnType::Ok)
 			]
-		+ SUniformGridPanel::Slot(1, 0)
+			+ SUniformGridPanel::Slot(1, 0)
 			[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
-			.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
-			.Text(LOCTEXT("Cancel", "Cancel"))
-			.OnClicked(this, &SSelectFolderPathDialog::OnButtonClick, EAppReturnType::Cancel)
+				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
+				.Text(LOCTEXT("Cancel", "Cancel"))
+				.OnClicked(this, &SSelectFolderPathDialog::OnButtonClick, EAppReturnType::Cancel)
 			]
-			]
-			]);
-	}
+		]
+	]);
+}
 
 EAppReturnType::Type
 SSelectFolderPathDialog::ShowModal()
