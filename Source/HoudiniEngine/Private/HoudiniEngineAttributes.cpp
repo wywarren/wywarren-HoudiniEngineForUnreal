@@ -966,7 +966,7 @@ TryConvertDataArray(
 		for (int32 i = 0; i < SrcData.Num(); ++i)
 		{
 			// Perform conversion of different numeric types
-			DstData[i] = static_cast<TStorageTypeInfo<DstStorageType>::UnrealDataType>(SrcData[i]);
+			DstData[i] = static_cast<typename TStorageTypeInfo<DstStorageType>::UnrealDataType>(SrcData[i]);
 		}
 	}
 	else if constexpr (TIsStringStorageType_V<SrcStorageType> && TIsNumericStorageType_V<DstStorageType>)
@@ -1371,7 +1371,7 @@ FHoudiniEngineAttributes::GetInfo(
 	FHoudiniEngineAttributes::Set##TYPE_NAME( \
 		const FHoudiniEngineAttributeArgs& Args, \
 		const HAPI_AttributeInfo& AttributeInfo, \
-		const TArrayView<const TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data) \
+		const TArrayView<const typename TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data) \
 	{ \
 		return SetAttribute<HAPI_STORAGETYPE>(Args, AttributeInfo, Data); \
 	} \
@@ -1379,7 +1379,7 @@ FHoudiniEngineAttributes::GetInfo(
 	FHoudiniEngineAttributes::Get##TYPE_NAME##NoResize( \
 		const FHoudiniEngineAttributeArgs& Args, \
 		const HAPI_AttributeInfo& AttributeInfo, \
-		const TArrayView<TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data) \
+		const TArrayView<typename TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data) \
 	{ \
 		return GetAttributeNoResize<HAPI_STORAGETYPE>(Args, AttributeInfo, Data); \
 	} \
@@ -1387,7 +1387,7 @@ FHoudiniEngineAttributes::GetInfo(
 	FHoudiniEngineAttributes::Get##TYPE_NAME( \
 		const FHoudiniEngineAttributeArgs& Args, \
 		const HAPI_AttributeInfo& InAttributeInfo, \
-		TArray<TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType>& OutData) \
+		TArray<typename TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType>& OutData) \
 	{ \
 		return GetAttribute<HAPI_STORAGETYPE>(Args, InAttributeInfo, OutData); \
 	}
@@ -1397,7 +1397,7 @@ FHoudiniEngineAttributes::GetInfo(
 	FHoudiniEngineAttributes::Set##TYPE_NAME( \
 		const FHoudiniEngineAttributeArgs& Args, \
 		const HAPI_AttributeInfo& AttributeInfo, \
-		const TArrayView<const TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data, \
+		const TArrayView<const typename TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data, \
 		const TArrayView<const int32> Sizes) \
 	{ \
 		return SetArrayAttribute<HAPI_STORAGETYPE>(Args, AttributeInfo, Data, Sizes); \
@@ -1406,7 +1406,7 @@ FHoudiniEngineAttributes::GetInfo(
 	FHoudiniEngineAttributes::Get##TYPE_NAME##NoResize( \
 		const FHoudiniEngineAttributeArgs& Args, \
 		const HAPI_AttributeInfo& AttributeInfo, \
-		const TArrayView<TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data, \
+		const TArrayView<typename TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType> Data, \
 		const TArrayView<int32> Sizes) \
 	{ \
 		return GetArrayAttributeNoResize<HAPI_STORAGETYPE>(Args, AttributeInfo, Data, Sizes); \
@@ -1415,7 +1415,7 @@ FHoudiniEngineAttributes::GetInfo(
 	FHoudiniEngineAttributes::Get##TYPE_NAME( \
 		const FHoudiniEngineAttributeArgs& Args, \
 		const HAPI_AttributeInfo& InAttributeInfo, \
-		TArray<TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType>& OutData, \
+		TArray<typename TStorageTypeInfo<HAPI_STORAGETYPE>::UnrealDataType>& OutData, \
 		TArray<int32>& OutSizes) \
 	{ \
 		return GetArrayAttribute<HAPI_STORAGETYPE>(Args, InAttributeInfo, OutData, OutSizes); \
