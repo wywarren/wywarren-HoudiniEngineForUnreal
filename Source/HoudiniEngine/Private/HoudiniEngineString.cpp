@@ -32,6 +32,8 @@
 
 #include <vector>
 
+FCriticalSection FHoudiniEngineString::GetStringCriticalSection;
+
 FHoudiniEngineString::FHoudiniEngineString()
 	: StringId(-1)
 {}
@@ -78,7 +80,7 @@ FHoudiniEngineString::HasValidId() const
 }
 
 bool
-FHoudiniEngineString::ToStdString(std::string& String) const
+FHoudiniEngineString::ToStdString(std::string& String, const HAPI_Session* InSession) const
 {
 	String = "";
 
@@ -91,7 +93,7 @@ FHoudiniEngineString::ToStdString(std::string& String) const
 
 	int32 NameLength = 0;
 	if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetStringBufLength(
-		FHoudiniEngine::Get().GetSession(), StringId, &NameLength))
+		InSession ? InSession : FHoudiniEngine::Get().GetSession(), StringId, &NameLength))
 	{
 		return false;
 	}
@@ -101,7 +103,7 @@ FHoudiniEngineString::ToStdString(std::string& String) const
 		
 	std::vector<char> NameBuffer(NameLength, '\0');
 	if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetString(
-		FHoudiniEngine::Get().GetSession(),
+		InSession ? InSession : FHoudiniEngine::Get().GetSession(),
 		StringId, &NameBuffer[0], NameLength ) )
 	{
 		return false;
@@ -113,11 +115,11 @@ FHoudiniEngineString::ToStdString(std::string& String) const
 }
 
 bool
-FHoudiniEngineString::ToFName(FName& Name) const
+FHoudiniEngineString::ToFName(FName& Name, const HAPI_Session* InSession) const
 {
 	Name = NAME_None;
 	FString NameString = TEXT("");
-	if (ToFString(NameString))
+	if (ToFString(NameString, InSession))
 	{
 		Name = FName(*NameString);
 		return true;
@@ -127,12 +129,12 @@ FHoudiniEngineString::ToFName(FName& Name) const
 }
 
 bool
-FHoudiniEngineString::ToFString(FString& String) const
+FHoudiniEngineString::ToFString(FString& String, const HAPI_Session* InSession) const
 {
 	String = TEXT("");
 	std::string NamePlain = "";
 
-	if (ToStdString(NamePlain))
+	if (ToStdString(NamePlain, InSession))
 	{
 		String = UTF8_TO_TCHAR(NamePlain.c_str());
 		return true;
@@ -142,12 +144,12 @@ FHoudiniEngineString::ToFString(FString& String) const
 }
 
 bool
-FHoudiniEngineString::ToFText(FText& Text) const
+FHoudiniEngineString::ToFText(FText& Text, const HAPI_Session* InSession) const
 {
 	Text = FText::GetEmpty();
 	FString NameString = TEXT("");
 
-	if (ToFString(NameString))
+	if (ToFString(NameString, InSession))
 	{
 		Text = FText::FromString(NameString);
 		return true;
@@ -157,44 +159,62 @@ FHoudiniEngineString::ToFText(FText& Text) const
 }
 
 bool 
-FHoudiniEngineString::ToStdString(const int32& InStringId, std::string& OutStdString)
+FHoudiniEngineString::ToStdString(
+	const int32& InStringId,
+	std::string& OutStdString,
+	const HAPI_Session* InSession)
 {
 	FHoudiniEngineString HAPIString(InStringId);
-	return HAPIString.ToStdString(OutStdString);
+	return HAPIString.ToStdString(OutStdString, InSession);
 }
 
 bool
-FHoudiniEngineString::ToFName(const int32& InStringId, FName& OutName)
+FHoudiniEngineString::ToFName(
+	const int32& InStringId,
+	FName& OutName,
+	const HAPI_Session* InSession)
 {
 	FHoudiniEngineString HAPIString(InStringId);
-	return HAPIString.ToFName(OutName);
+	return HAPIString.ToFName(OutName, InSession);
 }
 
 bool
-FHoudiniEngineString::ToFString(const int32& InStringId, FString& OutString)
+FHoudiniEngineString::ToFString(
+	const int32& InStringId,
+	FString& OutString,
+	const HAPI_Session* InSession)
 {
 	FHoudiniEngineString HAPIString(InStringId);
-	return HAPIString.ToFString(OutString);
+	return HAPIString.ToFString(OutString, InSession);
 }
 
 bool
-FHoudiniEngineString::ToFText(const int32& InStringId, FText& OutText)
+FHoudiniEngineString::ToFText(
+	const int32& InStringId,
+	FText& OutText,
+	const HAPI_Session* InSession)
 {
 	FHoudiniEngineString HAPIString(InStringId);
-	return HAPIString.ToFText(OutText);
+	return HAPIString.ToFText(OutText, InSession);
 }
 
 bool
-FHoudiniEngineString::SHArrayToFStringArray(const TArray<int32>& InStringIdArray, TArray<FString>& OutStringArray)
+FHoudiniEngineString::SHArrayToFStringArray(
+	const TArray<int32>& InStringIdArray,
+	TArray<FString>& OutStringArray,
+	const HAPI_Session* InSession)
 {
-	if (SHArrayToFStringArray_Batch(InStringIdArray, OutStringArray))
+	if (SHArrayToFStringArray_Batch(InStringIdArray, OutStringArray, InSession))
 		return true;
 
-	return SHArrayToFStringArray_Singles(InStringIdArray, OutStringArray);
+	return SHArrayToFStringArray_Singles(InStringIdArray, OutStringArray, InSession);
 }
 
 bool
-FHoudiniEngineString::SHArrayToFStringArray_Batch(const TArray<int32>& InStringIdArray, TArray<FString>& OutStringArray)
+FHoudiniEngineString::SHArrayToFStringArray_Batch(
+	const TArray<int32>& InStringIdArray,
+	TArray<FString>& OutStringArray,
+	const HAPI_Session* InSession)
 {
     bool bReturn = true;
     OutStringArray.SetNumZeroed(InStringIdArray.Num());
@@ -207,19 +227,25 @@ FHoudiniEngineString::SHArrayToFStringArray_Batch(const TArray<int32>& InStringI
 
     TArray<int32> UniqueSHArray = UniqueSH.Array();
 
-    int32 BufferSize = 0;
-    if (HAPI_RESULT_SUCCESS
-        != FHoudiniApi::GetStringBatchSize(FHoudiniEngine::Get().GetSession(), UniqueSHArray.GetData(),
-                                           UniqueSHArray.Num(), &BufferSize))
-        return false;
+	int32 BufferSize = 0;
+	TArray<char> Buffer;
+	{
+		// We can only get one string batch at a time. Otherwise another thread could clear the 
+		// string table data before actually get to retrieve it.
+		FScopeLock GetStringDataScopeLock(&GetStringCriticalSection);
 
-    if (BufferSize <= 0)
-        return false;
+		if (HAPI_RESULT_SUCCESS
+			!= FHoudiniApi::GetStringBatchSize(InSession ? InSession : FHoudiniEngine::Get().GetSession(), UniqueSHArray.GetData(),
+											   UniqueSHArray.Num(), &BufferSize))
+			return false;
 
-    TArray<char> Buffer;
-    Buffer.SetNumZeroed(BufferSize);
-    if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetStringBatch(FHoudiniEngine::Get().GetSession(), &Buffer[0], BufferSize))
-        return false;
+		if (BufferSize <= 0)
+			return false;
+
+		Buffer.SetNumZeroed(BufferSize);
+		if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetStringBatch(InSession ? InSession : FHoudiniEngine::Get().GetSession(), &Buffer[0], BufferSize))
+			return false;
+	}
 
     // Parse the buffer to a string array
     TMap<int, FString> StringMap;
@@ -252,7 +278,10 @@ FHoudiniEngineString::SHArrayToFStringArray_Batch(const TArray<int32>& InStringI
 }
 
 bool
-FHoudiniEngineString::SHArrayToFStringArray_Singles(const TArray<int32>& InStringIdArray, TArray<FString>& OutStringArray)
+FHoudiniEngineString::SHArrayToFStringArray_Singles(
+	const TArray<int32>& InStringIdArray,
+	TArray<FString>& OutStringArray,
+	const HAPI_Session* InSession)
 {
 	bool bReturn = true;
 	OutStringArray.SetNumZeroed(InStringIdArray.Num());
@@ -324,7 +353,7 @@ void FHoudiniEngineIndexedStringMap::Reset(int ExpectedStringCount, int Expected
 	Strings.Reserve(ExpectedStringCount);
 }
 
-void FHoudiniEngineRawStrings::CreateRawStrings(const TArray<FString>& Strings)
+void FHoudiniEngineRawStrings::CreateRawStrings(const TArrayView<const FString> Strings)
 {
 	RawStrings.SetNumZeroed(Strings.Num());
 	Buffer.SetNum(0);

@@ -79,8 +79,18 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 		// Return the houdini executable to use
 		static const FString GetHoudiniExecutable();
 
-		// Session accessor
-		virtual const HAPI_Session* GetSession() const;
+		/** Gets the main session; equivalent to calling @c GetSession(0) */
+		virtual const HAPI_Session* GetSession() const
+		{
+			return GetSession(0);
+		}
+
+		virtual const HAPI_Session* GetSession(int32 Index) const;
+
+		virtual const int32 GetNumSessions() const
+		{
+			return Sessions.Num();
+		}
 
 		virtual const EHoudiniSessionStatus& GetSessionStatus() const;
 
@@ -93,23 +103,30 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 
 		// Creates a new session
 		bool StartSession(
-			HAPI_Session*& SessionPtr,
-			const bool& StartAutomaticServer,
-			const float& AutomaticServerTimeout,
-			const EHoudiniRuntimeSettingsSessionType& SessionType,
+			const bool bStartAutomaticServer,
+			const float AutomaticServerTimeout,
+			const EHoudiniRuntimeSettingsSessionType SessionType,
 			const FString& ServerPipeName,
-			const int32& ServerPort,
-			const FString& ServerHost);
+			const int32 ServerPort,
+			const FString& ServerHost,
+			const int32 Index);
 
-		// Stop the current session if it is valid
-		bool StopSession(HAPI_Session*& SessionPtr);
+		bool StartSessions(
+			const bool bStartAutomaticServer,
+			const float AutomaticServerTimeout,
+			const EHoudiniRuntimeSettingsSessionType SessionType,
+			const int32 NumSessions,
+			const FString& ServerPipeName,
+			const int32 ServerPort,
+			const FString& ServerHost);
 
 		// Creates a session sync session
 		bool SessionSyncConnect(
-			const EHoudiniRuntimeSettingsSessionType& SessionType,
+			const EHoudiniRuntimeSettingsSessionType SessionType,
+			const int32 NumSessions,
 			const FString& ServerPipeName,
 			const FString& ServerHost,
-			const int32& ServerPort);
+			const int32 ServerPort);
 
 		// Stops the current session
 		bool StopSession();
@@ -254,8 +271,7 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 		// Location of libHAPI binary. 
 		FString LibHAPILocation;
 
-		// The Houdini Engine session. 
-		HAPI_Session Session;
+		TArray<HAPI_Session> Sessions;
 
 		// The Houdini Engine session's status
 		EHoudiniSessionStatus SessionStatus;

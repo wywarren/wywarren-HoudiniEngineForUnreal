@@ -1146,8 +1146,10 @@ FHoudiniEngineCommands::OpenSessionSync()
 		const double Timeout = 180.0; // 3min
 		const double StartTimestamp = FPlatformTime::Seconds();
 
-		FString ServerHost = TEXT("localhost");
-		while (!FHoudiniEngine::Get().SessionSyncConnect(SessionType, ServerPipeName, ServerHost, ServerPort))
+		const FString ServerHost = TEXT("localhost");
+		constexpr int32 NumSessions = 1;
+		while (!FHoudiniEngine::Get().SessionSyncConnect(
+			SessionType, NumSessions, ServerPipeName, ServerHost, ServerPort))
 		{
 			// Houdini might not be done loading, sleep for one second 
 			FPlatformProcess::Sleep(.5f);

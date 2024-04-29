@@ -180,6 +180,9 @@ protected:
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
 		TEnumAsByte<enum EHoudiniRuntimeSettingsSessionType> SessionType;
 
+		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session, meta = (ClampMin = "1", ClampMax = "128"))
+		int32 NumSessions;
+
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
 		FString ServerHost;
 

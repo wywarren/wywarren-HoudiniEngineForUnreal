@@ -47,25 +47,46 @@ class HOUDINIENGINE_API FHoudiniEngineString
 		bool operator!=(const FHoudiniEngineString & Other) const;
 
 		// Conversion functions
-		bool ToStdString(std::string & String) const;
-		bool ToFName(FName & Name) const;
-		bool ToFString(FString & String) const;
-		bool ToFText(FText & Text) const;
+		bool ToStdString(std::string & String, const HAPI_Session* InSession = nullptr) const;
+		bool ToFName(FName & Name, const HAPI_Session* InSession = nullptr) const;
+		bool ToFString(FString & String, const HAPI_Session* InSession = nullptr) const;
+		bool ToFText(FText & Text, const HAPI_Session* InSession = nullptr) const;
 		
 		// Static converters
-		static bool ToStdString(const int32& InStringId, std::string & String);
-		static bool ToFName(const int32& InStringId, FName & Name);
-		static bool ToFString(const int32& InStringId, FString & String);
-		static bool ToFText(const int32& InStringId, FText & Text);
+		static bool ToStdString(
+			const int32& InStringId,
+			std::string& String,
+			const HAPI_Session* InSession = nullptr);
+		static bool ToFName(
+			const int32& InStringId,
+			FName& Name,
+			const HAPI_Session* InSession = nullptr);
+		static bool ToFString(
+			const int32& InStringId,
+			FString& String,
+			const HAPI_Session* InSession = nullptr);
+		static bool ToFText(
+			const int32& InStringId,
+			FText& Text,
+			const HAPI_Session* InSession = nullptr);
 
 		// Array converter, uses a map to avoid redudant calls to HAPI
-		static bool SHArrayToFStringArray(const TArray<int32>& InStringIdArray, TArray<FString>& OutStringArray);
+		static bool SHArrayToFStringArray(
+			const TArray<int32>& InStringIdArray,
+			TArray<FString>& OutStringArray,
+			const HAPI_Session* InSession = nullptr);
 
 		// Array converter, uses string batches and a map to reduce HAPI calls
-		static bool SHArrayToFStringArray_Batch(const TArray<int32>& InStringIdArray, TArray<FString>& OutStringArray);
+		static bool SHArrayToFStringArray_Batch(
+			const TArray<int32>& InStringIdArray,
+			TArray<FString>& OutStringArray,
+			const HAPI_Session* InSession = nullptr);
 		
 		// Array converter, uses a map to reduce HAPI calls
-		static bool SHArrayToFStringArray_Singles(const TArray<int32>& InStringIdArray, TArray<FString>& OutStringArray);
+		static bool SHArrayToFStringArray_Singles(
+			const TArray<int32>& InStringIdArray,
+			TArray<FString>& OutStringArray,
+			const HAPI_Session* InSession = nullptr);
 
 		// Return id of this string.
 		int32 GetId() const;
@@ -77,6 +98,12 @@ class HOUDINIENGINE_API FHoudiniEngineString
 
 		// Id of the underlying Houdini Engine string.
 		int32 StringId;
+
+	private:
+
+		// Needed to lock the HAPI string table, otherwise it may get cleared by a HAPI call from
+		// another thread.
+		static FCriticalSection GetStringCriticalSection;
 };
 
 class FHoudiniEngineRawStrings
@@ -87,7 +114,7 @@ public:
     // and the data is stored in "Buffer". Destructing this class automatically
     // deletes the temporary memory memory needed.
 
-    void CreateRawStrings(const TArray<FString> & Strings);
+    void CreateRawStrings(const TArrayView<const FString> Strings);
 
     TArray<const char*> RawStrings;
     TArray<char> Buffer;

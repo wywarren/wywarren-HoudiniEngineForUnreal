@@ -58,6 +58,7 @@ UHoudiniRuntimeSettings::UHoudiniRuntimeSettings( const FObjectInitializer & Obj
 {
 	// Session options.
 	SessionType = HRSST_NamedPipe;
+	NumSessions = 1;
 	ServerHost = HAPI_UNREAL_SESSION_SERVER_HOST;
 	ServerPort = HAPI_UNREAL_SESSION_SERVER_PORT;
 	ServerPipeName = HAPI_UNREAL_SESSION_SERVER_PIPENAME;

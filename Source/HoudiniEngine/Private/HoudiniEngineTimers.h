@@ -32,7 +32,7 @@
 
 // Adds a new cpu profile event with the name of an FString
 #define H_SCOPED_FUNCTION_DYNAMIC_LABEL(__LABEL) \
-				TRACE_CPUPROFILER_EVENT_SCOPE_STR(__LABEL.GetCharArray().GetData())
+				TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(TCHAR_TO_ANSI(*__LABEL))
 
 // Adds a new cpu profile event with a static label. For some reason, adding __FUNCTION__
 // fails to compile on Mac.
