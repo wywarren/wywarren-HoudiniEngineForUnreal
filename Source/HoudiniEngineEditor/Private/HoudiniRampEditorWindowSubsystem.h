@@ -33,7 +33,7 @@
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SWindow.h"
-
+#include "HoudiniEngineRuntimePrivatePCH.h"
 #include "HoudiniRampEditorWindowSubsystem.generated.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE

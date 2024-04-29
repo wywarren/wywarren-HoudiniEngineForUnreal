@@ -36,6 +36,7 @@
 #include "HoudiniEditorUnitTestUtils.h"
 #include "FoliageType_InstancedStaticMesh.h"
 #include "HoudiniEngineBakeUtils.h"
+#include "HoudiniEngineRuntimePrivatePCH.h"
 
 IMPLEMENT_SIMPLE_HOUDINI_AUTOMATION_TEST(FHoudiniEditorTestsProxyMeshVertices, "Houdini.UnitTests.ProxyMesh.Vertices", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 

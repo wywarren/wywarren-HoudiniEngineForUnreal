@@ -27,6 +27,7 @@
 #pragma once
 
 #include "UObject/Object.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "HoudiniAsset.generated.h"
 
 class UAssetImportData;

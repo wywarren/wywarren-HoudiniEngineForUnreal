@@ -21,6 +21,7 @@
 #include "HoudiniParameterToggle.h"
 #include "HoudiniEngineOutputStats.h"
 #include "HoudiniPDGManager.h"
+#include "HoudiniEngineRuntimePrivatePCH.h"
 
 UHoudiniAssetComponent* FHoudiniEditorUnitTestUtils::LoadHDAIntoNewMap(
 	const FString& PackageName, 

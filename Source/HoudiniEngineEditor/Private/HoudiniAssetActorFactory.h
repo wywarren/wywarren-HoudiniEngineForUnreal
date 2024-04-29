@@ -27,6 +27,7 @@
 #pragma once
 
 #include "ActorFactories/ActorFactory.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "HoudiniAssetActorFactory.generated.h"
 
 class FText;

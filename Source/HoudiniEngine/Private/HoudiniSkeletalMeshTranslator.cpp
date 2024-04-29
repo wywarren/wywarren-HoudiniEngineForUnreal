@@ -1838,8 +1838,6 @@ FHoudiniSkeletalMeshTranslator::CreateSkeletalMeshMaterials(
 				InShapeMeshHGPO.ObjectId, *InShapeMeshHGPO.ObjectName, InShapeMeshHGPO.GeoId, InShapeMeshHGPO.PartId, *InShapeMeshHGPO.PartName, *UnrealMatPerFaceMatNames[FaceIdx]);
 
 			continue;
-
-			MaterialInterface = nullptr;
 		}
 
 		SkeletalMeshImportData::FMaterial CurrentMat;
