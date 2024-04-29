@@ -968,6 +968,14 @@ TryConvertDataArray(
 			// Perform conversion of different numeric types
 			DstData[i] = static_cast<typename TStorageTypeInfo<DstStorageType>::UnrealDataType>(SrcData[i]);
 		}
+
+		HOUDINI_LOG_WARNING(
+			CONVERSION_SUCCESS_LOG_MESSAGE,
+			ANSI_TO_TCHAR(AttributeName),
+			GetStorageTypeString(SrcStorageType),
+			GetStorageTypeString(DstStorageType));
+
+		return true;
 	}
 	else if constexpr (TIsStringStorageType_V<SrcStorageType> && TIsNumericStorageType_V<DstStorageType>)
 	{
@@ -984,6 +992,14 @@ TryConvertDataArray(
 				return false;
 			}
 		}
+
+		HOUDINI_LOG_WARNING(
+			CONVERSION_SUCCESS_LOG_MESSAGE,
+			ANSI_TO_TCHAR(AttributeName),
+			GetStorageTypeString(SrcStorageType),
+			GetStorageTypeString(DstStorageType));
+
+		return true;
 	}
 	else if constexpr (TIsNumericStorageType_V<SrcStorageType> && TIsStringStorageType_V<DstStorageType>)
 	{
@@ -998,6 +1014,14 @@ TryConvertDataArray(
 				DstData[i] = FString::SanitizeFloat(SrcData[i]);
 			}
 		}
+
+		HOUDINI_LOG_WARNING(
+			CONVERSION_SUCCESS_LOG_MESSAGE,
+			ANSI_TO_TCHAR(AttributeName),
+			GetStorageTypeString(SrcStorageType),
+			GetStorageTypeString(DstStorageType));
+
+		return true;
 	}
 	else
 	{
@@ -1007,15 +1031,9 @@ TryConvertDataArray(
 			ANSI_TO_TCHAR(AttributeName),
 			GetStorageTypeString(DstStorageType),
 			GetStorageTypeString(SrcStorageType));
+
 		return false;
 	}
-
-	HOUDINI_LOG_WARNING(
-		CONVERSION_SUCCESS_LOG_MESSAGE,
-		ANSI_TO_TCHAR(AttributeName),
-		GetStorageTypeString(SrcStorageType),
-		GetStorageTypeString(DstStorageType));
-	return true;
 }
 
 template<
@@ -1033,16 +1051,18 @@ GetAttributeWithTypeConversion(
 		// No conversion needed, the type is correct
 		return AttributeGetter<DstStorageType>::Get(Args, AttributeInfo, DstData);
 	}
-
-	TArray<typename TStorageTypeInfo<SrcStorageType>::UnrealDataType> SrcData;
-	SrcData.SetNumZeroed(DstData.Num());
-
-	if (!AttributeGetter<SrcStorageType>::Get(Args, AttributeInfo, SrcData))
+	else
 	{
-		return false;
-	}
+		TArray<typename TStorageTypeInfo<SrcStorageType>::UnrealDataType> SrcData;
+		SrcData.SetNumZeroed(DstData.Num());
 
-	return TryConvertDataArray<SrcStorageType, DstStorageType>(Args.AttributeName, SrcData, DstData);
+		if (!AttributeGetter<SrcStorageType>::Get(Args, AttributeInfo, SrcData))
+		{
+			return false;
+		}
+
+		return TryConvertDataArray<SrcStorageType, DstStorageType>(Args.AttributeName, SrcData, DstData);
+	}
 }
 
 template<
@@ -1061,16 +1081,18 @@ GetArrayAttributeWithTypeConversion(
 		// No conversion needed, the type is correct
 		return ArrayAttributeGetter<DstStorageType>::Get(Args, AttributeInfo, DstData, Sizes);
 	}
-
-	TArray<typename TStorageTypeInfo<SrcStorageType>::UnrealDataType> SrcData;
-	SrcData.SetNumZeroed(DstData.Num());
-
-	if (!ArrayAttributeGetter<SrcStorageType>::Get(Args, AttributeInfo, SrcData, Sizes))
+	else
 	{
-		return false;
-	}
+		TArray<typename TStorageTypeInfo<SrcStorageType>::UnrealDataType> SrcData;
+		SrcData.SetNumZeroed(DstData.Num());
 
-	return TryConvertDataArray<SrcStorageType, DstStorageType>(Args.AttributeName, SrcData, DstData);
+		if (!ArrayAttributeGetter<SrcStorageType>::Get(Args, AttributeInfo, SrcData, Sizes))
+		{
+			return false;
+		}
+
+		return TryConvertDataArray<SrcStorageType, DstStorageType>(Args.AttributeName, SrcData, DstData);
+	}
 }
 
 template<template<HAPI_StorageType> typename AttributeGetter, HAPI_StorageType StorageType>
