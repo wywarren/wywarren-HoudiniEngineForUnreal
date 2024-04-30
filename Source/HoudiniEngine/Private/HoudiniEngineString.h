@@ -29,6 +29,7 @@
 #include <string>
 #include "HoudiniApi.h"
 #include "Containers/Map.h"
+#include "HAL/CriticalSection.h"
 class FText;
 class FString;
 class FName;
