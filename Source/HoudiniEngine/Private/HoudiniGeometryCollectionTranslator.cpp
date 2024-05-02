@@ -253,6 +253,13 @@ FHoudiniGeometryCollectionTranslator::SetupGeometryCollectionComponentFromOutput
 		
 		if (IsValid(GeometryCollectionComponent))
 		{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+			// TODO: Improve me!
+			// Somehow, in 5.4 - the Component doesnt seem to update properly if we set the GC too early
+			// (which is what we used to do) - 	resetting the whole GC as temporary fix
+			GeometryCollectionComponent->SetRestCollection(GeometryCollection);
+#endif
+
 			// Mark the render state dirty otherwise it won't appear until you move it
 			GeometryCollectionComponent->MarkRenderStateDirty();
 		}
@@ -1507,7 +1514,8 @@ FHoudiniGeometryCollectionTranslator::AppendStaticMesh(
 			}
 		}
 
-		if (ReindexMaterials) {
+		if (ReindexMaterials) 
+		{
 			GeometryCollection->ReindexMaterials();
 		}
 	}
