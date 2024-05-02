@@ -227,6 +227,14 @@ enum HAPI_StatusVerbosity
 };
 HAPI_C_ENUM_TYPEDEF( HAPI_StatusVerbosity )
 
+enum HAPI_JobStatus
+{
+    HAPI_JOB_STATUS_RUNNING,
+    HAPI_JOB_STATUS_IDLE,
+    HAPI_JOB_STATUS_MAX
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_JobStatus )
+
 enum HAPI_Result
 {
     HAPI_RESULT_SUCCESS                                 = 0,
