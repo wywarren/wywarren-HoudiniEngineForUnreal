@@ -275,16 +275,7 @@ FHoudiniSkeletalMeshTranslator::BuildSKFromImportData(SKBuildSettings& BuildSett
 		SortBonesByParent(SkeletalMeshImportData);//only sort if new skeleton
 	}
 
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
-	// TODO:5.4 ?? CHECK ME
-	FMeshDescription MeshDescription;
-	if (SkeletalMeshImportData.GetMeshDescription(nullptr, &BuildSettings.SKMesh->GetLODInfo(0)->BuildSettings, MeshDescription))
-	{
-		BuildSettings.SKMesh->CreateMeshDescription(0, MoveTemp(MeshDescription));
-		BuildSettings.SKMesh->CommitMeshDescription(0);
-	}
-
-#else
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 4
 	BuildSettings.SKMesh->SaveLODImportedData(0, SkeletalMeshImportData);  //Import the ImportData
 #endif
 
@@ -318,6 +309,13 @@ FHoudiniSkeletalMeshTranslator::BuildSKFromImportData(SKBuildSettings& BuildSett
 	NewLODInfo.ReductionSettings.NumOfVertPercentage = 1.0f;
 	NewLODInfo.ReductionSettings.MaxDeviationPercentage = 0.0f;
 	NewLODInfo.LODHysteresis = 0.02f;
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	PRAGMA_DISABLE_DEPRECATION_WARNINGS
+	BuildSettings.SKMesh->SaveLODImportedData(ImportLODModelIndex, SkeletalMeshImportData);
+	PRAGMA_ENABLE_DEPRECATION_WARNINGS
+#endif
+
 	FBoxSphereBounds3f bsb3f = FBoxSphereBounds3f(BoundingBox);
 	BuildSettings.SKMesh->SetImportedBounds(FBoxSphereBounds(bsb3f));
 	// Store whether or not this mesh has vertex colors
@@ -1207,6 +1205,8 @@ FHoudiniSkeletalMeshTranslator::FillSkeletalMeshImportData(SKBuildSettings& Buil
 			}
 		}
 
+		bool bLimitBoneInfluence = false;
+		TArray<SkeletalMeshImportData::FRawBoneInfluence> CurrentBoneInfluences;
 		// Now that we have the total weight, we can set normalized influences for the skeletal mesh.
 		for (int CaptureDataOffset = 0; CaptureDataOffset < MaxInfluencesPerVertex; CaptureDataOffset++)
 		{
@@ -1235,13 +1235,54 @@ FHoudiniSkeletalMeshTranslator::FillSkeletalMeshImportData(SKBuildSettings& Buil
 			}
 
 			int CapturePoseBoneIndex = CapturePoseBoneIndices.FindChecked(BoneName);
-			
+			if (CapturePoseBoneIndex != BoneNameIndex)
+			{
+				HOUDINI_LOG_WARNING(TEXT("Bad bone index for bone '%s' og is %d and found %d."), *BoneName, BoneNameIndex, CapturePoseBoneIndex);
+			}
+
 			SkeletalMeshImportData::FRawBoneInfluence Influence;
 			Influence.VertexIndex = PointIndex;
 			Influence.BoneIndex = CapturePoseBoneIndex;
 			Influence.Weight = Weight;
 
-			SkeletalMeshImportData.Influences.Add(Influence);
+			if(bLimitBoneInfluence)
+			{
+				// Add the current influence to an array
+				CurrentBoneInfluences.Add(Influence);
+			}
+		}
+
+		if(bLimitBoneInfluence)
+		{
+			// Done naively for now for testing purposes
+			// Unreal only supports a maximum of 4 influences - only keep the 4 highest ones
+			if (CurrentBoneInfluences.Num() > 4)
+			{
+				// Sort the bone influences by weight (higher weight first)
+				CurrentBoneInfluences.Sort([](const SkeletalMeshImportData::FRawBoneInfluence& bone1, const SkeletalMeshImportData::FRawBoneInfluence& bone2) { return bone1.Weight > bone2.Weight; });
+
+				// Only keep the first 4 - and renormalize
+				float newTotal = 1.0f;
+				for (int32 i = CurrentBoneInfluences.Num() - 1; i >= 0; i--)
+				{
+					if (i >= 4)
+					{
+						// decrease the total influence
+						newTotal -= CurrentBoneInfluences[i].Weight;
+						// delete the influence
+						CurrentBoneInfluences.RemoveAt(i);
+					}
+					else
+					{
+						CurrentBoneInfluences[i].Weight /= newTotal;
+					}
+				}
+			}
+
+			for (auto& CurInfluence : CurrentBoneInfluences)
+			{
+				SkeletalMeshImportData.Influences.Add(CurInfluence);
+			}
 		}
 	}
 	
@@ -1949,7 +1990,8 @@ FHoudiniSkeletalMeshTranslator::CreateSkeletalMeshMaterials(
 		OutputAssignmentMaterials,
 		MaterialAndTexturePackages,
 		false,
-		true))
+		true,
+		false))
 	{
 		return false;
 	}
@@ -1959,7 +2001,7 @@ FHoudiniSkeletalMeshTranslator::CreateSkeletalMeshMaterials(
 	for (int32 FaceIdx = 0; FaceIdx < NumFaces; FaceIdx++)
 	{
 		// First material is the default one - so increment the indices to account for it
-		OutPerFaceUEMaterialIds[FaceIdx] = UniqueHoudiniMaterialsIndices[HoudiniMatPerFaceMaterialIds[FaceIdx]] + 1;
+		OutPerFaceUEMaterialIds[FaceIdx] = UniqueHoudiniMaterialsIndices[HoudiniMatPerFaceMaterialIds[FaceIdx]];
 	}
 
 	// Add the created material to the skeletal mesh's ImportData
