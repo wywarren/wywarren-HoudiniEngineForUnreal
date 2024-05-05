@@ -411,6 +411,66 @@ HAPI_DECL HAPI_Cleanup( const HAPI_Session * session );
 ///
 HAPI_DECL HAPI_Shutdown( const HAPI_Session * session );
 
+/// @brief  Start a Houdini Performance Monitor profile.
+///	    A profile records time and memory statistics from events
+///	    that occur in the Houdini session.  A profile records node cooks 
+///	    for example; how long it takes to cook a node and how many times 
+///	    a node is cooked.  Return ::HAPI_RESULT_INVALID_ARGUMENT if NULL 
+///	    is passed in for the `profile_id` parameter.
+///
+/// @ingroup Sessions
+///
+/// @param[in]      session 
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      title
+///                 The title of the profile.  If NULL is passed into this
+///		    parameter, then a default title will be chosen for the 
+///		    profile.
+///
+/// @param[out]     profile_id
+///                 The id of the profile.  You can pass the id to 
+///		    ::HAPI_StopPerformanceMonitorProfile to stop the profile.
+///
+///
+HAPI_DECL HAPI_StartPerformanceMonitorProfile( const HAPI_Session * session,
+					       const char * title,
+					       int * profile_id );
+
+/// @brief  Stop the Performance Monitor profile that matches the given
+///	    profile id and save out the profile's statistics to the specified
+///	    file path on disk.  The profile is cleared from memory after its
+///	    statistics are saved to disk.  Return ::HAPI_RESULT_INVALID_ARGUMENT
+///	    if no profile exists for the given id.  Return ::HAPI_RESULT_FAILURE
+///	    if the profile statistics could not be saved out to the specified
+///	    file path.  In this case, the profile is stopped but is not cleared 
+///	    from memory.  You can call 
+///	    ::HAPI_StopPerformanceMonitorProfile to attempt saving the
+///	    profile to disk again.
+///
+/// @ingroup Sessions
+///
+/// @param[in]      session 
+///                 The session of Houdini you are interacting with.
+///                 See @ref HAPI_Sessions for more on sessions.
+///                 Pass NULL to just use the default in-process session.
+///                 <!-- default NULL -->
+///
+/// @param[in]      profile_id
+///                 The id of the profile to stop.
+///
+/// @param[in]      file_path
+///                 The path to the file where the profile statistics should be
+///		    written to.  Use the Performance Monitor file extension,
+///		    .hperf, in the file name (i.e. /path/to/myProfile.hperf).
+///
+HAPI_DECL HAPI_StopPerformanceMonitorProfile( const HAPI_Session *session, 
+					      int profile_id, 
+					      const char * file_path );
+
 /// @defgroup Environment
 /// Functions for reading and writing to the session environment
 
@@ -5860,7 +5920,7 @@ HAPI_DECL HAPI_GetAttributeStringArrayData( const HAPI_Session * session,
 ///                 Attribute name.
 ///
 /// @param[in]      attr_info
-///                 ::HAPI_AttributeInfo used as input for what tuple size.
+///                 ::HAPI_AttributeInfo used as input for what tuple size
 ///                 you want. Also contains some sanity checks like
 ///                 data type. Generally should be the same struct
 ///                 returned by ::HAPI_GetAttributeInfo().

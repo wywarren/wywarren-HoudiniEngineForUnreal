@@ -1057,6 +1057,13 @@ enum HAPI_TCP_PortType
 };
 HAPI_C_ENUM_TYPEDEF( HAPI_TCP_PortType )
 
+enum HAPI_ThriftSharedMemoryBufferType
+{
+    HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER,
+    HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_ThriftSharedMemoryBufferType )
+
 /////////////////////////////////////////////////////////////////////////////
 // Main API Structs
 
@@ -1117,6 +1124,14 @@ struct HAPI_API HAPI_SessionInfo
 
     /// Specifies a list of port numbers
     int ports[ HAPI_MAX_NUM_CONNECTIONS ];
+
+    // Must match the buffer type passed to the HARS executable through the
+    // command line or ::HAPI_StartThriftSharedMemoryServer
+    HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;
+
+    // Must match the buffer size passed to the HARS executable through the
+    // command line or ::HAPI_StartThriftSharedMemoryServer
+    HAPI_Int64 sharedMemoryBufferSize;
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_SessionInfo )
 
@@ -1134,6 +1149,17 @@ struct HAPI_API HAPI_ThriftServerOptions
 
     // Specifies the maximum status verbosity that will be logged.
     HAPI_StatusVerbosity verbosity;
+
+    // Only used when starting a Thrift shared memory server. This controls the
+    // type of buffer that is used in the underlying communication protocol. A
+    // fixed length buffer is faster but the data passed to any single HAPI API
+    // call cannot exceed the total length of the buffer. A ring buffer is
+    // slower but has no limitations on the size of the data.
+    HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;
+
+    // Only used when starting a Thrift shared memory server. This variable
+    // specifies the size of the allocated shared memory buffer.
+    HAPI_Int64 sharedMemoryBufferSize;
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_ThriftServerOptions )
 
