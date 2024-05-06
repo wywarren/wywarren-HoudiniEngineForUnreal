@@ -4589,7 +4589,8 @@ FHoudiniInputTranslator::UpdateWorldInput(UHoudiniInput* InInput)
 		InInput->MarkChanged(true);
 
 		// Mark the outer package as dirty, to ensure that the changes are saved when using OFPA / World partition
-		InInput->MarkPackageDirty();
+		//InInput->MarkPackageDirty();
+
 	}
 
 	return true;
