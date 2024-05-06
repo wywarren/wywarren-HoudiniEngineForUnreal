@@ -613,7 +613,9 @@ FHoudiniEngine::StartSession(
 	const FString& ServerPipeName,
 	const int32 ServerPort,
 	const FString& ServerHost,
-	const int32 Index)
+	const int32 Index,
+	const int64 SharedMemoryBufferSize,
+	const bool bSharedMemoryCyclicBuffer)
 {
 	auto UpdatePathForServer = [&]
 	{
@@ -637,6 +639,8 @@ FHoudiniEngine::StartSession(
 	FMemory::Memzero<HAPI_ThriftServerOptions>(ServerOptions);
 	ServerOptions.autoClose = true;
 	ServerOptions.timeoutMs = AutomaticServerTimeout;
+	ServerOptions.sharedMemoryBufferSize = SharedMemoryBufferSize * 1024 * 1024;
+	ServerOptions.sharedMemoryBufferType = bSharedMemoryCyclicBuffer ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;		
 
 	HAPI_Result SessionResult = HAPI_RESULT_FAILURE;
 
@@ -683,6 +687,32 @@ FHoudiniEngine::StartSession(
 			bEnableSessionSync = false;
 
 			SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
+				&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+		}
+	}
+	break;
+
+	case EHoudiniRuntimeSettingsSessionType::HRSST_MemoryBuffer:
+	{
+		// Try to connect to an existing pipe session first
+		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		SessionInfo.sharedMemoryBufferSize = SharedMemoryBufferSize * 1024 * 1024;
+		SessionInfo.sharedMemoryBufferType = bSharedMemoryCyclicBuffer ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
+		
+		SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
+			&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+
+		// Start a session and try to connect to it if we failed
+		if (bStartAutomaticServer && SessionResult != HAPI_RESULT_SUCCESS)
+		{
+			UpdatePathForServer();
+			FHoudiniApi::StartThriftSharedMemoryServer(
+				&ServerOptions, TCHAR_TO_UTF8(*ServerPipeName), nullptr, nullptr);
+
+			// We've started the server manually, disable session sync
+			bEnableSessionSync = false;
+
+			SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
 				&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
 		}
 	}
@@ -747,7 +777,9 @@ FHoudiniEngine::StartSessions(
 	const int32 NumSessions,
 	const FString& ServerPipeName,
 	const int32 ServerPort,
-	const FString& ServerHost)
+	const FString& ServerHost,
+	const int64 SharedMemoryBufferSize,
+	const bool bSharedMemoryCyclicBuffer)
 {
 	// HAPI needs to be initialized
 	if (!FHoudiniApi::IsHAPIInitialized())
@@ -787,7 +819,9 @@ FHoudiniEngine::StartSessions(
 			ServerPipeName,
 			ServerPort,
 			ServerHost,
-			i);
+			i,
+			SharedMemoryBufferSize,
+			bSharedMemoryCyclicBuffer);
 
 		if (!bSuccess)
 		{
@@ -827,11 +861,6 @@ FHoudiniEngine::SessionSyncConnect(
 	HAPI_Result SessionResult = HAPI_RESULT_FAILURE;
 	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
 	
-	HAPI_ThriftServerOptions ServerOptions;
-	FMemory::Memzero< HAPI_ThriftServerOptions >(ServerOptions);
-	ServerOptions.autoClose = true;
-	ServerOptions.timeoutMs = HoudiniRuntimeSettings->AutomaticServerTimeout;
-
 	switch (SessionType)
 	{
 	case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
@@ -860,6 +889,23 @@ FHoudiniEngine::SessionSyncConnect(
 		{
 			Sessions.Emplace();
 			SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
+				&Sessions[i], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+		}
+	}
+	break;
+
+	case EHoudiniRuntimeSettingsSessionType::HRSST_MemoryBuffer:
+	{
+		// Try to connect to an existing pipe session first
+		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		SessionInfo.sharedMemoryBufferSize = HoudiniRuntimeSettings->SharedMemoryBufferSize * 1024 * 1024;
+		SessionInfo.sharedMemoryBufferType = HoudiniRuntimeSettings->bSharedMemoryBufferCyclic ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
+
+		Sessions.Empty(NumSessions);
+		for (int32 i = 0; i < NumSessions; ++i)
+		{
+			Sessions.Emplace();
+			SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
 				&Sessions[i], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
 		}
 	}
@@ -1073,7 +1119,9 @@ FHoudiniEngine::RestartSession()
 			HoudiniRuntimeSettings->NumSessions,
 			HoudiniRuntimeSettings->ServerPipeName,
 			HoudiniRuntimeSettings->ServerPort,
-			HoudiniRuntimeSettings->ServerHost))
+			HoudiniRuntimeSettings->ServerHost,
+			HoudiniRuntimeSettings->SharedMemoryBufferSize,
+			HoudiniRuntimeSettings->bSharedMemoryBufferCyclic))
 		{
 			HOUDINI_LOG_ERROR(TEXT("Failed to restart the Houdini Engine session - Failed to start the new Session"));
 			SetSessionStatus(EHoudiniSessionStatus::Failed);
@@ -1126,7 +1174,9 @@ FHoudiniEngine::CreateSession(const EHoudiniRuntimeSettingsSessionType& SessionT
 		HoudiniRuntimeSettings->NumSessions,
 		OverrideServerPipeName == NAME_None ? HoudiniRuntimeSettings->ServerPipeName : OverrideServerPipeName.ToString(),
 		HoudiniRuntimeSettings->ServerPort,
-		HoudiniRuntimeSettings->ServerHost))
+		HoudiniRuntimeSettings->ServerHost,
+		HoudiniRuntimeSettings->SharedMemoryBufferSize,
+		HoudiniRuntimeSettings->bSharedMemoryBufferCyclic))
 	{
 		HOUDINI_LOG_ERROR(TEXT("Failed to start the Houdini Engine Session"));
 		SetSessionStatus(EHoudiniSessionStatus::Failed);
@@ -1177,7 +1227,9 @@ FHoudiniEngine::ConnectSession(const EHoudiniRuntimeSettingsSessionType& Session
 		HoudiniRuntimeSettings->NumSessions,
 		HoudiniRuntimeSettings->ServerPipeName,
 		HoudiniRuntimeSettings->ServerPort,
-		HoudiniRuntimeSettings->ServerHost))
+		HoudiniRuntimeSettings->ServerHost,
+		HoudiniRuntimeSettings->SharedMemoryBufferSize,
+		HoudiniRuntimeSettings->bSharedMemoryBufferCyclic))
 	{
 		HOUDINI_LOG_ERROR(TEXT("Failed to connect to the Houdini Engine Session"));
 		SetSessionStatus(EHoudiniSessionStatus::Failed);

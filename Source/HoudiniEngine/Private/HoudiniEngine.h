@@ -109,7 +109,9 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 			const FString& ServerPipeName,
 			const int32 ServerPort,
 			const FString& ServerHost,
-			const int32 Index);
+			const int32 Index,
+			const int64 SharedMemoryBufferSize,
+			const bool bSharedMemoryCyclicBuffer);
 
 		bool StartSessions(
 			const bool bStartAutomaticServer,
@@ -118,7 +120,9 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 			const int32 NumSessions,
 			const FString& ServerPipeName,
 			const int32 ServerPort,
-			const FString& ServerHost);
+			const FString& ServerHost,
+			const int64 SharedMemoryBufferSize,
+			const bool bSharedMemoryCyclicBuffer);
 
 		// Creates a session sync session
 		bool SessionSyncConnect(

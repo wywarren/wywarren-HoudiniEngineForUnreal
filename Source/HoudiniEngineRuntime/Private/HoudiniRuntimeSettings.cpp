@@ -65,6 +65,9 @@ UHoudiniRuntimeSettings::UHoudiniRuntimeSettings( const FObjectInitializer & Obj
 	bStartAutomaticServer = HAPI_UNREAL_SESSION_SERVER_AUTOSTART;
 	AutomaticServerTimeout = HAPI_UNREAL_SESSION_SERVER_TIMEOUT;
 
+	SharedMemoryBufferSize = 500;
+	bSharedMemoryBufferCyclic = true;
+
 	bSyncWithHoudiniCook = true;
 	bCookUsingHoudiniTime = true;
 	bSyncViewport = false;
@@ -357,6 +360,8 @@ UHoudiniRuntimeSettings::UpdateSessionUI()
 	SetPropertyReadOnly(TEXT("ServerPipeName"), true);
 	SetPropertyReadOnly(TEXT("bStartAutomaticServer"), true);
 	SetPropertyReadOnly(TEXT("AutomaticServerTimeout"), true);
+	SetPropertyReadOnly(TEXT("SharedMemoryBufferSize"), true);
+	SetPropertyReadOnly(TEXT("bSharedMemoryBufferCyclic"), true);
 
 	bool bServerType = false;
 
@@ -373,6 +378,15 @@ UHoudiniRuntimeSettings::UpdateSessionUI()
 	case HRSST_NamedPipe:
 	{
 		SetPropertyReadOnly(TEXT("ServerPipeName"), false);
+		bServerType = true;
+		break;
+	}
+
+	case HRSST_MemoryBuffer:
+	{
+		SetPropertyReadOnly(TEXT("ServerPipeName"), false);
+		SetPropertyReadOnly(TEXT("SharedMemoryBufferSize"), false);
+		SetPropertyReadOnly(TEXT("bSharedMemoryBufferCyclic"), false);
 		bServerType = true;
 		break;
 	}

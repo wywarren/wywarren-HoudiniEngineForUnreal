@@ -51,6 +51,9 @@ enum EHoudiniRuntimeSettingsSessionType
 	// No session, prevents license/Engine cook
 	HRSST_None UMETA(DisplayName = "None"),
 
+	// Memory Buffer
+	HRSST_MemoryBuffer UMETA(DisplayName = "Shared Memory Buffer"),
+
 	HRSST_MAX
 };
 
@@ -191,6 +194,14 @@ protected:
 
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
 		FString ServerPipeName;
+
+		// The size (in MB) of the Memory buffer used for shared memory buffer sessions
+		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
+		int64 SharedMemoryBufferSize;
+
+		// Indicates if the shared memory buffer session use a cyclic (ring) buffer. If disabled, the buffer will be of fixed size.
+		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
+		bool bSharedMemoryBufferCyclic;
 
 		// Whether to automatically start a HARS process
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
