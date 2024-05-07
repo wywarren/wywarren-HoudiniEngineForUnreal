@@ -82,7 +82,6 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			const FString& InputNodeNameStr,
 			const FString& HeightFieldName,
 			const FTransform& LandscapeTransform,
-			FVector& CenterOffset,
 			HAPI_NodeId& HeightId,
 			HAPI_PartId& PartId,
 			HAPI_NodeId& HeightFieldId,
@@ -129,16 +128,15 @@ struct HOUDINIENGINE_API FUnrealLandscapeTranslator
 			FVector3d& Origin, FVector3d& Extents);
 
 		// Converts Unreal uint16 values to Houdini Float
-		static bool ConvertLandscapeDataToHeightfieldData(
+		static bool ConvertLandscapeDataToHeightFieldData(
 			const TArray<uint16>& IntHeightData,
-			const int32& XSize,
-			const int32& YSize,
+			int32 XSize,
+			int32 YSize,
 			FVector Min,
 			FVector Max,
-			const FTransform& LandscapeTransform,
+			const FTransform& LandscapeActorTransform,
 			TArray<float>& HeightfieldFloatValues,
-			HAPI_VolumeInfo& HeightfieldVolumeInfo,
-			FVector& CenterOffset);
+			HAPI_VolumeInfo& HeightfieldVolumeInfo);
 
 		// Converts Unreal uint8 values to Houdini Float
 		static bool ConvertLandscapeLayerDataToHeightfieldData(
