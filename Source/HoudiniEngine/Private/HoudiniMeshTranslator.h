@@ -292,9 +292,6 @@ struct HOUDINIENGINE_API FHoudiniMeshTranslator
 		// Create a StaticMesh using the MeshDescription format
 		bool CreateStaticMesh_MeshDescription();
 
-		// Legacy function using RawMesh for static Mesh creation
-		bool CreateStaticMesh_RawMesh();
-
 		bool CreateStaticMeshesFromSplitGroups();
 
 		// Indicates the update is forced

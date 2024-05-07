@@ -2766,7 +2766,6 @@ void FHoudiniToolsEditor::CopySettingsToPreset(const UHoudiniAssetComponent* HAC
 
 	// Populate Mesh Gen Settings
 	Preset->bApplyStaticMeshGenSettings = bApplyMeshGenSettings;
-	Preset->bUseDeprecatedRawMeshSupport = HAC->bUseDeprecatedRawMeshSupport;
 	Preset->StaticMeshGenerationProperties = HAC->StaticMeshGenerationProperties;
 	Preset->StaticMeshBuildSettings = HAC->StaticMeshBuildSettings;
 
@@ -3074,7 +3073,6 @@ FHoudiniToolsEditor::ApplyPresetToHoudiniAssetComponent(
 
 	if (Preset->bApplyStaticMeshGenSettings)
 	{
-		HAC->bUseDeprecatedRawMeshSupport = Preset->bUseDeprecatedRawMeshSupport;
 		HAC->StaticMeshGenerationProperties = Preset->StaticMeshGenerationProperties;
 		HAC->StaticMeshBuildSettings = Preset->StaticMeshBuildSettings;
 	}

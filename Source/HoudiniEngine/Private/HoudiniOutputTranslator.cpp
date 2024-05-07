@@ -333,8 +333,7 @@ FHoudiniOutputTranslator::UpdateOutputs(
 					}
 				}
 
-				EHoudiniStaticMeshMethod MeshMethod = HAC->bUseDeprecatedRawMeshSupport ?
-									EHoudiniStaticMeshMethod::RawMesh_DEPRECATED : EHoudiniStaticMeshMethod::FMeshDescription;
+				EHoudiniStaticMeshMethod MeshMethod = EHoudiniStaticMeshMethod::FMeshDescription;
 				if (bIsProxyStaticMeshEnabled)
 					MeshMethod = EHoudiniStaticMeshMethod::UHoudiniStaticMesh;
 				
@@ -750,7 +749,7 @@ FHoudiniOutputTranslator::BuildStaticMeshesOnHoudiniProxyMeshOutputs(UHoudiniAss
 				FHoudiniMeshTranslator::CreateAllMeshesAndComponentsFromHoudiniOutput(
 					CurOutput,
 					PackageParams,
-					HAC->bUseDeprecatedRawMeshSupport ? EHoudiniStaticMeshMethod::RawMesh_DEPRECATED : EHoudiniStaticMeshMethod::FMeshDescription,
+					EHoudiniStaticMeshMethod::FMeshDescription,
 					HAC->bSplitMeshSupport,
 					HAC->StaticMeshGenerationProperties,
 					HAC->StaticMeshBuildSettings,

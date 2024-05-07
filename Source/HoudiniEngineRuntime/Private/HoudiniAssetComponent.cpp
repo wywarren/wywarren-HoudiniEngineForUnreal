@@ -203,8 +203,6 @@ UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & Object
 	bUseOutputNodes = true;
 	PDGAssetLink = nullptr;
 
-	bUseDeprecatedRawMeshSupport = false;
-
 	bOverrideGlobalProxyStaticMeshSettings = false;
 	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings)
