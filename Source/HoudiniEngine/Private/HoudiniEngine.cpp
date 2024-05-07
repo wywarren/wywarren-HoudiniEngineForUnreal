@@ -877,8 +877,11 @@ FHoudiniEngine::SessionSyncConnect(
 		for (int32 i = 0; i < NumSessions; ++i)
 		{
 			Sessions.Emplace();
-			FHoudiniApi::CreateThriftSocketSession(
+			SessionResult = FHoudiniApi::CreateThriftSocketSession(
 				&Sessions[i], TCHAR_TO_UTF8(*ServerHost), ServerPort, &SessionInfo);
+			if (SessionResult != HAPI_RESULT_SUCCESS)
+				break;
+
 		}
 
 	}
@@ -896,6 +899,8 @@ FHoudiniEngine::SessionSyncConnect(
 			Sessions.Emplace();
 			SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
 				&Sessions[i], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+			if (SessionResult != HAPI_RESULT_SUCCESS)
+				break;
 		}
 	}
 	break;
@@ -914,6 +919,8 @@ FHoudiniEngine::SessionSyncConnect(
 			Sessions.Emplace();
 			SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
 				&Sessions[i], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+			if (SessionResult != HAPI_RESULT_SUCCESS)
+				break;
 		}
 	}
 	break;
