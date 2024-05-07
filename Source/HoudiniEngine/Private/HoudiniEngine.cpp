@@ -649,7 +649,8 @@ FHoudiniEngine::StartSession(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
 	{
 		// Try to connect to an existing socket session first
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
 		SessionResult = FHoudiniApi::CreateThriftSocketSession(
 			&Sessions[Index], TCHAR_TO_UTF8(*ServerHost), ServerPort, &SessionInfo);
 
@@ -672,7 +673,8 @@ FHoudiniEngine::StartSession(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
 	{
 		// Try to connect to an existing pipe session first
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
 		SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
 			&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
 
@@ -695,9 +697,10 @@ FHoudiniEngine::StartSession(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_MemoryBuffer:
 	{
 		// Try to connect to an existing pipe session first
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
-		SessionInfo.sharedMemoryBufferSize = SharedMemoryBufferSize * 1024 * 1024;
-		SessionInfo.sharedMemoryBufferType = bSharedMemoryCyclicBuffer ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
+		SessionInfo.sharedMemoryBufferSize = ServerOptions.sharedMemoryBufferSize;
+		SessionInfo.sharedMemoryBufferType = ServerOptions.sharedMemoryBufferType;
 		
 		SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
 			&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
@@ -729,7 +732,8 @@ FHoudiniEngine::StartSession(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_InProcess:
 	{
 		// As of Unreal 4.19, InProcess sessions are not supported anymore
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
 		SessionResult = FHoudiniApi::CreateInProcessSession(&Sessions[Index], &SessionInfo);
 		// Disable session sync
 		bEnableSessionSync = false;
@@ -866,7 +870,8 @@ FHoudiniEngine::SessionSyncConnect(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
 	{
 		// Try to connect to an existing socket session first
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
 
 		Sessions.Empty(NumSessions);
 		for (int32 i = 0; i < NumSessions; ++i)
@@ -882,7 +887,8 @@ FHoudiniEngine::SessionSyncConnect(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
 	{
 		// Try to connect to an existing pipe session first
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
 
 		Sessions.Empty(NumSessions);
 		for (int32 i = 0; i < NumSessions; ++i)
@@ -897,7 +903,8 @@ FHoudiniEngine::SessionSyncConnect(
 	case EHoudiniRuntimeSettingsSessionType::HRSST_MemoryBuffer:
 	{
 		// Try to connect to an existing pipe session first
-		HAPI_SessionInfo SessionInfo = FHoudiniApi::SessionInfo_Create();
+		HAPI_SessionInfo SessionInfo;
+		FHoudiniApi::SessionInfo_Init(&SessionInfo);
 		SessionInfo.sharedMemoryBufferSize = HoudiniRuntimeSettings->SharedMemoryBufferSize * 1024 * 1024;
 		SessionInfo.sharedMemoryBufferType = HoudiniRuntimeSettings->bSharedMemoryBufferCyclic ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
 

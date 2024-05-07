@@ -336,9 +336,6 @@ FHoudiniApi::GetAttributeUInt8Data = &FHoudiniApi::GetAttributeUInt8DataEmptyStu
 FHoudiniApi::GetAttributeUInt8DataAsyncFuncPtr
 FHoudiniApi::GetAttributeUInt8DataAsync = &FHoudiniApi::GetAttributeUInt8DataAsyncEmptyStub;
 
-FHoudiniApi::GetAttributeWaitFuncPtr
-FHoudiniApi::GetAttributeWait = &FHoudiniApi::GetAttributeWaitEmptyStub;
-
 FHoudiniApi::GetAvailableAssetCountFuncPtr
 FHoudiniApi::GetAvailableAssetCount = &FHoudiniApi::GetAvailableAssetCountEmptyStub;
 
@@ -470,6 +467,9 @@ FHoudiniApi::GetInstancedPartIds = &FHoudiniApi::GetInstancedPartIdsEmptyStub;
 
 FHoudiniApi::GetInstancerPartTransformsFuncPtr
 FHoudiniApi::GetInstancerPartTransforms = &FHoudiniApi::GetInstancerPartTransformsEmptyStub;
+
+FHoudiniApi::GetJobStatusFuncPtr
+FHoudiniApi::GetJobStatus = &FHoudiniApi::GetJobStatusEmptyStub;
 
 FHoudiniApi::GetLoadedAssetLibraryCountFuncPtr
 FHoudiniApi::GetLoadedAssetLibraryCount = &FHoudiniApi::GetLoadedAssetLibraryCountEmptyStub;
@@ -969,83 +969,164 @@ FHoudiniApi::SetAnimCurve = &FHoudiniApi::SetAnimCurveEmptyStub;
 FHoudiniApi::SetAttributeDictionaryArrayDataFuncPtr
 FHoudiniApi::SetAttributeDictionaryArrayData = &FHoudiniApi::SetAttributeDictionaryArrayDataEmptyStub;
 
+FHoudiniApi::SetAttributeDictionaryArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeDictionaryArrayDataAsync = &FHoudiniApi::SetAttributeDictionaryArrayDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeDictionaryDataFuncPtr
 FHoudiniApi::SetAttributeDictionaryData = &FHoudiniApi::SetAttributeDictionaryDataEmptyStub;
+
+FHoudiniApi::SetAttributeDictionaryDataAsyncFuncPtr
+FHoudiniApi::SetAttributeDictionaryDataAsync = &FHoudiniApi::SetAttributeDictionaryDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeFloat64ArrayDataFuncPtr
 FHoudiniApi::SetAttributeFloat64ArrayData = &FHoudiniApi::SetAttributeFloat64ArrayDataEmptyStub;
 
+FHoudiniApi::SetAttributeFloat64ArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeFloat64ArrayDataAsync = &FHoudiniApi::SetAttributeFloat64ArrayDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeFloat64DataFuncPtr
 FHoudiniApi::SetAttributeFloat64Data = &FHoudiniApi::SetAttributeFloat64DataEmptyStub;
+
+FHoudiniApi::SetAttributeFloat64DataAsyncFuncPtr
+FHoudiniApi::SetAttributeFloat64DataAsync = &FHoudiniApi::SetAttributeFloat64DataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeFloat64UniqueDataFuncPtr
 FHoudiniApi::SetAttributeFloat64UniqueData = &FHoudiniApi::SetAttributeFloat64UniqueDataEmptyStub;
 
+FHoudiniApi::SetAttributeFloat64UniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeFloat64UniqueDataAsync = &FHoudiniApi::SetAttributeFloat64UniqueDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeFloatArrayDataFuncPtr
 FHoudiniApi::SetAttributeFloatArrayData = &FHoudiniApi::SetAttributeFloatArrayDataEmptyStub;
+
+FHoudiniApi::SetAttributeFloatArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeFloatArrayDataAsync = &FHoudiniApi::SetAttributeFloatArrayDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeFloatDataFuncPtr
 FHoudiniApi::SetAttributeFloatData = &FHoudiniApi::SetAttributeFloatDataEmptyStub;
 
+FHoudiniApi::SetAttributeFloatDataAsyncFuncPtr
+FHoudiniApi::SetAttributeFloatDataAsync = &FHoudiniApi::SetAttributeFloatDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeFloatUniqueDataFuncPtr
 FHoudiniApi::SetAttributeFloatUniqueData = &FHoudiniApi::SetAttributeFloatUniqueDataEmptyStub;
+
+FHoudiniApi::SetAttributeFloatUniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeFloatUniqueDataAsync = &FHoudiniApi::SetAttributeFloatUniqueDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeIndexedStringDataFuncPtr
 FHoudiniApi::SetAttributeIndexedStringData = &FHoudiniApi::SetAttributeIndexedStringDataEmptyStub;
 
+FHoudiniApi::SetAttributeIndexedStringDataAsyncFuncPtr
+FHoudiniApi::SetAttributeIndexedStringDataAsync = &FHoudiniApi::SetAttributeIndexedStringDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeInt16ArrayDataFuncPtr
 FHoudiniApi::SetAttributeInt16ArrayData = &FHoudiniApi::SetAttributeInt16ArrayDataEmptyStub;
+
+FHoudiniApi::SetAttributeInt16ArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt16ArrayDataAsync = &FHoudiniApi::SetAttributeInt16ArrayDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeInt16DataFuncPtr
 FHoudiniApi::SetAttributeInt16Data = &FHoudiniApi::SetAttributeInt16DataEmptyStub;
 
+FHoudiniApi::SetAttributeInt16DataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt16DataAsync = &FHoudiniApi::SetAttributeInt16DataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeInt16UniqueDataFuncPtr
 FHoudiniApi::SetAttributeInt16UniqueData = &FHoudiniApi::SetAttributeInt16UniqueDataEmptyStub;
+
+FHoudiniApi::SetAttributeInt16UniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt16UniqueDataAsync = &FHoudiniApi::SetAttributeInt16UniqueDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeInt64ArrayDataFuncPtr
 FHoudiniApi::SetAttributeInt64ArrayData = &FHoudiniApi::SetAttributeInt64ArrayDataEmptyStub;
 
+FHoudiniApi::SetAttributeInt64ArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt64ArrayDataAsync = &FHoudiniApi::SetAttributeInt64ArrayDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeInt64DataFuncPtr
 FHoudiniApi::SetAttributeInt64Data = &FHoudiniApi::SetAttributeInt64DataEmptyStub;
+
+FHoudiniApi::SetAttributeInt64DataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt64DataAsync = &FHoudiniApi::SetAttributeInt64DataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeInt64UniqueDataFuncPtr
 FHoudiniApi::SetAttributeInt64UniqueData = &FHoudiniApi::SetAttributeInt64UniqueDataEmptyStub;
 
+FHoudiniApi::SetAttributeInt64UniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt64UniqueDataAsync = &FHoudiniApi::SetAttributeInt64UniqueDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeInt8ArrayDataFuncPtr
 FHoudiniApi::SetAttributeInt8ArrayData = &FHoudiniApi::SetAttributeInt8ArrayDataEmptyStub;
+
+FHoudiniApi::SetAttributeInt8ArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt8ArrayDataAsync = &FHoudiniApi::SetAttributeInt8ArrayDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeInt8DataFuncPtr
 FHoudiniApi::SetAttributeInt8Data = &FHoudiniApi::SetAttributeInt8DataEmptyStub;
 
+FHoudiniApi::SetAttributeInt8DataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt8DataAsync = &FHoudiniApi::SetAttributeInt8DataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeInt8UniqueDataFuncPtr
 FHoudiniApi::SetAttributeInt8UniqueData = &FHoudiniApi::SetAttributeInt8UniqueDataEmptyStub;
+
+FHoudiniApi::SetAttributeInt8UniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeInt8UniqueDataAsync = &FHoudiniApi::SetAttributeInt8UniqueDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeIntArrayDataFuncPtr
 FHoudiniApi::SetAttributeIntArrayData = &FHoudiniApi::SetAttributeIntArrayDataEmptyStub;
 
+FHoudiniApi::SetAttributeIntArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeIntArrayDataAsync = &FHoudiniApi::SetAttributeIntArrayDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeIntDataFuncPtr
 FHoudiniApi::SetAttributeIntData = &FHoudiniApi::SetAttributeIntDataEmptyStub;
+
+FHoudiniApi::SetAttributeIntDataAsyncFuncPtr
+FHoudiniApi::SetAttributeIntDataAsync = &FHoudiniApi::SetAttributeIntDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeIntUniqueDataFuncPtr
 FHoudiniApi::SetAttributeIntUniqueData = &FHoudiniApi::SetAttributeIntUniqueDataEmptyStub;
 
+FHoudiniApi::SetAttributeIntUniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeIntUniqueDataAsync = &FHoudiniApi::SetAttributeIntUniqueDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeStringArrayDataFuncPtr
 FHoudiniApi::SetAttributeStringArrayData = &FHoudiniApi::SetAttributeStringArrayDataEmptyStub;
+
+FHoudiniApi::SetAttributeStringArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeStringArrayDataAsync = &FHoudiniApi::SetAttributeStringArrayDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeStringDataFuncPtr
 FHoudiniApi::SetAttributeStringData = &FHoudiniApi::SetAttributeStringDataEmptyStub;
 
+FHoudiniApi::SetAttributeStringDataAsyncFuncPtr
+FHoudiniApi::SetAttributeStringDataAsync = &FHoudiniApi::SetAttributeStringDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeStringUniqueDataFuncPtr
 FHoudiniApi::SetAttributeStringUniqueData = &FHoudiniApi::SetAttributeStringUniqueDataEmptyStub;
+
+FHoudiniApi::SetAttributeStringUniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeStringUniqueDataAsync = &FHoudiniApi::SetAttributeStringUniqueDataAsyncEmptyStub;
 
 FHoudiniApi::SetAttributeUInt8ArrayDataFuncPtr
 FHoudiniApi::SetAttributeUInt8ArrayData = &FHoudiniApi::SetAttributeUInt8ArrayDataEmptyStub;
 
+FHoudiniApi::SetAttributeUInt8ArrayDataAsyncFuncPtr
+FHoudiniApi::SetAttributeUInt8ArrayDataAsync = &FHoudiniApi::SetAttributeUInt8ArrayDataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeUInt8DataFuncPtr
 FHoudiniApi::SetAttributeUInt8Data = &FHoudiniApi::SetAttributeUInt8DataEmptyStub;
 
+FHoudiniApi::SetAttributeUInt8DataAsyncFuncPtr
+FHoudiniApi::SetAttributeUInt8DataAsync = &FHoudiniApi::SetAttributeUInt8DataAsyncEmptyStub;
+
 FHoudiniApi::SetAttributeUInt8UniqueDataFuncPtr
 FHoudiniApi::SetAttributeUInt8UniqueData = &FHoudiniApi::SetAttributeUInt8UniqueDataEmptyStub;
+
+FHoudiniApi::SetAttributeUInt8UniqueDataAsyncFuncPtr
+FHoudiniApi::SetAttributeUInt8UniqueDataAsync = &FHoudiniApi::SetAttributeUInt8UniqueDataAsyncEmptyStub;
 
 FHoudiniApi::SetCachePropertyFuncPtr
 FHoudiniApi::SetCacheProperty = &FHoudiniApi::SetCachePropertyEmptyStub;
@@ -1188,6 +1269,9 @@ FHoudiniApi::SetWorkitemStringData = &FHoudiniApi::SetWorkitemStringDataEmptyStu
 FHoudiniApi::ShutdownFuncPtr
 FHoudiniApi::Shutdown = &FHoudiniApi::ShutdownEmptyStub;
 
+FHoudiniApi::StartPerformanceMonitorProfileFuncPtr
+FHoudiniApi::StartPerformanceMonitorProfile = &FHoudiniApi::StartPerformanceMonitorProfileEmptyStub;
+
 FHoudiniApi::StartThriftNamedPipeServerFuncPtr
 FHoudiniApi::StartThriftNamedPipeServer = &FHoudiniApi::StartThriftNamedPipeServerEmptyStub;
 
@@ -1196,6 +1280,9 @@ FHoudiniApi::StartThriftSharedMemoryServer = &FHoudiniApi::StartThriftSharedMemo
 
 FHoudiniApi::StartThriftSocketServerFuncPtr
 FHoudiniApi::StartThriftSocketServer = &FHoudiniApi::StartThriftSocketServerEmptyStub;
+
+FHoudiniApi::StopPerformanceMonitorProfileFuncPtr
+FHoudiniApi::StopPerformanceMonitorProfile = &FHoudiniApi::StopPerformanceMonitorProfileEmptyStub;
 
 FHoudiniApi::ThriftServerOptions_CreateFuncPtr
 FHoudiniApi::ThriftServerOptions_Create = &FHoudiniApi::ThriftServerOptions_CreateEmptyStub;
@@ -1345,7 +1432,6 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::GetAttributeUInt8ArrayDataAsync = (GetAttributeUInt8ArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetAttributeUInt8ArrayDataAsync"));
 	FHoudiniApi::GetAttributeUInt8Data = (GetAttributeUInt8DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetAttributeUInt8Data"));
 	FHoudiniApi::GetAttributeUInt8DataAsync = (GetAttributeUInt8DataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetAttributeUInt8DataAsync"));
-	FHoudiniApi::GetAttributeWait = (GetAttributeWaitFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetAttributeWait"));
 	FHoudiniApi::GetAvailableAssetCount = (GetAvailableAssetCountFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetAvailableAssetCount"));
 	FHoudiniApi::GetAvailableAssets = (GetAvailableAssetsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetAvailableAssets"));
 	FHoudiniApi::GetBoxInfo = (GetBoxInfoFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetBoxInfo"));
@@ -1390,6 +1476,7 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::GetInstancedObjectIds = (GetInstancedObjectIdsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetInstancedObjectIds"));
 	FHoudiniApi::GetInstancedPartIds = (GetInstancedPartIdsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetInstancedPartIds"));
 	FHoudiniApi::GetInstancerPartTransforms = (GetInstancerPartTransformsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetInstancerPartTransforms"));
+	FHoudiniApi::GetJobStatus = (GetJobStatusFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetJobStatus"));
 	FHoudiniApi::GetLoadedAssetLibraryCount = (GetLoadedAssetLibraryCountFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetLoadedAssetLibraryCount"));
 	FHoudiniApi::GetManagerNodeId = (GetManagerNodeIdFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetManagerNodeId"));
 	FHoudiniApi::GetMaterialInfo = (GetMaterialInfoFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_GetMaterialInfo"));
@@ -1556,32 +1643,59 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::SessionSyncInfo_Create = (SessionSyncInfo_CreateFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SessionSyncInfo_Create"));
 	FHoudiniApi::SetAnimCurve = (SetAnimCurveFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAnimCurve"));
 	FHoudiniApi::SetAttributeDictionaryArrayData = (SetAttributeDictionaryArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeDictionaryArrayData"));
+	FHoudiniApi::SetAttributeDictionaryArrayDataAsync = (SetAttributeDictionaryArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeDictionaryArrayDataAsync"));
 	FHoudiniApi::SetAttributeDictionaryData = (SetAttributeDictionaryDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeDictionaryData"));
+	FHoudiniApi::SetAttributeDictionaryDataAsync = (SetAttributeDictionaryDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeDictionaryDataAsync"));
 	FHoudiniApi::SetAttributeFloat64ArrayData = (SetAttributeFloat64ArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64ArrayData"));
+	FHoudiniApi::SetAttributeFloat64ArrayDataAsync = (SetAttributeFloat64ArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64ArrayDataAsync"));
 	FHoudiniApi::SetAttributeFloat64Data = (SetAttributeFloat64DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64Data"));
+	FHoudiniApi::SetAttributeFloat64DataAsync = (SetAttributeFloat64DataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64DataAsync"));
 	FHoudiniApi::SetAttributeFloat64UniqueData = (SetAttributeFloat64UniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64UniqueData"));
+	FHoudiniApi::SetAttributeFloat64UniqueDataAsync = (SetAttributeFloat64UniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64UniqueDataAsync"));
 	FHoudiniApi::SetAttributeFloatArrayData = (SetAttributeFloatArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloatArrayData"));
+	FHoudiniApi::SetAttributeFloatArrayDataAsync = (SetAttributeFloatArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloatArrayDataAsync"));
 	FHoudiniApi::SetAttributeFloatData = (SetAttributeFloatDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloatData"));
+	FHoudiniApi::SetAttributeFloatDataAsync = (SetAttributeFloatDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloatDataAsync"));
 	FHoudiniApi::SetAttributeFloatUniqueData = (SetAttributeFloatUniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloatUniqueData"));
+	FHoudiniApi::SetAttributeFloatUniqueDataAsync = (SetAttributeFloatUniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloatUniqueDataAsync"));
 	FHoudiniApi::SetAttributeIndexedStringData = (SetAttributeIndexedStringDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIndexedStringData"));
+	FHoudiniApi::SetAttributeIndexedStringDataAsync = (SetAttributeIndexedStringDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIndexedStringDataAsync"));
 	FHoudiniApi::SetAttributeInt16ArrayData = (SetAttributeInt16ArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt16ArrayData"));
+	FHoudiniApi::SetAttributeInt16ArrayDataAsync = (SetAttributeInt16ArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt16ArrayDataAsync"));
 	FHoudiniApi::SetAttributeInt16Data = (SetAttributeInt16DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt16Data"));
+	FHoudiniApi::SetAttributeInt16DataAsync = (SetAttributeInt16DataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt16DataAsync"));
 	FHoudiniApi::SetAttributeInt16UniqueData = (SetAttributeInt16UniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt16UniqueData"));
+	FHoudiniApi::SetAttributeInt16UniqueDataAsync = (SetAttributeInt16UniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt16UniqueDataAsync"));
 	FHoudiniApi::SetAttributeInt64ArrayData = (SetAttributeInt64ArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt64ArrayData"));
+	FHoudiniApi::SetAttributeInt64ArrayDataAsync = (SetAttributeInt64ArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt64ArrayDataAsync"));
 	FHoudiniApi::SetAttributeInt64Data = (SetAttributeInt64DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt64Data"));
+	FHoudiniApi::SetAttributeInt64DataAsync = (SetAttributeInt64DataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt64DataAsync"));
 	FHoudiniApi::SetAttributeInt64UniqueData = (SetAttributeInt64UniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt64UniqueData"));
+	FHoudiniApi::SetAttributeInt64UniqueDataAsync = (SetAttributeInt64UniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt64UniqueDataAsync"));
 	FHoudiniApi::SetAttributeInt8ArrayData = (SetAttributeInt8ArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt8ArrayData"));
+	FHoudiniApi::SetAttributeInt8ArrayDataAsync = (SetAttributeInt8ArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt8ArrayDataAsync"));
 	FHoudiniApi::SetAttributeInt8Data = (SetAttributeInt8DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt8Data"));
+	FHoudiniApi::SetAttributeInt8DataAsync = (SetAttributeInt8DataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt8DataAsync"));
 	FHoudiniApi::SetAttributeInt8UniqueData = (SetAttributeInt8UniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt8UniqueData"));
+	FHoudiniApi::SetAttributeInt8UniqueDataAsync = (SetAttributeInt8UniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeInt8UniqueDataAsync"));
 	FHoudiniApi::SetAttributeIntArrayData = (SetAttributeIntArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIntArrayData"));
+	FHoudiniApi::SetAttributeIntArrayDataAsync = (SetAttributeIntArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIntArrayDataAsync"));
 	FHoudiniApi::SetAttributeIntData = (SetAttributeIntDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIntData"));
+	FHoudiniApi::SetAttributeIntDataAsync = (SetAttributeIntDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIntDataAsync"));
 	FHoudiniApi::SetAttributeIntUniqueData = (SetAttributeIntUniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIntUniqueData"));
+	FHoudiniApi::SetAttributeIntUniqueDataAsync = (SetAttributeIntUniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeIntUniqueDataAsync"));
 	FHoudiniApi::SetAttributeStringArrayData = (SetAttributeStringArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeStringArrayData"));
+	FHoudiniApi::SetAttributeStringArrayDataAsync = (SetAttributeStringArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeStringArrayDataAsync"));
 	FHoudiniApi::SetAttributeStringData = (SetAttributeStringDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeStringData"));
+	FHoudiniApi::SetAttributeStringDataAsync = (SetAttributeStringDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeStringDataAsync"));
 	FHoudiniApi::SetAttributeStringUniqueData = (SetAttributeStringUniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeStringUniqueData"));
+	FHoudiniApi::SetAttributeStringUniqueDataAsync = (SetAttributeStringUniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeStringUniqueDataAsync"));
 	FHoudiniApi::SetAttributeUInt8ArrayData = (SetAttributeUInt8ArrayDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeUInt8ArrayData"));
+	FHoudiniApi::SetAttributeUInt8ArrayDataAsync = (SetAttributeUInt8ArrayDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeUInt8ArrayDataAsync"));
 	FHoudiniApi::SetAttributeUInt8Data = (SetAttributeUInt8DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeUInt8Data"));
+	FHoudiniApi::SetAttributeUInt8DataAsync = (SetAttributeUInt8DataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeUInt8DataAsync"));
 	FHoudiniApi::SetAttributeUInt8UniqueData = (SetAttributeUInt8UniqueDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeUInt8UniqueData"));
+	FHoudiniApi::SetAttributeUInt8UniqueDataAsync = (SetAttributeUInt8UniqueDataAsyncFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeUInt8UniqueDataAsync"));
 	FHoudiniApi::SetCacheProperty = (SetCachePropertyFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetCacheProperty"));
 	FHoudiniApi::SetCompositorOptions = (SetCompositorOptionsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetCompositorOptions"));
 	FHoudiniApi::SetCurveCounts = (SetCurveCountsFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetCurveCounts"));
@@ -1629,9 +1743,11 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::SetWorkitemIntData = (SetWorkitemIntDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetWorkitemIntData"));
 	FHoudiniApi::SetWorkitemStringData = (SetWorkitemStringDataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetWorkitemStringData"));
 	FHoudiniApi::Shutdown = (ShutdownFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_Shutdown"));
+	FHoudiniApi::StartPerformanceMonitorProfile = (StartPerformanceMonitorProfileFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartPerformanceMonitorProfile"));
 	FHoudiniApi::StartThriftNamedPipeServer = (StartThriftNamedPipeServerFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartThriftNamedPipeServer"));
 	FHoudiniApi::StartThriftSharedMemoryServer = (StartThriftSharedMemoryServerFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartThriftSharedMemoryServer"));
 	FHoudiniApi::StartThriftSocketServer = (StartThriftSocketServerFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StartThriftSocketServer"));
+	FHoudiniApi::StopPerformanceMonitorProfile = (StopPerformanceMonitorProfileFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_StopPerformanceMonitorProfile"));
 	FHoudiniApi::ThriftServerOptions_Create = (ThriftServerOptions_CreateFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_ThriftServerOptions_Create"));
 	FHoudiniApi::ThriftServerOptions_Init = (ThriftServerOptions_InitFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_ThriftServerOptions_Init"));
 	FHoudiniApi::TimelineOptions_Create = (TimelineOptions_CreateFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_TimelineOptions_Create"));
@@ -1754,7 +1870,6 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::GetAttributeUInt8ArrayDataAsync = &FHoudiniApi::GetAttributeUInt8ArrayDataAsyncEmptyStub;
 	FHoudiniApi::GetAttributeUInt8Data = &FHoudiniApi::GetAttributeUInt8DataEmptyStub;
 	FHoudiniApi::GetAttributeUInt8DataAsync = &FHoudiniApi::GetAttributeUInt8DataAsyncEmptyStub;
-	FHoudiniApi::GetAttributeWait = &FHoudiniApi::GetAttributeWaitEmptyStub;
 	FHoudiniApi::GetAvailableAssetCount = &FHoudiniApi::GetAvailableAssetCountEmptyStub;
 	FHoudiniApi::GetAvailableAssets = &FHoudiniApi::GetAvailableAssetsEmptyStub;
 	FHoudiniApi::GetBoxInfo = &FHoudiniApi::GetBoxInfoEmptyStub;
@@ -1799,6 +1914,7 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::GetInstancedObjectIds = &FHoudiniApi::GetInstancedObjectIdsEmptyStub;
 	FHoudiniApi::GetInstancedPartIds = &FHoudiniApi::GetInstancedPartIdsEmptyStub;
 	FHoudiniApi::GetInstancerPartTransforms = &FHoudiniApi::GetInstancerPartTransformsEmptyStub;
+	FHoudiniApi::GetJobStatus = &FHoudiniApi::GetJobStatusEmptyStub;
 	FHoudiniApi::GetLoadedAssetLibraryCount = &FHoudiniApi::GetLoadedAssetLibraryCountEmptyStub;
 	FHoudiniApi::GetManagerNodeId = &FHoudiniApi::GetManagerNodeIdEmptyStub;
 	FHoudiniApi::GetMaterialInfo = &FHoudiniApi::GetMaterialInfoEmptyStub;
@@ -1965,32 +2081,59 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::SessionSyncInfo_Create = &FHoudiniApi::SessionSyncInfo_CreateEmptyStub;
 	FHoudiniApi::SetAnimCurve = &FHoudiniApi::SetAnimCurveEmptyStub;
 	FHoudiniApi::SetAttributeDictionaryArrayData = &FHoudiniApi::SetAttributeDictionaryArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeDictionaryArrayDataAsync = &FHoudiniApi::SetAttributeDictionaryArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeDictionaryData = &FHoudiniApi::SetAttributeDictionaryDataEmptyStub;
+	FHoudiniApi::SetAttributeDictionaryDataAsync = &FHoudiniApi::SetAttributeDictionaryDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeFloat64ArrayData = &FHoudiniApi::SetAttributeFloat64ArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeFloat64ArrayDataAsync = &FHoudiniApi::SetAttributeFloat64ArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeFloat64Data = &FHoudiniApi::SetAttributeFloat64DataEmptyStub;
+	FHoudiniApi::SetAttributeFloat64DataAsync = &FHoudiniApi::SetAttributeFloat64DataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeFloat64UniqueData = &FHoudiniApi::SetAttributeFloat64UniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeFloat64UniqueDataAsync = &FHoudiniApi::SetAttributeFloat64UniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeFloatArrayData = &FHoudiniApi::SetAttributeFloatArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeFloatArrayDataAsync = &FHoudiniApi::SetAttributeFloatArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeFloatData = &FHoudiniApi::SetAttributeFloatDataEmptyStub;
+	FHoudiniApi::SetAttributeFloatDataAsync = &FHoudiniApi::SetAttributeFloatDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeFloatUniqueData = &FHoudiniApi::SetAttributeFloatUniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeFloatUniqueDataAsync = &FHoudiniApi::SetAttributeFloatUniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeIndexedStringData = &FHoudiniApi::SetAttributeIndexedStringDataEmptyStub;
+	FHoudiniApi::SetAttributeIndexedStringDataAsync = &FHoudiniApi::SetAttributeIndexedStringDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt16ArrayData = &FHoudiniApi::SetAttributeInt16ArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeInt16ArrayDataAsync = &FHoudiniApi::SetAttributeInt16ArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt16Data = &FHoudiniApi::SetAttributeInt16DataEmptyStub;
+	FHoudiniApi::SetAttributeInt16DataAsync = &FHoudiniApi::SetAttributeInt16DataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt16UniqueData = &FHoudiniApi::SetAttributeInt16UniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeInt16UniqueDataAsync = &FHoudiniApi::SetAttributeInt16UniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt64ArrayData = &FHoudiniApi::SetAttributeInt64ArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeInt64ArrayDataAsync = &FHoudiniApi::SetAttributeInt64ArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt64Data = &FHoudiniApi::SetAttributeInt64DataEmptyStub;
+	FHoudiniApi::SetAttributeInt64DataAsync = &FHoudiniApi::SetAttributeInt64DataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt64UniqueData = &FHoudiniApi::SetAttributeInt64UniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeInt64UniqueDataAsync = &FHoudiniApi::SetAttributeInt64UniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt8ArrayData = &FHoudiniApi::SetAttributeInt8ArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeInt8ArrayDataAsync = &FHoudiniApi::SetAttributeInt8ArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt8Data = &FHoudiniApi::SetAttributeInt8DataEmptyStub;
+	FHoudiniApi::SetAttributeInt8DataAsync = &FHoudiniApi::SetAttributeInt8DataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeInt8UniqueData = &FHoudiniApi::SetAttributeInt8UniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeInt8UniqueDataAsync = &FHoudiniApi::SetAttributeInt8UniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeIntArrayData = &FHoudiniApi::SetAttributeIntArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeIntArrayDataAsync = &FHoudiniApi::SetAttributeIntArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeIntData = &FHoudiniApi::SetAttributeIntDataEmptyStub;
+	FHoudiniApi::SetAttributeIntDataAsync = &FHoudiniApi::SetAttributeIntDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeIntUniqueData = &FHoudiniApi::SetAttributeIntUniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeIntUniqueDataAsync = &FHoudiniApi::SetAttributeIntUniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeStringArrayData = &FHoudiniApi::SetAttributeStringArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeStringArrayDataAsync = &FHoudiniApi::SetAttributeStringArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeStringData = &FHoudiniApi::SetAttributeStringDataEmptyStub;
+	FHoudiniApi::SetAttributeStringDataAsync = &FHoudiniApi::SetAttributeStringDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeStringUniqueData = &FHoudiniApi::SetAttributeStringUniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeStringUniqueDataAsync = &FHoudiniApi::SetAttributeStringUniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeUInt8ArrayData = &FHoudiniApi::SetAttributeUInt8ArrayDataEmptyStub;
+	FHoudiniApi::SetAttributeUInt8ArrayDataAsync = &FHoudiniApi::SetAttributeUInt8ArrayDataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeUInt8Data = &FHoudiniApi::SetAttributeUInt8DataEmptyStub;
+	FHoudiniApi::SetAttributeUInt8DataAsync = &FHoudiniApi::SetAttributeUInt8DataAsyncEmptyStub;
 	FHoudiniApi::SetAttributeUInt8UniqueData = &FHoudiniApi::SetAttributeUInt8UniqueDataEmptyStub;
+	FHoudiniApi::SetAttributeUInt8UniqueDataAsync = &FHoudiniApi::SetAttributeUInt8UniqueDataAsyncEmptyStub;
 	FHoudiniApi::SetCacheProperty = &FHoudiniApi::SetCachePropertyEmptyStub;
 	FHoudiniApi::SetCompositorOptions = &FHoudiniApi::SetCompositorOptionsEmptyStub;
 	FHoudiniApi::SetCurveCounts = &FHoudiniApi::SetCurveCountsEmptyStub;
@@ -2038,9 +2181,11 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::SetWorkitemIntData = &FHoudiniApi::SetWorkitemIntDataEmptyStub;
 	FHoudiniApi::SetWorkitemStringData = &FHoudiniApi::SetWorkitemStringDataEmptyStub;
 	FHoudiniApi::Shutdown = &FHoudiniApi::ShutdownEmptyStub;
+	FHoudiniApi::StartPerformanceMonitorProfile = &FHoudiniApi::StartPerformanceMonitorProfileEmptyStub;
 	FHoudiniApi::StartThriftNamedPipeServer = &FHoudiniApi::StartThriftNamedPipeServerEmptyStub;
 	FHoudiniApi::StartThriftSharedMemoryServer = &FHoudiniApi::StartThriftSharedMemoryServerEmptyStub;
 	FHoudiniApi::StartThriftSocketServer = &FHoudiniApi::StartThriftSocketServerEmptyStub;
+	FHoudiniApi::StopPerformanceMonitorProfile = &FHoudiniApi::StopPerformanceMonitorProfileEmptyStub;
 	FHoudiniApi::ThriftServerOptions_Create = &FHoudiniApi::ThriftServerOptions_CreateEmptyStub;
 	FHoudiniApi::ThriftServerOptions_Init = &FHoudiniApi::ThriftServerOptions_InitEmptyStub;
 	FHoudiniApi::TimelineOptions_Create = &FHoudiniApi::TimelineOptions_CreateEmptyStub;
@@ -2541,7 +2686,7 @@ FHoudiniApi::GetAttributeDictionaryDataEmptyStub(const HAPI_Session* session, HA
 
 
 HAPI_Result
-FHoudiniApi::GetAttributeDictionaryDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, HAPI_AttributeInfo * attr_info, int stride, HAPI_StringHandle * data_array, int start, int length, int * job_id)
+FHoudiniApi::GetAttributeDictionaryDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, HAPI_AttributeInfo * attr_info, HAPI_StringHandle * data_array, int start, int length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -2751,7 +2896,7 @@ FHoudiniApi::GetAttributeStringDataEmptyStub(const HAPI_Session * session, HAPI_
 
 
 HAPI_Result
-FHoudiniApi::GetAttributeStringDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, HAPI_AttributeInfo * attr_info, int stride, HAPI_StringHandle * data_array, int start, int length, int * job_id)
+FHoudiniApi::GetAttributeStringDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, HAPI_AttributeInfo * attr_info, HAPI_StringHandle * data_array, int start, int length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -2780,13 +2925,6 @@ FHoudiniApi::GetAttributeUInt8DataEmptyStub(const HAPI_Session * session, HAPI_N
 
 HAPI_Result
 FHoudiniApi::GetAttributeUInt8DataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, HAPI_AttributeInfo * attr_info, int stride, HAPI_UInt8 * data_array, int start, int length, int * job_id)
-{
-	return HAPI_RESULT_FAILURE;
-}
-
-
-HAPI_Result
-FHoudiniApi::GetAttributeWaitEmptyStub(const HAPI_Session * session, int job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -3095,6 +3233,13 @@ FHoudiniApi::GetInstancedPartIdsEmptyStub(const HAPI_Session * session, HAPI_Nod
 
 HAPI_Result
 FHoudiniApi::GetInstancerPartTransformsEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, HAPI_RSTOrder rst_order, HAPI_Transform * transforms_array, int start, int length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::GetJobStatusEmptyStub(const HAPI_Session * session, int job_id, HAPI_JobStatus * job_status)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4263,7 +4408,21 @@ FHoudiniApi::SetAttributeDictionaryArrayDataEmptyStub(const HAPI_Session* sessio
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeDictionaryArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const char ** data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeDictionaryDataEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const char** data_array, int start, int length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeDictionaryDataAsyncEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const char** data_array, int start, int length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4277,7 +4436,21 @@ FHoudiniApi::SetAttributeFloat64ArrayDataEmptyStub(const HAPI_Session * session,
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeFloat64ArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const double * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeFloat64DataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const double * data_array, int start, int length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeFloat64DataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const double * data_array, int start, int length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4291,7 +4464,21 @@ FHoudiniApi::SetAttributeFloat64UniqueDataEmptyStub(const HAPI_Session* session,
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeFloat64UniqueDataAsyncEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const double* data_array, int data_length, int start_index, int num_indices, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeFloatArrayDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const float * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeFloatArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const float * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4305,7 +4492,21 @@ FHoudiniApi::SetAttributeFloatDataEmptyStub(const HAPI_Session * session, HAPI_N
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeFloatDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const float * data_array, int start, int length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeFloatUniqueDataEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const float* data_array, int data_length, int start_index, int num_indices)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeFloatUniqueDataAsyncEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const float* data_array, int data_length, int start_index, int num_indices, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4319,7 +4520,21 @@ FHoudiniApi::SetAttributeIndexedStringDataEmptyStub(const HAPI_Session* session,
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeIndexedStringDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const char ** string_array, int string_count, const int * indices_array, int indices_start, int indices_length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeInt16ArrayDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int16 * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeInt16ArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int16 * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4333,7 +4548,21 @@ FHoudiniApi::SetAttributeInt16DataEmptyStub(const HAPI_Session * session, HAPI_N
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeInt16DataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int16 * data_array, int start, int length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeInt16UniqueDataEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const HAPI_Int16* data_array, int data_length, int start_index, int num_indices)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeInt16UniqueDataAsyncEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const HAPI_Int16* data_array, int data_length, int start_index, int num_indices, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4347,7 +4576,21 @@ FHoudiniApi::SetAttributeInt64ArrayDataEmptyStub(const HAPI_Session * session, H
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeInt64ArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int64 * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeInt64DataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int64 * data_array, int start, int length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeInt64DataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int64 * data_array, int start, int length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4361,7 +4604,21 @@ FHoudiniApi::SetAttributeInt64UniqueDataEmptyStub(const HAPI_Session* session, H
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeInt64UniqueDataAsyncEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const HAPI_Int64* data_array, int data_length, int start_index, int num_indices, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeInt8ArrayDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int8 * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeInt8ArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int8 * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4375,7 +4632,21 @@ FHoudiniApi::SetAttributeInt8DataEmptyStub(const HAPI_Session * session, HAPI_No
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeInt8DataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int8 * data_array, int start, int length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeInt8UniqueDataEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const HAPI_Int8* data_array, int data_length, int start_index, int num_indices)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeInt8UniqueDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_Int8* data_array, int data_length, int start_index, int num_indices, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4389,7 +4660,21 @@ FHoudiniApi::SetAttributeIntArrayDataEmptyStub(const HAPI_Session * session, HAP
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeIntArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const int * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeIntDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const int * data_array, int start, int length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeIntDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const int * data_array, int start, int length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4403,7 +4688,21 @@ FHoudiniApi::SetAttributeIntUniqueDataEmptyStub(const HAPI_Session* session, HAP
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeIntUniqueDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const int * data_array, int data_length, int start_index, int num_indices, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeStringArrayDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const char ** data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeStringArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const char ** data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4417,7 +4716,21 @@ FHoudiniApi::SetAttributeStringDataEmptyStub(const HAPI_Session * session, HAPI_
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeStringDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const char ** data_array, int start, int length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeStringUniqueDataEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const char* data_array, int data_length, int start_index, int num_indices)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeStringUniqueDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const char * data_array, int data_length, int start_index, int num_indices, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4431,6 +4744,13 @@ FHoudiniApi::SetAttributeUInt8ArrayDataEmptyStub(const HAPI_Session * session, H
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeUInt8ArrayDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_UInt8 * data_fixed_array, int data_fixed_length, const int * sizes_fixed_array, int start, int sizes_fixed_length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeUInt8DataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_UInt8 * data_array, int start, int length)
 {
 	return HAPI_RESULT_FAILURE;
@@ -4438,7 +4758,21 @@ FHoudiniApi::SetAttributeUInt8DataEmptyStub(const HAPI_Session * session, HAPI_N
 
 
 HAPI_Result
+FHoudiniApi::SetAttributeUInt8DataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_UInt8 * data_array, int start, int length, int * job_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::SetAttributeUInt8UniqueDataEmptyStub(const HAPI_Session* session, HAPI_NodeId node_id, HAPI_PartId part_id, const char* name, const HAPI_AttributeInfo* attr_info, const HAPI_UInt8* data_array, int data_length, int start_index, int num_indices)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::SetAttributeUInt8UniqueDataAsyncEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const HAPI_UInt8 * data_array, int data_length, int start_index, int num_indices, int * job_id)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -4774,6 +5108,13 @@ FHoudiniApi::ShutdownEmptyStub(const HAPI_Session * session)
 
 
 HAPI_Result
+FHoudiniApi::StartPerformanceMonitorProfileEmptyStub(const HAPI_Session * session, const char * title, int * profile_id)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
 FHoudiniApi::StartThriftNamedPipeServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id, const char * log_file)
 {
 	return HAPI_RESULT_FAILURE;
@@ -4789,6 +5130,13 @@ FHoudiniApi::StartThriftSharedMemoryServerEmptyStub(const HAPI_ThriftServerOptio
 
 HAPI_Result
 FHoudiniApi::StartThriftSocketServerEmptyStub(const HAPI_ThriftServerOptions * options, int port, HAPI_ProcessId * process_id, const char * log_file)
+{
+	return HAPI_RESULT_FAILURE;
+}
+
+
+HAPI_Result
+FHoudiniApi::StopPerformanceMonitorProfileEmptyStub(const HAPI_Session *session, int profile_id, const char * file_path)
 {
 	return HAPI_RESULT_FAILURE;
 }
