@@ -355,7 +355,6 @@ struct HOUDINIENGINE_API FHoudiniInputTranslator
 		const FString& InputNodeName,
 		const FTransform& InTransform,
 		const bool& bImportAsReferenceRotScaleEnabled,
-		const bool bInUseRefCountedInputSystem,
 		FUnrealObjectInputHandle& OutHandle,
 		const bool& bInputNodesCanBeDeleted,
 		const bool& bImportAsReferenceBboxEnabled = false,

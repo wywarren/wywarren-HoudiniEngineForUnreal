@@ -60,7 +60,6 @@ public:
 		const FString& InInputNodeName,
 		const FTransform& InTransform,
 		const bool& bImportAsReferenceRotScaleEnabled,
-		const bool bInUseRefCountedInputSystem,
 		FUnrealObjectInputHandle& OutHandle,
 		const bool& bInputNodesCanBeDeleted,
 		const bool& bImportAsReferenceBboxEnabled = false,

@@ -488,7 +488,7 @@ void
 UHoudiniInputObject::SetInputNodeId(const int32 InInputNodeId)
 {
 	// Only set the node id if the ref counted system is not used.
-	if (bInputNodeHandleOverridesNodeIds && FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+	if (bInputNodeHandleOverridesNodeIds)
 		return;
 	InputNodeId = InInputNodeId;
 }
@@ -499,7 +499,7 @@ UHoudiniInputObject::GetInputNodeId() const
 	// If the ref counted system is enabled then we return the node id via the handle, otherwise return the id stored
 	// on this object
 
-	if (!bInputNodeHandleOverridesNodeIds || !FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+	if (!bInputNodeHandleOverridesNodeIds)
 		return InputNodeId;
 
 	if (!InputNodeHandle.IsValid())
@@ -522,7 +522,7 @@ void
 UHoudiniInputObject::SetInputObjectNodeId(const int32 InInputObjectNodeId)
 {
 	// Only set the node id if the ref counted system is not used.
-	if (bInputNodeHandleOverridesNodeIds && FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+	if (bInputNodeHandleOverridesNodeIds)
 		return;
 	InputObjectNodeId = InInputObjectNodeId;
 }
@@ -533,7 +533,7 @@ UHoudiniInputObject::GetInputObjectNodeId() const
 	// If the ref counted system is enabled then we return the node id via the handle, otherwise return the id stored
 	// on this object
 
-	if (!bInputNodeHandleOverridesNodeIds || !FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+	if (!bInputNodeHandleOverridesNodeIds)
 		return InputObjectNodeId;
 
 	if (!InputNodeHandle.IsValid())
@@ -1374,9 +1374,8 @@ UHoudiniInputObject::Matches(const UHoudiniInputObject& Other) const
 		&& InputNodeId == Other.InputNodeId
 		&& InputObjectNodeId == Other.InputObjectNodeId
 		);
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bUseRefCountedInputSystem)
-		Matches &= InputNodeHandle == Other.InputNodeHandle;
+
+	Matches &= InputNodeHandle == Other.InputNodeHandle;
 
 	return Matches;
 }
@@ -1401,8 +1400,7 @@ UHoudiniInputObject::InvalidateData()
 
 	// If we are using the new input system, then don't delete the nodes if we have a valid handle, and the HAPI
 	// nodes associated with the handle matches InputNodeId / InputObjectNodeId
-	const bool bIsRefCountedInputSystemEnabled = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bIsRefCountedInputSystemEnabled && InputNodeHandle.IsValid())
+	if (InputNodeHandle.IsValid())
 	{
 		IUnrealObjectInputManager const* const Manager = FUnrealObjectInputManager::Get();
 		if (Manager)
@@ -1811,9 +1809,7 @@ UHoudiniInputSceneComponent::HasComponentChanged(const FHoudiniInputObjectSettin
 FTransform
 UHoudiniInputSceneComponent::GetHoudiniObjectTransform() const
 {
-	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
-		return GetTransformRelativeToOwner();
-	return GetTransform();
+	return GetTransformRelativeToOwner();
 }
 
 bool
@@ -2306,7 +2302,6 @@ bool
 UHoudiniInputActor::HasContentChanged(const FHoudiniInputObjectSettings& InSettings) const
 {
 	// In the new input system, treat the input actor as changed if it has any component changes
-	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
 	{
 		if (GetLastUpdateNumComponentsAdded() > 0 || GetLastUpdateNumComponentsRemoved() > 0)
 			return true;
@@ -2375,16 +2370,12 @@ UHoudiniInputActor::GetChangedObjectsAndValidNodes(TArray<UHoudiniInputObject*>&
 	if (Super::GetChangedObjectsAndValidNodes(OutChangedObjects, OutNodeIdsOfUnchangedValidObjects))
 		return true;
 
-	const bool bIsRefCountedInputSystemEnabled = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	
 	// If the actor is merging spline mesh components then it should have a valid SplinesMeshObjectNodeId 
 	if (bUsedMergeSplinesMeshAtLastTranslate)
 	{
 		if (SplinesMeshObjectNodeId >= 0)
 		{
-			// When using the new system we only ever want to add the node of the actor here
-			if (!bIsRefCountedInputSystemEnabled)
-				OutNodeIdsOfUnchangedValidObjects.Add(SplinesMeshObjectNodeId);
+			// Old input system code removed.
 		}
 		else
 		{
@@ -2394,24 +2385,6 @@ UHoudiniInputActor::GetChangedObjectsAndValidNodes(TArray<UHoudiniInputObject*>&
 	}
 	
 	bool bAnyChanges = false;
-	// In the new input system we treat the blueprint/actor as changed (in HasContentChanged()) if there are any component changes
-	if (!bIsRefCountedInputSystemEnabled)
-	{
-		// Check each of its child objects (components)
-		for (auto* const CurrentComp : GetActorComponents())
-		{
-			if (!IsValid(CurrentComp))
-				continue;
-
-			// If we are using merged spline mesh components, then spline mesh component changes, or disabling merging are all
-			// treated as actor changes
-			if (bUsedMergeSplinesMeshAtLastTranslate && CurrentComp->IsA<UHoudiniInputSplineMeshComponent>())
-				continue;
-
-			if (CurrentComp->GetChangedObjectsAndValidNodes(OutChangedObjects, OutNodeIdsOfUnchangedValidObjects))
-				bAnyChanges = true;
-		}
-	}
 
 	return bAnyChanges;
 }
@@ -2433,8 +2406,7 @@ UHoudiniInputActor::InvalidateSplinesMeshData()
 	{
 		// If we are using the new input system, then don't delete the nodes if we have a valid handle, and the HAPI
 		// nodes associated with the handle matches SplinesMeshNodeId / SplinesMeshObjectNodeId
-		const bool bIsRefCountedInputSystemEnabled = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-		if (bIsRefCountedInputSystemEnabled && SplinesMeshInputNodeHandle.IsValid())
+		if (SplinesMeshInputNodeHandle.IsValid())
 		{
 			IUnrealObjectInputManager const* const Manager = FUnrealObjectInputManager::Get();
 			if (Manager)
@@ -2470,8 +2442,6 @@ UHoudiniInputActor::InvalidateSplinesMeshData()
 bool
 UHoudiniInputActor::UsesInputObjectNode() const
 {
-	if (!FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
-		return false;
 	return true;
 }
 
@@ -2702,9 +2672,6 @@ bool UHoudiniInputPackedLevelActor::ShouldTrackComponent(UActorComponent const* 
 {
 	// Only track components when the old input system is being used: the old input system treats a packed level actor
 	// instance like a normal actor/world input
-	const bool bExportLevelInstanceContent = InSettings ? InSettings->bExportLevelInstanceContent : CachedInputSettings.bExportLevelInstanceContent;
-	if (!FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled() && bExportLevelInstanceContent)
-		return Super::ShouldTrackComponent(InComponent, InSettings);
 	return false;
 }
 
@@ -2813,20 +2780,6 @@ UHoudiniInputBlueprint::GetChangedObjectsAndValidNodes(TArray<UHoudiniInputObjec
 		return true;
 
 	bool bAnyChanges = false;
-	// In the new input system we treat the blueprint/actor as changed (in HasContentChanged()) if there are any component changes
-	if (!FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
-	{
-		// Check each of its child objects (components)
-		for (auto* const CurrentComp : GetComponents())
-		{
-			if (!IsValid(CurrentComp))
-				continue;
-
-			if (CurrentComp->GetChangedObjectsAndValidNodes(OutChangedObjects, OutNodeIdsOfUnchangedValidObjects))
-				bAnyChanges = true;
-		}
-	}
-
 	return bAnyChanges;
 }
 
@@ -2849,7 +2802,7 @@ bool
 UHoudiniInputBlueprint::HasContentChanged(const FHoudiniInputObjectSettings& InSettings) const
 {
 	// In the new input system, treat the input blueprint as changed if it has any component changes
-	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+
 	{
 		if (GetLastUpdateNumComponentsAdded() > 0 || GetLastUpdateNumComponentsRemoved() > 0)
 			return true;
@@ -2884,8 +2837,6 @@ UHoudiniInputBlueprint::InvalidateData()
 bool
 UHoudiniInputBlueprint::UsesInputObjectNode() const
 {
-	if (!FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
-		return false;
 	return true;
 }
 

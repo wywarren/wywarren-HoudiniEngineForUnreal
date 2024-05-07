@@ -89,12 +89,10 @@ FUnrealInstanceTranslator::HapiCreateInputNodeForInstancer(
 	// Modifier chain name for component overrides on the static mesh (used with the ref counted input system).
 	const FName MeshChainName("sm_overrides");
 
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	FString FinalInputNodeName = InNodeName;
 	HAPI_NodeId ParentNodeId = -1;
 	FUnrealObjectInputHandle ParentHandle;
 	FUnrealObjectInputIdentifier Identifier;
-	if (bUseRefCountedInputSystem)
 	{
 		// Build the identifier for the entry in the manager
 		constexpr bool bIsLeaf = false;
@@ -176,7 +174,6 @@ FUnrealInstanceTranslator::HapiCreateInputNodeForInstancer(
 	HAPI_NodeId ObjectNodeId = -1;
 	HAPI_NodeId CopyNodeId = -1;
 	int32 MatNodeId = -1;
-	if (bUseRefCountedInputSystem)
 	{
 		// If we have existing valid HAPI nodes (so we are rebuilding a dirty / old version) reuse those nodes. This
 		// is quite important, to keep our obj merges / node references in _Houdini_ valid
@@ -212,14 +209,6 @@ FUnrealInstanceTranslator::HapiCreateInputNodeForInstancer(
 			HOUDINI_CHECK_ERROR_RETURN( FHoudiniEngineUtils::CreateNode(
 				ObjectNodeId, ObjectNodeId < 0 ? TEXT("SOP/attribcreate") : TEXT("attribcreate"), FinalInputNodeName, true, &MatNodeId), false);
 		}
-	}
-	else
-	{
-		HOUDINI_CHECK_ERROR_RETURN( FHoudiniEngineUtils::CreateNode(
-			-1, TEXT("SOP/attribcreate"), FinalInputNodeName, true, &MatNodeId), false);
-		
-		// Get the attribcreate node's parent OBJ NodeID
-		ObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(MatNodeId);
 	}
 
 	if (CopyNodeId < 0)
@@ -377,7 +366,6 @@ FUnrealInstanceTranslator::HapiCreateInputNodeForInstancer(
 		FHoudiniEngine::Get().GetSession(), MatNodeId, 0, CopyNodeId, 0), false);
 
 	// Update/create the entry in the input manager
-	if (bUseRefCountedInputSystem)
 	{
 		// Record the node in the manager
 		FUnrealObjectInputHandle Handle;

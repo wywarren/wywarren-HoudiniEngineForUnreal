@@ -62,8 +62,6 @@ FUnrealLevelInstanceTranslator::CreateNodeForLevelInstance(
 	FUnrealObjectInputHandle& OutHandle,
 	const bool bInputNodesCanBeDeleted)
 {
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-
 	FUnrealObjectInputIdentifier Identifier;
 	FUnrealObjectInputIdentifier GeoNodeIdentifier;
 	FUnrealObjectInputHandle ParentHandle;
@@ -71,7 +69,6 @@ FUnrealLevelInstanceTranslator::CreateNodeForLevelInstance(
 	FString FinalInputNodeName = InputNodeName;
 	HAPI_NodeId ParentNodeId = -1;
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputOptions Options;
 		Options.bExportLevelInstanceContent = false;
@@ -138,7 +135,6 @@ FUnrealLevelInstanceTranslator::CreateNodeForLevelInstance(
 
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetPartInfo(FHoudiniEngine::Get().GetSession(), InputNodeId, 0, &Part), false);
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))

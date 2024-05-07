@@ -4,14 +4,6 @@
 #include "UnrealObjectInputRuntimeTypes.h"
 #include "UnrealObjectInputManager.h"
 
-
-bool
-FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled()
-{
-	UHoudiniRuntimeSettings const* const Settings = GetDefault<UHoudiniRuntimeSettings>();
-	return IsValid(Settings) && Settings->bEnableTheReferenceCountedInputSystem;
-}
-
 bool
 FUnrealObjectInputRuntimeUtils::IsInputNodeDirty(const FUnrealObjectInputIdentifier& InIdentifier)
 {

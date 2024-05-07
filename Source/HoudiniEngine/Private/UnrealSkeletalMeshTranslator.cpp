@@ -116,7 +116,7 @@ FUnrealSkeletalMeshTranslator::HapiCreateInputNodeForSkeletalMesh(
 	// Now create the capture pose node
 	HAPI_NodeId CapturePoseNodeId = -1;
 	HAPI_NodeId PackFolderNodeId = -1;
-	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
+
 	{
 		// Create input node for the capture pose only
 		FUnrealObjectInputHandle CapturePoseHandle;
@@ -170,28 +170,6 @@ FUnrealSkeletalMeshTranslator::HapiCreateInputNodeForSkeletalMesh(
 		TSet<FUnrealObjectInputHandle> RefNodes { SKMeshHandle, CapturePoseHandle };
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, PackFolderNodeId, RefNodeHandle, GeoObjectNodeId, &RefNodes, bInputNodesCanBeDeleted))
 			OutHandle = RefNodeHandle;
-	}
-	else
-	{
-		const HAPI_NodeId ObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(InputNodeId);
-		// Create nodes for the capture pose
-		FUnrealObjectInputHandle CapturePoseHandle;
-		if (!CreateInputNodeForCapturePose(
-				SkeletalMesh,
-				ObjectNodeId,
-				InputNodeName + TEXT("_capture_pose"),
-				CapturePoseNodeId,
-				CapturePoseHandle,
-				bInputNodesCanBeDeleted))
-		{
-			return false;
-		}
-
-		// Create packfolder node
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateNode(ObjectNodeId, TEXT("packfolder"), TEXT("packfolder"), true, &PackFolderNodeId), false);
-
-		// Set the display flag on the packfolder node
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetNodeDisplay(FHoudiniEngine::Get().GetSession(), PackFolderNodeId, 1), false);
 	}
 
 	HAPI_Session const* const Session = FHoudiniEngine::Get().GetSession();
@@ -257,8 +235,7 @@ FUnrealSkeletalMeshTranslator::CreateInputNodesForSkeletalMesh(
 	FUnrealObjectInputIdentifier Identifier;
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = -1;
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bUseRefCountedInputSystem)
+
 	{
 		// Check if we already have an input node for this asset
 		static constexpr bool bForceCreateInputRefNode = false;
@@ -504,7 +481,7 @@ FUnrealSkeletalMeshTranslator::CreateInputNodesForSkeletalMesh(
 
 		// When using the new input system
 		// Don't export LOD0 with the LODs  since we have a separate "main mesh" input
-		FirstLODIndex = bUseRefCountedInputSystem ? 1 : 0;
+		FirstLODIndex = 1;
 	}
 	else if (ExportMainMesh)
 	{
@@ -805,7 +782,6 @@ FUnrealSkeletalMeshTranslator::CreateInputNodesForSkeletalMesh(
 		}
 	}
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))
@@ -1983,8 +1959,7 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
 	FUnrealObjectInputIdentifier Identifier(InSkeletalMesh, Options, true);
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = InParentNodeId;
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bUseRefCountedInputSystem)
+
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::NodeExistsAndIsNotDirty(Identifier, Handle))
@@ -2025,7 +2000,6 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
 	
 	HAPI_NodeId NewNodeId = -1;
 
-	if (bUseRefCountedInputSystem)
 	{
 		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateInputNode(
 			FinalInputNodeName, NewNodeId, ParentNodeId), false);
@@ -2040,12 +2014,6 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
 			FHoudiniEngineUtils::DeleteHoudiniNode(ObjectNodeId);
 			PreviousNodeId = -1;
 		}
-	}
-	else
-	{
-		// Create a new input node for the capture pose
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateNode(
-			InParentNodeId, TEXT("null"), FinalInputNodeName, false, &NewNodeId), false);
 	}
 
 	// The ObjectNodeId inside which we'll be creating some more input processing nodes.
@@ -2297,7 +2265,6 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
 
 	FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), NewNodeId);
 	
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, NewNodeId, Handle, ObjectNodeId, nullptr, bInputNodesCanBeDeleted))

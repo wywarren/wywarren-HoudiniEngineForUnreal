@@ -405,8 +405,6 @@ FUnrealLandscapeSplineTranslator::CreateInputNodeForLandscapeSplinesComponent(
 	FUnrealObjectInputIdentifier Identifier;
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = -1;
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bUseRefCountedInputSystem)
 	{
 		// Check if we already have an input node for this component and its options
 		bool bSingleLeafNodeOnly = false;
@@ -671,7 +669,6 @@ FUnrealLandscapeSplineTranslator::CreateInputNodeForLandscapeSplinesComponent(
 		}
 	}
 
-	if (bUseRefCountedInputSystem)
 	{
 		// Get our parent OBJ NodeID
 		const HAPI_NodeId InputObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(OutCreatedInputNodeId);

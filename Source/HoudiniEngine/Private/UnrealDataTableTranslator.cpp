@@ -106,14 +106,12 @@ bool FUnrealDataTableTranslator::CreateInputNodeForDataTable(
 	FUnrealObjectInputHandle& OutHandle,
 	const bool& bInputNodesCanBeDeleted)
 {
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	FString FinalInputNodeName = InputNodeName;
 
 	FUnrealObjectInputIdentifier Identifier;
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = -1;
 
-	if (bUseRefCountedInputSystem)
 	{
 		const FUnrealObjectInputOptions Options;
 		Identifier = FUnrealObjectInputIdentifier(DataTable, Options, true);
@@ -827,7 +825,6 @@ bool FUnrealDataTableTranslator::CreateInputNodeForDataTable(
 	if (!FHoudiniEngineUtils::HapiCookNode(InputNodeId, nullptr, true))
 		return false;
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))

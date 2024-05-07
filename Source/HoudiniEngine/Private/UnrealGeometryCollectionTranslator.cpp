@@ -79,8 +79,6 @@ FUnrealGeometryCollectionTranslator::HapiCreateInputNodeForGeometryCollection(
 	FUnrealObjectInputIdentifier Identifier;
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = -1;
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bUseRefCountedInputSystem)
 	{
 		// Creates this input's identifier and input options
 		FUnrealObjectInputOptions Options;
@@ -211,7 +209,6 @@ FUnrealGeometryCollectionTranslator::HapiCreateInputNodeForGeometryCollection(
 	
 	InputNodeId = PackNodeId;
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))

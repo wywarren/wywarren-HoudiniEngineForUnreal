@@ -123,8 +123,6 @@ FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = -1;
 	UObject* const InputSystemObject = bIsSplineMesh ? static_cast<UObject*>(SplineMeshComponent) : static_cast<UObject*>(StaticMesh);
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (bUseRefCountedInputSystem)
 	{
 		// Check if we already have an input node for this asset
 		bool bSingleLeafNodeOnly = false;
@@ -406,7 +404,6 @@ FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 	const int32 NumLODs = StaticMesh->GetNumLODs();
 	int32 FirstLODIndex = 0;
 	int32 LastLODIndex = -1;
-	if (bUseRefCountedInputSystem)
 	{
 		if (DoExportLODs)
 		{
@@ -438,31 +435,6 @@ FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 				LastLODIndex = 0;
 				FirstLODIndex = 0;
 			}
-		}
-		else
-		{
-			LastLODIndex = -1;
-			FirstLODIndex = 0;
-		}
-	}
-	else
-	{
-		if (!DoExportLODs && bHiResMeshSuccess)
-		{
-			// Do not export LOD0 if we have exported the HiRes mesh and don't need additional LODs
-			LastLODIndex = -1;
-			FirstLODIndex = 0;
-		}
-		else if (DoExportLODs)
-		{
-			LastLODIndex = NumLODs - 1;
-			FirstLODIndex = 0;
-		}
-		else if (ExportMainMesh)
-		{
-			// The main mesh, if nanite is not used, is LOD0
-			LastLODIndex = 0;
-			FirstLODIndex = 0;
 		}
 		else
 		{
@@ -770,7 +742,6 @@ FUnrealMeshTranslator::HapiCreateInputNodeForStaticMesh(
 		}
 	}
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))
@@ -1459,32 +1430,11 @@ FUnrealMeshTranslator::CreateInputNodeForRawMesh(
 	// the component to account for overrides. For the ref counted input system the component will override the
 	// materials in its input node.
 	const bool bIsStaticMeshComponentValid = (IsValid(StaticMeshComponent) && StaticMeshComponent->IsValidLowLevel());
-	const bool bUsingRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 
 	if (RawMesh.FaceMaterialIndices.Num() > 0)
 	{
 		// Create an array of Material Interfaces
 		TArray<UMaterialInterface *> MaterialInterfaces;
-		if (bIsStaticMeshComponentValid && !bUsingRefCountedInputSystem)
-		{
-			// StaticMeshComponent->GetUsedMaterials(MaterialInterfaces, false);
-
-			int32 NumMeshBasedMaterials = StaticMeshComponent->GetNumMaterials();
-			TArray<UMaterialInterface *> MeshBasedMaterialInterfaces;
-			MeshBasedMaterialInterfaces.SetNumUninitialized(NumMeshBasedMaterials);
-			for (int32 i = 0; i < NumMeshBasedMaterials; i++)
-				MeshBasedMaterialInterfaces[i] = StaticMeshComponent->GetMaterial(i);
-
-			int32 NumSections = StaticMesh->GetNumSections(InLODIndex);
-			MaterialInterfaces.SetNumUninitialized(NumSections);
-			for (int32 SectionIndex = 0; SectionIndex < NumSections; SectionIndex++)
-			{
-				FMeshSectionInfo Info = StaticMesh->GetSectionInfoMap().Get(InLODIndex, SectionIndex);
-				check(Info.MaterialIndex < NumMeshBasedMaterials);
-				MaterialInterfaces[SectionIndex] = MeshBasedMaterialInterfaces[Info.MaterialIndex];
-			}
-		}
-		else
 		{
 			// Query the Static mesh's materials
 			for (int32 MatIdx = 0; MatIdx < StaticMesh->GetStaticMaterials().Num(); MatIdx++)
@@ -1941,7 +1891,6 @@ FUnrealMeshTranslator::CreateInputNodeForStaticMeshLODResources(
 	// the component to account for overrides. For the ref counted input system the component will override the
 	// materials in its input node.
 	const bool bIsStaticMeshComponentValid = (IsValid(StaticMeshComponent) && StaticMeshComponent->IsValidLowLevel());
-	const bool bUsingRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	const int32 NumStaticMaterials = StaticMaterials.Num();
 	// If we find any invalid Material (null or pending kill), or we find a section below with an out of range MaterialIndex,
 	// then we will set UEDefaultMaterial at the invalid index
@@ -1954,11 +1903,6 @@ FUnrealMeshTranslator::CreateInputNodeForStaticMeshLODResources(
 		{
 			const FStaticMaterial &MaterialInfo = StaticMaterials[MaterialIndex];
 			UMaterialInterface *Material = nullptr;
-			if (bIsStaticMeshComponentValid && !bUsingRefCountedInputSystem)
-			{
-				Material = StaticMeshComponent->GetMaterial(MaterialIndex);
-			}
-			else
 			{
 				Material = MaterialInfo.MaterialInterface;
 			}
@@ -2610,18 +2554,6 @@ FUnrealMeshTranslator::CreateInputNodeForStaticMeshLODResources(
 FString
 FUnrealMeshTranslator::GetSimplePhysicalMaterialPath(UMeshComponent const* const MeshComponent, UBodySetup const* const BodySetup)
 {
-	// If the ref counted input system is used, don't get the override from the component, this will be handled at the
-	// component level by the input system.
-	const bool bIsUsingRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
-	if (!bIsUsingRefCountedInputSystem && MeshComponent && MeshComponent->GetBodyInstance())
-	{
-		UPhysicalMaterial* PhysicalMaterial = MeshComponent->GetBodyInstance()->GetSimplePhysicalMaterial();
-		if (PhysicalMaterial != nullptr && PhysicalMaterial != GEngine->DefaultPhysMaterial)
-		{
-			return PhysicalMaterial->GetPathName();
-		}
-	}
-
 	if (IsValid(BodySetup) && IsValid(BodySetup->PhysMaterial))
 	{
 		FString Path = BodySetup->PhysMaterial.GetPath();
@@ -3001,7 +2933,6 @@ FUnrealMeshTranslator::CreateAndPopulateMeshPartFromMeshDescription(
 	// the component to account for overrides. For the ref counted input system the component will override the
 	// materials in its input node.
 	const bool bIsMeshComponentValid = (IsValid(MeshComponent) && MeshComponent->IsValidLowLevel());
-	const bool bUsingRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	const int32 NumStaticMaterials = MeshMaterials.Num();
 	// If we find any invalid Material (null or pending kill), or we find a section below with an out of range MaterialIndex,
 	// then we will set UEDefaultMaterial at the invalid index
@@ -3014,11 +2945,6 @@ FUnrealMeshTranslator::CreateAndPopulateMeshPartFromMeshDescription(
 		{
 			const FStaticMaterial &MaterialInfo = MeshMaterials[MaterialIndex];
 			UMaterialInterface *Material = nullptr;
-			if (bIsMeshComponentValid && !bUsingRefCountedInputSystem)
-			{
-				Material = MeshComponent->GetMaterial(MaterialIndex);
-			}
-			else
 			{
 				Material = MaterialInfo.MaterialInterface;
 			}

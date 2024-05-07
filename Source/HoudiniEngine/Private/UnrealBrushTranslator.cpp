@@ -72,14 +72,12 @@ bool FUnrealBrushTranslator::CreateInputNodeForBrush(
 	if (InputBrushObject->ShouldIgnoreThisInput())
 		return true;
 
-	const bool bUseRefCountedInputSystem = FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled();
 	FString FinalInputNodeName = NodeName;
 
 	FUnrealObjectInputIdentifier Identifier;
 	FUnrealObjectInputHandle ParentHandle;
 	HAPI_NodeId ParentNodeId = -1;
 
-	if (bUseRefCountedInputSystem)
 	{
 		const FUnrealObjectInputOptions Options;
 		Identifier = FUnrealObjectInputIdentifier(BrushActor, Options, true);
@@ -448,7 +446,6 @@ bool FUnrealBrushTranslator::CreateInputNodeForBrush(
 
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), InputNodeId), false);
 
-	if (bUseRefCountedInputSystem)
 	{
 		FUnrealObjectInputHandle Handle;
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))
