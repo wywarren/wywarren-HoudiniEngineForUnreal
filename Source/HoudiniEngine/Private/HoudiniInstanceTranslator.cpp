@@ -1161,12 +1161,16 @@ FHoudiniInstanceTranslator::UpdateInstanceVariationObjects(
 			}
 
 			// If we don't have variations, simply use the original object
-			if (CurInstancedOutput.VariationObjects.Num() <= 0)
+			if (CurInstancedOutput.VariationObjects.Num() == 0)
 			{
 				// No variations? add the original one
 				CurInstancedOutput.VariationObjects.Add(OriginalObj);
 				CurInstancedOutput.VariationTransformOffsets.Add(FTransform::Identity);
 				CurInstancedOutput.TransformVariationIndices.SetNum(0);
+			}
+			else
+			{
+				HOUDINI_LOG_WARNING(TEXT("Instance Variations are deprecated and will be removed in a future version. See documentation for more details."));
 			}
 
 			// If the number of transforms has changed since the previous cook, 
