@@ -1314,11 +1314,11 @@ FUnrealLandscapeTranslator::ConvertLandscapeDataToHeightFieldData(
 	HapiTransform.position[2] = 0.0f;
 
 	FVector Scale = LandscapeActorTransform.GetScale3D() / 100.0f;
-	HapiTransform.scale[0] = Scale.Z * 0.5f * HoudiniXSize;
+	HapiTransform.scale[0] = Scale.Y * 0.5f * HoudiniXSize;
 	HapiTransform.scale[1] = Scale.X * 0.5f * HoudiniYSize;
 	HapiTransform.scale[2] = 0.5f;
 	if (bUseDefaultUE4Scaling)
-			HapiTransform.scale[2] *= Scale.Y;
+			HapiTransform.scale[2] *= Scale.Z;
 
 	HapiTransform.shear[0] = 0.0f;
 	HapiTransform.shear[1] = 0.0f;
