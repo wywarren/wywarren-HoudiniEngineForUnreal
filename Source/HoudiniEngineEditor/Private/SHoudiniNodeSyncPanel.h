@@ -28,6 +28,7 @@
 
 #include "CoreMinimal.h"
 #include "HoudiniInput.h"
+#include "HoudiniRuntimeSettings.h"
 
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SCompoundWidget.h"
@@ -42,6 +43,7 @@ public:
     virtual ~SHoudiniNodeSyncPanel() override;
 
     void Construct( const FArguments& InArgs );
+
 
 private:
 

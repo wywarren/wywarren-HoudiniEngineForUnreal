@@ -60,7 +60,7 @@ UHoudiniEditorNodeSyncSubsystem::CreateSessionIfNeeded()
 	// Attempt to restart the session
 	if (!FHoudiniEngine::Get().IsSessionSyncEnabled())
 	{
-		FHoudiniEngine::Get().RestartSession();
+		FHoudiniEngineCommands::OpenSessionSync(true);
 	}
 
 	// Make sure we have a valid session
@@ -148,19 +148,38 @@ UHoudiniEditorNodeSyncSubsystem::SendContentBrowserSelection(const TArray<UObjec
 		return;
 	}
 
-	// Input type? switch to geo
+	// Switch the input type to GEO
+	EHoudiniInputType NSInputType = NodeSyncInput->GetInputType();
 	bool bOutBPModif = false;
 	NodeSyncInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
 
+	// Keep track of the index where we add new things
+	// New objects are appended at the end, and we don't want to resend the whole array
+	int32 AddedObjectIndex = ContentBrowserSelection.Num();
+
+	TArray<UObject*> ObjectNeedingUpload;
 	for (auto& CurObject : CurrentCBSelection)
 	{
 		if (ContentBrowserSelection.Contains(CurObject))
 			continue;
 
 		ContentBrowserSelection.Add(CurObject);
+		ObjectNeedingUpload.Add(CurObject);
 	}
 
-	SendToHoudini(ContentBrowserSelection);
+	// Full refresh
+	if (false)
+	{
+		SendToHoudini(ContentBrowserSelection, 0);
+	}
+
+	if (ObjectNeedingUpload.Num() > 0)
+	{
+		SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
+	}
+
+	// Switch back to previous input type
+	NodeSyncInput->SetInputType(NSInputType, bOutBPModif);
 }
 
 
@@ -184,24 +203,39 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 		return;
 	}
 
-	// Input type? switch to world
+	// Make sure that the input is properly set to world
 	bool bOutBPModif = false;
 	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
 
+	// Keep track of the index where we add new things
+	// New objects are appended at the end, and we don't want to resend the whole array
+	int32 AddedObjectIndex = WorldSelection.Num();
+
+	TArray<UObject*> ObjectNeedingUpload;
 	for (auto& CurObject : CurrentWorldSelection)
 	{
 		if (WorldSelection.Contains(CurObject))
 			continue;
 
 		WorldSelection.Add(CurObject);
+		ObjectNeedingUpload.Add(CurObject);
 	}
 
-	SendToHoudini(WorldSelection);
+	// Full refresh
+	if (false)
+	{
+		SendToHoudini(WorldSelection, 0);
+	}
+
+	if (ObjectNeedingUpload.Num() > 0)
+	{
+		SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
+	}	
 }
 
 
 void 
-UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedAssets)
+UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedAssets, int32 ObjectIndex)
 {
 	if (SelectedAssets.Num() <= 0)
 		return;
@@ -272,9 +306,9 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 			continue;
 		*/
 
-		NodeSyncInput->SetInputObjectAt(Idx, CurrentObject);
+		NodeSyncInput->SetInputObjectAt(ObjectIndex + Idx, CurrentObject);
 
-		UHoudiniInputObject* CurrentInputObject = NodeSyncInput->GetHoudiniInputObjectAt(Idx);
+		UHoudiniInputObject* CurrentInputObject = NodeSyncInput->GetHoudiniInputObjectAt(ObjectIndex + Idx);
 		if (!IsValid(CurrentInputObject))
 			continue;
 
@@ -328,6 +362,10 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 			continue;
 		}
 
+		// Mark that input object as non dirty
+		CurrentInputObject->MarkChanged(false);
+		CurrentInputObject->MarkTransformChanged(false);
+
 		// We've created the input nodes for this object, now, we need to object merge them into the content node in the path specified by the user
 		bool bObjMergeSuccess = false;
 		for (int32 CreatedNodeIdx = 0; CreatedNodeIdx < CreatedNodeIds.Num(); CreatedNodeIdx++)
@@ -342,7 +380,6 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 				CurrentObjectNodeId, CreatedNodeIds[CreatedNodeIdx], ObjectName, ObjectMergeNodeId, CurrentObjectNodeId, true, FTransform::Identity, 1);
 		}
 	}
-	
 
 	// Update status
 	if (LastSendStatus != EHoudiniNodeSyncStatus::SuccessWithErrors)
@@ -355,6 +392,10 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 	// TODO: Improve me! handle failures!
 	Notification = TEXT("Houdini Node Sync success!");
 	FHoudiniEngineUtils::CreateSlateNotification(Notification);
+
+	// Start ticking if needed once we send something
+	if(NodeSyncOptions.bSyncWorldInput)
+		StartTicking();
 }
 
 
@@ -879,6 +920,158 @@ UHoudiniEditorNodeSyncSubsystem::ValidateFetchedNodePath(const FString& InFetchN
 
 		return false;
 	}
+
+	return true;
+}
+
+
+bool
+UHoudiniEditorNodeSyncSubsystem::UpdateNodeSyncInputs()
+{
+	if (!IsValid(NodeSyncInput))
+		return false;
+
+	// No need to tick if we dont have any input objects
+	if (NodeSyncInput->GetNumberOfInputObjects(EHoudiniInputType::World) <= 0)
+	{		
+		StopTicking();
+		return true;
+	}
+
+	// See if we need to update some of the node sync inputs
+	if (!FHoudiniInputTranslator::UpdateWorldInput(NodeSyncInput))
+		return false;
+
+	if (!NodeSyncInput->NeedsToTriggerUpdate())
+		return false;
+
+	bool bSuccess = true;
+	if (NodeSyncInput->IsDataUploadNeeded())
+	{
+		TArray<UHoudiniInputObject*>* InputObjectsArray = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+
+		// Iterate on all the input objects and see if they need to be uploaded
+		TArray<int32> CreatedNodeIds;
+		TSet<FUnrealObjectInputHandle> Handles;
+		TArray<int32> ValidNodeIds;
+		TArray<UHoudiniInputObject*> ChangedInputObjects;
+		for (int32 ObjIdx = 0; ObjIdx < InputObjectsArray->Num(); ObjIdx++)
+		{
+			UHoudiniInputObject* CurrentInputObject = (*InputObjectsArray)[ObjIdx];
+			if (!IsValid(CurrentInputObject))
+				continue;
+
+			ValidNodeIds.Reset();
+			ChangedInputObjects.Reset();
+			// The input object could have child objects: GetChangedObjectsAndValidNodes finds if the object itself or
+			// any its children has changed, and also returns the NodeIds of those objects that are still valid and
+			// unchanged
+			CurrentInputObject->GetChangedObjectsAndValidNodes(ChangedInputObjects, ValidNodeIds);
+
+			// Keep track of the node ids for unchanged objects that already exist
+			if (ValidNodeIds.Num() > 0)
+				CreatedNodeIds.Append(ValidNodeIds);
+
+			// Upload the changed input objects
+			for (UHoudiniInputObject* ChangedInputObject : ChangedInputObjects)
+			{
+				// Upload the current input object to Houdini
+				if (!FHoudiniInputTranslator::UploadHoudiniInputObject(
+					NodeSyncInput, ChangedInputObject, FTransform::Identity, CreatedNodeIds, Handles, ChangedInputObject->CanDeleteHoudiniNodes()))
+					bSuccess = false;
+			}
+		}
+
+		NodeSyncInput->MarkDataUploadNeeded(!bSuccess);
+	}
+
+	if (NodeSyncInput->IsTransformUploadNeeded())
+	{
+		bSuccess &= FHoudiniInputTranslator::UploadInputTransform(NodeSyncInput);
+	}
+
+	// Update the input properties AFTER eventually uploading it
+	bSuccess = FHoudiniInputTranslator::UpdateInputProperties(NodeSyncInput);
+
+	if (bSuccess)
+	{
+		NodeSyncInput->MarkChanged(false);
+		NodeSyncInput->MarkAllInputObjectsChanged(false);
+	}
+
+	if (NodeSyncInput->HasInputTypeChanged())
+		NodeSyncInput->SetPreviousInputType(EHoudiniInputType::Invalid);
+
+	// Even if we failed, no need to try updating again.
+	NodeSyncInput->SetNeedsToTriggerUpdate(false);
+
+	return true;
+}
+
+void
+UHoudiniEditorNodeSyncSubsystem::StartTicking()
+{
+	// If we have no timer delegate spawned, spawn one.
+	if (!TickerHandle.IsValid() && GEditor)
+	{
+		// We use the ticker manager so we get ticked once per frame, no more.
+		//TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &UHoudiniEditorNodeSyncSubsystem::Tick));
+
+		TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([this](float DeltaTime) { return this->Tick(DeltaTime); }));
+
+		// Grab current time for delayed notification.
+		//FHoudiniEngine::Get().SetHapiNotificationStartedTime(FPlatformTime::Seconds());
+	}
+
+	dLastTick = 0.0;
+}
+
+void
+UHoudiniEditorNodeSyncSubsystem::StopTicking()
+{
+	if (TickerHandle.IsValid() && GEditor)
+	{
+		if (IsInGameThread())
+		{
+			FTSTicker::GetCoreTicker().RemoveTicker(TickerHandle);
+			TickerHandle.Reset();
+
+			bMustStopTicking = false;
+			dLastTick = 0.0;
+		}
+		else
+		{
+			// We can't stop ticking now as we're not in the game Thread,
+			// and accessing the timer would crash, indicate that we want to stop ticking asap
+			// This can happen when loosing a session due to a Houdini crash
+			bMustStopTicking = true;
+		}
+	}
+}
+
+bool 
+UHoudiniEditorNodeSyncSubsystem::IsTicking() const
+{
+	return TickerHandle.IsValid();
+}
+
+bool
+UHoudiniEditorNodeSyncSubsystem::Tick(float DeltaTime)
+{
+	if (bMustStopTicking)
+	{
+		// Ticking should be stopped immediately
+		StopTicking();
+		return true;
+	}
+
+	double dNow = FPlatformTime::Seconds();
+	if ((dNow - dLastTick) < 1.0)
+		return true;
+
+	UpdateNodeSyncInputs();
+
+	dLastTick = dNow;
 
 	return true;
 }

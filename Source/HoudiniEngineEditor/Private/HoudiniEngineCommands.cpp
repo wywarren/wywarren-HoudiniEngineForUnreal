@@ -1033,7 +1033,7 @@ void FHoudiniEngineCommands::RecentreSelection()
 }
 
 void
-FHoudiniEngineCommands::OpenSessionSync()
+FHoudiniEngineCommands::OpenSessionSync(bool bWaitForCompletion)
 {
 	//if (!FHoudiniEngine::IsInitialized())
 	//	return;
@@ -1139,75 +1139,90 @@ FHoudiniEngineCommands::OpenSessionSync()
 		FHoudiniEngine::Get().SetHESSProcHandle(HESSHandle);
 	}
 
-	// Start an Async task to connect to Session Sync	
-	Async(EAsyncExecution::TaskGraphMainThread, [SessionType, ServerPipeName, ServerPort]()
+	if (!bWaitForCompletion)
 	{
-		// Use a timeout to avoid waiting indefinitely for H to start in session sync mode
-		const double Timeout = 180.0; // 3min
-		const double StartTimestamp = FPlatformTime::Seconds();
-
-		const FString ServerHost = TEXT("localhost");
-		constexpr int32 NumSessions = 1;
-		while (!FHoudiniEngine::Get().SessionSyncConnect(
-			SessionType, NumSessions, ServerPipeName, ServerHost, ServerPort))
+		Async(EAsyncExecution::TaskGraphMainThread, [SessionType, ServerPipeName, ServerPort]()
 		{
-			// Houdini might not be done loading, sleep for one second 
-			FPlatformProcess::Sleep(.5f);
+			StartAndConnectToSessionSync(SessionType, ServerPipeName, ServerPort);
+		});
+	}
+	else
+	{
+		StartAndConnectToSessionSync(SessionType, ServerPipeName, ServerPort);
+	}
+}
 
-            // Check for license error
-            int32 HESSReturnCode;
-            FProcHandle HESSHandle = FHoudiniEngine::Get().GetHESSProcHandle();
-            if (FPlatformProcess::GetProcReturnCode(HESSHandle, &HESSReturnCode))
-            {
-                FString Notification = TEXT("Failed to start SessionSync...");
-                FHoudiniEngineUtils::CreateSlateNotification(Notification);
+bool
+FHoudiniEngineCommands::StartAndConnectToSessionSync(
+	EHoudiniRuntimeSettingsSessionType SessionType, 
+	const FString& ServerPipeName, 
+	int32 ServerPort)
+{
+	// Use a timeout to avoid waiting indefinitely for H to start in session sync mode
+	const double Timeout = 180.0; // 3min
+	const double StartTimestamp = FPlatformTime::Seconds();
 
-                switch (HESSReturnCode)
-                {
-                    case 3:
-                        HOUDINI_LOG_ERROR(TEXT("Failed to start SessionSync - No licenses were available"));
-                        FHoudiniEngine::Get().SetSessionStatus(EHoudiniSessionStatus::NoLicense);
-                        return false;
-                        break;
-                    default:
-                        HOUDINI_LOG_ERROR(TEXT("Failed to start SessionSync - Unknown error"));
-                        FHoudiniEngine::Get().SetSessionStatus(EHoudiniSessionStatus::Failed);
-                        return false;
-                        break;
-                }
-            }
+	const FString ServerHost = TEXT("localhost");
+	constexpr int32 NumSessions = 1;
+	while (!FHoudiniEngine::Get().SessionSyncConnect(
+		SessionType, NumSessions, ServerPipeName, ServerHost, ServerPort))
+	{
+		// Houdini might not be done loading, sleep for one second 
+		FPlatformProcess::Sleep(.5f);
 
-			// Check for the timeout
-			if (FPlatformTime::Seconds() - StartTimestamp > Timeout)
+		// Check for license error
+		int32 HESSReturnCode;
+		FProcHandle HESSHandle = FHoudiniEngine::Get().GetHESSProcHandle();
+		if (FPlatformProcess::GetProcReturnCode(HESSHandle, &HESSReturnCode))
+		{
+			FString Notification = TEXT("Failed to start SessionSync...");
+			FHoudiniEngineUtils::CreateSlateNotification(Notification);
+
+			switch (HESSReturnCode)
 			{
-				// ... and a log message
-				HOUDINI_LOG_ERROR(TEXT("Failed to start SessionSync - Timeout..."));
+			case 3:
+				HOUDINI_LOG_ERROR(TEXT("Failed to start SessionSync - No licenses were available"));
+				FHoudiniEngine::Get().SetSessionStatus(EHoudiniSessionStatus::NoLicense);
 				return false;
+				break;
+			default:
+				HOUDINI_LOG_ERROR(TEXT("Failed to start SessionSync - Unknown error"));
+				FHoudiniEngine::Get().SetSessionStatus(EHoudiniSessionStatus::Failed);
+				return false;
+				break;
 			}
 		}
 
-		// Initialize HAPI with this session
-		if (!FHoudiniEngine::Get().InitializeHAPISession())
+		// Check for the timeout
+		if (FPlatformTime::Seconds() - StartTimestamp > Timeout)
 		{
-			FHoudiniEngine::Get().StopTicking();
+			// ... and a log message
+			HOUDINI_LOG_ERROR(TEXT("Failed to start SessionSync - Timeout..."));
 			return false;
 		}
-		
-		// Notify all HACs that they need to instantiate in the new session
-		FHoudiniEngineUtils::MarkAllHACsAsNeedInstantiation();
-		
-		// Start ticking
-		FHoudiniEngine::Get().StartTicking();
+	}
 
-		// Add a slate notification
-		FString Notification = TEXT("Succesfully connected to Session Sync...");
-		FHoudiniEngineUtils::CreateSlateNotification(Notification);
+	// Initialize HAPI with this session
+	if (!FHoudiniEngine::Get().InitializeHAPISession())
+	{
+		FHoudiniEngine::Get().StopTicking();
+		return false;
+	}
 
-		// ... and a log message
-		HOUDINI_LOG_MESSAGE(TEXT("Succesfully connected to Session Sync..."));
-		
-		return true;
-	});
+	// Notify all HACs that they need to instantiate in the new session
+	FHoudiniEngineUtils::MarkAllHACsAsNeedInstantiation();
+
+	// Start ticking
+	FHoudiniEngine::Get().StartTicking();
+
+	// Add a slate notification
+	FString Notification = TEXT("Succesfully connected to Session Sync...");
+	FHoudiniEngineUtils::CreateSlateNotification(Notification);
+
+	// ... and a log message
+	HOUDINI_LOG_MESSAGE(TEXT("Succesfully connected to Session Sync..."));
+
+	return true;
 }
 
 void

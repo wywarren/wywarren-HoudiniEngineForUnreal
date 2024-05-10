@@ -284,31 +284,6 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 			IDetailCategoryBuilder & HouEngineCategory =
 				DetailBuilder.EditCategory(*HoudiniEngineCategoryName, FText::FromString("Houdini Engine"), ECategoryPriority::Important);
 
-			// // Create an action button that will perform actions on the "main component"
-			// HouEngineCategory.AddCustomRow(FText::GetEmpty())
-			// [
-			// 	SNew(SHorizontalBox)
-			// 	+SHorizontalBox::Slot()
-			// 	.FillWidth(1.0f)
-			// 	.HAlign(HAlign_Right)
-			// 	[
-			// 		SNew(SComboButton)
-			// 		.HasDownArrow(false)
-			// 		.ContentPadding(0)
-			// 		.ForegroundColor( FSlateColor::UseForeground() )
-			// 		.ButtonStyle( FAppStyle::Get(), "SimpleButton" )
-			// 		.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("ViewOptions")))
-			// 		.MenuContent()
-			// 		[
-			// 			ConstructActionMenu(MainComponent).ToSharedRef()
-			// 		]
-			// 		.ButtonContent()
-			// 		[
-			// 			OptionsImage.ToSharedRef()
-			// 		]
-			// 	]
-			// ];
-		
 			// If we are running Houdini Engine Indie license, we need to display a special label.
 			if (bIsIndieLicense)
 				AddIndieLicenseRow(HouEngineCategory);
@@ -397,12 +372,6 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 				UHoudiniParameter* CurrentParam = MainComponent->GetParameterAt(ParamIdx);
 				if (!IsValid(CurrentParam))
 					continue;
-
-				// TODO: remove ? unneeded?
-				// ensure the parameter is actually owned by a HAC
-				/*const TWeakObjectPtr<UHoudiniAssetComponent> Owner = Cast<UHoudiniAssetComponent>(CurrentParam->GetOuter());
-				if (!Owner.IsValid())
-					continue;*/
 
 				// Build an array of edited parameter for multi edit
 				JoinedParams.Emplace();
@@ -576,16 +545,6 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 				UHoudiniOutput* LinkedOutput = HACs[LinkedIdx]->GetOutputAt(OutputIdx);
 				if (!IsValid(LinkedOutput))
 					continue;
-
-				/*
-				// Linked output should match the main output! If not try to find one that matches
-				if (!LinkedOutput->Matches(*CurrentOutput))
-				{
-					LinkedOutput = MainComponent->FindMatchingInput(CurrentOutput);
-					if (!IsValid(LinkedOutput))
-						continue;
-				}
-				*/
 
 				EditedOutputs.Add(LinkedOutput);
 			}

@@ -2051,6 +2051,9 @@ FHoudiniInputTranslator::HapiCreateInputNodeForObject(const FString& InObjNodeNa
 bool
 FHoudiniInputTranslator::HapiSetGeoObjectTransform(const HAPI_NodeId& InObjectNodeId, const FTransform& InTransform)
 {
+	if (InObjectNodeId < 0)
+		return true;
+
 	// Updating the Transform
 	HAPI_TransformEuler HapiTransform;
 	FHoudiniApi::TransformEuler_Init(&HapiTransform);

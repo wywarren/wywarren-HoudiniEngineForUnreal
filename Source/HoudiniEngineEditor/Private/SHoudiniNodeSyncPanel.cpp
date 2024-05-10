@@ -33,10 +33,14 @@
 #include "HoudiniEditorNodeSyncSubsystem.h"
 #include "HoudiniInputDetails.h"
 #include "HoudiniInput.h"
-#include "SNewFilePathPicker.h"
 
+#include "SNewFilePathPicker.h"
+#include "SSelectFolderPathDialog.h"
+
+#include "DetailsViewArgs.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "PropertyCustomizationHelpers.h"
+#include "PropertyEditorModule.h"
 #include "SlateOptMacros.h"
 #include "UObject/UObjectGlobals.h"
 #include "Widgets/Images/SImage.h"
@@ -65,6 +69,7 @@ SHoudiniNodeSyncPanel::~SHoudiniNodeSyncPanel()
 void
 SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 {
+	UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 	TSharedPtr<SHorizontalBox> HoudiniLogoBox;
 	TSharedPtr<SExpandableArea> ImportOptionsArea;
 	TSharedPtr<SExpandableArea> FetchToWorldOptionsArea;
@@ -83,6 +88,26 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	TSharedPtr<SCheckBox> CheckBoxFetchToWorld;
 	TSharedPtr<SCheckBox> CheckBoxReplaceExisting;
 	TSharedPtr<SCheckBox> CheckBoxAutoBake;
+	TSharedPtr<SCheckBox> CheckBoxSyncWorld;
+
+	auto OnImportFolderBrowseButtonClickedLambda = []()
+	{
+		UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+		if (!HoudiniEditorNodeSyncSubsystem)
+			FReply::Handled();
+
+		TSharedRef<SSelectFolderPathDialog> Dialog =
+			SNew(SSelectFolderPathDialog)
+			.InitialPath(FText::FromString(HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.UnrealAssetFolder))
+			.TitleText(LOCTEXT("CookFolderDialogTitle", "Select Temporary Cook Folder"));
+
+		if (Dialog->ShowModal() != EAppReturnType::Cancel)
+		{
+			HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.UnrealAssetFolder = Dialog->GetFolderPath().ToString();
+		}
+
+		return FReply::Handled();
+	};
 
 	// Get the session status
 	auto GetSessionSyncStatusAndColor = [](FString& OutStatus, FLinearColor& OutStatusColor)
@@ -101,6 +126,11 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 				// Append a warning and change the color to orange
 				OutStatus += TEXT(" - Session Sync OFF");
 				OutStatusColor = FLinearColor(1.0f, 0.647f, 0.0f);
+			}
+			else
+			{
+				// Append a warning and change the color to orange
+				OutStatus += TEXT(" - Session Sync READY");
 			}
 		}
 	};	
@@ -359,6 +389,36 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 						HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.UnrealAssetFolder = NewPathStr;
 					})
 				]
+				+ SHorizontalBox::Slot()
+				.Padding(5.0, 0.0, 0.0, 0.0)
+				.VAlign(VAlign_Center)
+				.AutoWidth()
+				[
+					SNew(SButton)
+					//.ContentPadding(FMargin(6.0, 2.0))
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.IsEnabled(true)
+					.Text(LOCTEXT("BrowseButtonText", "..."))
+					.ToolTipText(LOCTEXT("ImportFolderBrowseButtonToolTip", "Browse to select the Import Asset folder..."))
+					.OnClicked_Lambda(OnImportFolderBrowseButtonClickedLambda)
+				]
+				/*
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.Padding(5.0, 0.0, 0.0, 0.0)
+				.VAlign(VAlign_Center)
+				[
+					SNew(SButton)
+					//.ContentPadding(FMargin(6.0, 2.0))
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.IsEnabled(true)
+					.Text(LOCTEXT("ResetButtonText", "Reset"))
+					.ToolTipText(LOCTEXT("CookFolderResetButtonToolTip", "Reset the cook folder to default setting"))
+					.OnClicked_Lambda(OnImportFolderBrowseButtonClickedLambda)
+				];
+				*/
 			]
 
 			// FETCH TO WORLD?
@@ -524,92 +584,6 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 					]
 				]
 			]
-			/*
-			// IMPORT OPTIONS
-			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Left)
-			.AutoHeight()
-			.Padding(10.0, 0.0, 0.0, 5.0)
-			[
-				SAssignNew(ImportOptionsArea, SExpandableArea)
-				.InitiallyCollapsed(true)
-				.HeaderContent()
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("OptionDetails", "Import Options"))
-					.Font(FAppStyle::Get().GetFontStyle("DetailsView.CategoryFontStyle"))
-					.ShadowOffset(FVector2D(1.0f, 1.0f))
-				]
-				.BodyContent()
-				[
-					SNew(SScrollBox)
-					.Orientation(Orient_Vertical)
-					+ SScrollBox::Slot()
-					.Padding(10.0, 0.0, 0.0, 5.0)
-					[
-						SNew(SBox)
-						.WidthOverride(335.0f)
-						[
-							SNew(STextBlock)
-							.Text(LOCTEXT("SKOptionsLabel", "Skeletal Mesh Options"))
-						]
-					]
-					+ SScrollBox::Slot()
-					.Padding(10.0, 0.0, 0.0, 5.0)
-					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot()
-						.HAlign(HAlign_Left)
-						[
-							SNew(SBox)
-							.WidthOverride(160.f)
-							[
-								SAssignNew(CheckBoxUseExistingSkeleton, SCheckBox)
-								.Content()
-								[
-									SNew(STextBlock).Text(LOCTEXT("OverwriteSkeletonLabel", "Use Existing Skeleton"))
-									.ToolTipText(LOCTEXT("OverwriteSkeletonToolTip", "Use Existing Skeleton"))
-									.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
-								]
-								.IsChecked_Lambda([]()
-								{
-									UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
-									return HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.bOverwriteSkeleton ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-								})
-								.OnCheckStateChanged_Lambda([](ECheckBoxState NewState)
-								{
-									const bool bNewState = (NewState == ECheckBoxState::Checked);
-									UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
-									HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.bOverwriteSkeleton = bNewState;
-								})
-							]
-						]
-						+ SHorizontalBox::Slot()
-						.HAlign(HAlign_Left)
-						[
-							SNew(SEditableTextBox)
-							.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
-							.ToolTipText(LOCTEXT("ExistingSkeletonTooltip", "Path to the skelton asset in unreal"))
-							.HintText(LOCTEXT("ExistingSkeletonLabel", "Path to skeleton asset In Unreal"))
-							.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
-							.Text_Lambda([]()
-							{
-								UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
-								return FText::FromString(HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.SkeletonAssetPath);
-							})
-							.OnTextCommitted_Lambda([](const FText& Val, ETextCommit::Type TextCommitType)
-							{
-								FString NewPathStr = Val.ToString();
-
-								UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
-								HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.SkeletonAssetPath = NewPathStr;
-							})
-						]
-					]
-				]
-			]
-			*/
-
 			// FETCH BUTTON
 			+ SVerticalBox::Slot()
 			.HAlign(HAlign_Center)
@@ -762,6 +736,39 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 				LandscapeSplineOptionsVBox.ToSharedRef()
 			]
 
+			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Left)
+			.AutoHeight()
+			.Padding(10.0f, 0.0f, 0.0f, 5.0f)
+			[
+				SNew(SBox)
+				.WidthOverride(160.f)
+				[
+					SAssignNew(CheckBoxSyncWorld, SCheckBox)
+					.Content()
+					[
+						SNew(STextBlock).Text(LOCTEXT("SyncWorld", "Sync World Inputs"))
+						.ToolTipText(LOCTEXT("SyncWorldToolTip", "If enabled, actors sent to Houdini will be automatically updated in Houdini if they are modified in the level."))
+						.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
+					]
+					.IsChecked_Lambda([]()
+					{
+						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+						return HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.bSyncWorldInput ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+					})
+					.OnCheckStateChanged_Lambda([](ECheckBoxState NewState)
+					{
+						const bool bNewState = (NewState == ECheckBoxState::Checked);
+						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+						HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.bSyncWorldInput = bNewState;
+						if (bNewState)
+							HoudiniEditorNodeSyncSubsystem->StartTicking();
+						else
+							HoudiniEditorNodeSyncSubsystem->StopTicking();
+					})
+				]
+			]
+
 		
 			// SEND Button
 			+ SVerticalBox::Slot()
@@ -843,7 +850,6 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	];
 	
 	// Get the NodeSync input from the editor subsystem
-	UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 	UHoudiniInput* NodeSyncInput = nullptr;
 	if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncInput(NodeSyncInput))
 		return;
@@ -899,6 +905,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		)));
 	}
 }
+
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 #undef LOCTEXT_NAMESPACE

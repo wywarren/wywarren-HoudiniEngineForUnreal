@@ -1483,7 +1483,7 @@ FHoudiniEngineEditor::GetLevelViewportContextMenuExtender(const TSharedRef<FUICo
 				FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine.HoudiniEngineLogo"),
 				FUIAction(
 					FExecuteAction::CreateLambda([this]() { return SendToHoudini_World(); }),
-					FCanExecuteAction::CreateLambda([=] { return ((Actors.Num() > 0) && FHoudiniEngine::Get().IsSessionSyncEnabled()); })
+					FCanExecuteAction::CreateLambda([=] { return ((Actors.Num() > 0)); })
 				)
 			);
 		})
@@ -1578,7 +1578,7 @@ FHoudiniEngineEditor::RegisterConsoleCommands()
 	static FAutoConsoleCommand CCmdOpenSessionSync = FAutoConsoleCommand(
 		TEXT("Houdini.OpenSessionSync"),
 		TEXT("Stops the current session, opens Houdini and automatically start and connect a Session Sync."),
-		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::OpenSessionSync));
+		FConsoleCommandDelegate::CreateLambda([]() { FHoudiniEngineCommands::OpenSessionSync(false); }));
 
 #if !UE_BUILD_SHIPPING
 	static FAutoConsoleCommand CCmdClearInputManager = FAutoConsoleCommand(
