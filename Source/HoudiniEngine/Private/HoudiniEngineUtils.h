@@ -437,6 +437,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set float attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeFloatData(
 			const TArray<float>& InFloatData,
 			const HAPI_NodeId& InNodeId,
@@ -445,6 +446,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const HAPI_AttributeInfo& InAttributeInfo,
 			bool bAttemptRunLengthEncoding = false);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeFloatData(
 			const float* InFloatData,
 			const HAPI_NodeId& InNodeId,
@@ -463,6 +465,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set Int attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeIntData(
 			const TArray<int32>& InIntData,
 			const HAPI_NodeId& InNodeId,
@@ -471,6 +474,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const HAPI_AttributeInfo& InAttributeInfo,
             bool bAttemptRunLengthEncoding = false);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeIntData(
 			const int32* InIntData,
 			const HAPI_NodeId& InNodeId,
@@ -489,6 +493,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set unsigned Int attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUIntData(
 			const TArray<int64>& InIntData,
 			const HAPI_NodeId& InNodeId,
@@ -496,6 +501,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUIntData(
 			const int64* InIntData,
 			const HAPI_NodeId& InNodeId,
@@ -505,6 +511,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set signed int8 attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeInt8Data(
 			const TArray<int8>& InByteData,
 			const HAPI_NodeId& InNodeId,
@@ -512,6 +519,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeInt8Data(
 			const int8* InByteData,
 			const HAPI_NodeId& InNodeId,
@@ -521,6 +529,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set Byte attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUInt8Data(
 			const TArray<uint8>& InByteData,
 			const HAPI_NodeId& InNodeId,
@@ -528,6 +537,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUInt8Data(
 			const uint8* InByteData,
 			const HAPI_NodeId& InNodeId,
@@ -537,6 +547,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set signed int16 attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeInt16Data(
 			const TArray<int16>& InShortData,
 			const HAPI_NodeId& InNodeId,
@@ -544,6 +555,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeInt16Data(
 			const int16* InShortData,
 			const HAPI_NodeId& InNodeId,
@@ -553,6 +565,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set uint16 attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUInt16Data(
 			const TArray<int32>& InShortData,
 			const HAPI_NodeId& InNodeId,
@@ -560,6 +573,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUInt16Data(
 			const int32* InShortData,
 			const HAPI_NodeId& InNodeId,
@@ -569,6 +583,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set Int64 attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeInt64Data(
 			const TArray<int64>& InInt64Data,
 			const HAPI_NodeId& InNodeId,
@@ -576,6 +591,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeInt64Data(
 			const int64* InInt64Data,
 			const HAPI_NodeId& InNodeId,
@@ -585,6 +601,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set unsigned Int64 attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUInt64Data(
 			const TArray<int64>& InInt64Data,
 			const HAPI_NodeId& InNodeId,
@@ -592,6 +609,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeUInt64Data(
 			const int64* InInt64Data,
 			const HAPI_NodeId& InNodeId,
@@ -601,6 +619,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set Double attribute data
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeDoubleData(
 			const TArray<double>& InDoubleData,
 			const HAPI_NodeId& InNodeId,
@@ -608,6 +627,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeDoubleData(
 			const double* InDoubleData,
 			const HAPI_NodeId& InNodeId,
@@ -639,6 +659,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set attribute string data for a FString array
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeStringData(
 			const TArray<FString>& InStringArray,
 			const HAPI_NodeId& InNodeId,
@@ -646,6 +667,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeStringMap(
 			const FHoudiniEngineIndexedStringMap& InIndexedStringMap,
 			const HAPI_NodeId& InNodeId,
@@ -653,6 +675,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeStringArrayData(
 			const TArray<FString>& InStringArray,
 			const HAPI_NodeId& InNodeId,
@@ -663,6 +686,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 
 		// Helper function to set attribute dict data for a FString array
 		// The data will be sent in chunks if too large for thrift
+		UE_DEPRECATED(5.2, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
 		static HAPI_Result HapiSetAttributeDictionaryData(
 			const TArray<FString>& InStringArray,
 			const HAPI_NodeId& InNodeId,

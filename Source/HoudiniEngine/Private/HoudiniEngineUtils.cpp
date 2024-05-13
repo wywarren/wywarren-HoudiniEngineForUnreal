@@ -43,6 +43,7 @@
 #include "HoudiniAssetActor.h"
 #include "HoudiniAssetComponent.h"
 #include "HoudiniEngine.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineEditorSettings.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineRuntime.h"
@@ -3470,8 +3471,18 @@ FHoudiniEngineUtils::HapiSetAttributeFloatData(
 	if (InFloatData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	return FHoudiniEngineAttributes::SetFloat(Args, InAttributeInfo, InFloatData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
     return FHoudiniEngineUtils::HapiSetAttributeFloatData(InFloatData.GetData(), InNodeId, InPartId, InAttributeName,
                                                           InAttributeInfo, bAttemptRunLengthEncoding);
+	*/
 }
 
 
@@ -3489,6 +3500,16 @@ FHoudiniEngineUtils::HapiSetAttributeFloatData(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const float> FloatData(InFloatData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetFloat(Args, InAttributeInfo, FloatData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 
 	if (bAttemptRunLengthEncoding)
@@ -3543,6 +3564,7 @@ FHoudiniEngineUtils::HapiSetAttributeFloatData(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -3557,8 +3579,18 @@ FHoudiniEngineUtils::HapiSetAttributeIntData(
 	if (InIntData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int32> Data(InIntData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, InIntData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeIntData(InIntData.GetData(), InNodeId, InPartId, InAttributeName,
                                                         InAttributeInfo, bAttemptRunLengthEncoding);
+	*/
 }
 
 HAPI_Result
@@ -3617,6 +3649,15 @@ FHoudiniEngineUtils::HapiSetAttributeIntData(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const int32> Data(InIntData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	if (bAttemptRunLengthEncoding)
 	{
         TArray<int> RunLengths = RunLengthEncode(InIntData, InAttributeInfo.tupleSize, InAttributeInfo.count);
@@ -3672,6 +3713,7 @@ FHoudiniEngineUtils::HapiSetAttributeIntData(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -3682,8 +3724,20 @@ FHoudiniEngineUtils::HapiSetAttributeUIntData(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
+	UE_DEPRECATED(5.4, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
+
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int64> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InIntData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InIntData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3694,8 +3748,19 @@ FHoudiniEngineUtils::HapiSetAttributeUIntData(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const int64> Data(InIntData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InIntData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3709,8 +3774,18 @@ FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 	if (InByteData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt8(Args, InAttributeInfo, InByteData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 		InByteData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3725,7 +3800,16 @@ FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
+	
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
 
+	TArrayView<const int8> Data(InByteData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt8(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -3756,6 +3840,7 @@ FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -3769,8 +3854,18 @@ FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 	if (InByteData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetUInt8(Args, InAttributeInfo, InByteData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 		InByteData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3786,6 +3881,16 @@ FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const uint8> Data(InByteData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetUInt8(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -3816,6 +3921,7 @@ FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -3831,8 +3937,21 @@ FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 	if (InShortData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
+		return HAPI_RESULT_INVALID_ARGUMENT;
+
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt16(Args, InAttributeInfo, InShortData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 		InShortData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3848,6 +3967,16 @@ FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt16(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -3878,6 +4007,7 @@ FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -3888,8 +4018,18 @@ FHoudiniEngineUtils::HapiSetAttributeUInt16Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, InShortData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeIntData(
 		InShortData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3900,8 +4040,18 @@ FHoudiniEngineUtils::HapiSetAttributeUInt16Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const int32> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeIntData(
 		InShortData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3915,8 +4065,18 @@ FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 	if (InInt64Data.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int32> Data(InShortData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InInt64Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InInt64Data.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -3932,6 +4092,16 @@ FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const int64> Data(InInt64Data, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 #if PLATFORM_LINUX
 	TArray<HAPI_Int64> HData;
 	HData.Reserve(InAttributeInfo.count * InAttributeInfo.tupleSize);
@@ -4010,6 +4180,7 @@ FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -4020,8 +4191,18 @@ FHoudiniEngineUtils::HapiSetAttributeUInt64Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const int64> Data(InInt64Data, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InInt64Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InInt64Data, InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -4032,8 +4213,19 @@ FHoudiniEngineUtils::HapiSetAttributeUInt64Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const int64> Data(InInt64Data, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	/*
+	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InInt64Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InInt64Data, InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -4047,8 +4239,18 @@ FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 	if (InDoubleData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+	
+	return FHoudiniEngineAttributes::SetDouble(Args, InAttributeInfo, InDoubleData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	return FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 		InDoubleData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
+	*/
 }
 
 HAPI_Result
@@ -4064,6 +4266,16 @@ FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	TArrayView<const double> Data(InDoubleData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetDouble(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -4094,6 +4306,7 @@ FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 	}
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -4206,7 +4419,7 @@ FHoudiniEngineUtils::HapiSetAttributeStringMap(
 
 	FHoudiniEngineRawStrings IndexedRawStrings = InIndexedStringMap.GetRawStrings();
 	TArray<int> IndexArray = InIndexedStringMap.GetIds();
-
+	
 	HAPI_Result Result = FHoudiniApi::SetAttributeIndexedStringData(
 	    FHoudiniEngine::Get().GetSession(),
 		InNodeId, InPartId, TCHAR_TO_ANSI(*InAttributeName),
@@ -4225,6 +4438,16 @@ FHoudiniEngineUtils::HapiSetAttributeStringData(
 {
     H_SCOPED_FUNCTION_DYNAMIC_LABEL(InAttributeName);
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const double> Data(InDoubleData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetString(Args, InAttributeInfo, InStringArray) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	TArray<const char *> StringDataArray;
 	for (const auto& CurrentString : InStringArray)
 	{
@@ -4267,6 +4490,7 @@ FHoudiniEngineUtils::HapiSetAttributeStringData(
 	FreeRawStringMemory(StringDataArray);
 
 	return Result;
+	*/
 }
 
 HAPI_Result
@@ -4280,6 +4504,16 @@ FHoudiniEngineUtils::HapiSetAttributeStringArrayData(
 {
     H_SCOPED_FUNCTION_DYNAMIC_LABEL(InAttributeName);
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	//TArrayView<const double> Data(InDoubleData, InAttributeInfo.count);
+	return FHoudiniEngineAttributes::SetStringArray(Args, InAttributeInfo, InStringArray, SizesFixedArray) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+
+	/*
 	TArray<const char*> StringDataArray;
 	for (const auto& CurrentString : InStringArray)
 	{
@@ -4330,6 +4564,7 @@ FHoudiniEngineUtils::HapiSetAttributeStringArrayData(
 	FreeRawStringMemory(StringDataArray);
 
 	return Result;
+	*/
 }
 
 
@@ -4340,6 +4575,15 @@ FHoudiniEngineUtils::HapiSetAttributeDictionaryData(const TArray<FString>& JSOND
 {
 	H_SCOPED_FUNCTION_DYNAMIC_LABEL(InAttributeName);
 
+	FHoudiniEngineAttributeArgs Args;
+	Args.NodeId = InNodeId;
+	Args.PartId = InPartId;
+	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
+	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
+
+	return FHoudiniEngineAttributes::SetDictionary(Args, InAttributeInfo, JSONData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
+	
+	/*
 	TArray<const char *> RawStringData;
 	for (const FString& Data : JSONData)
 	{
@@ -4381,6 +4625,7 @@ FHoudiniEngineUtils::HapiSetAttributeDictionaryData(const TArray<FString>& JSOND
 	FreeRawStringMemory(RawStringData);
 
 	return Result;
+	*/
 }
 
 
