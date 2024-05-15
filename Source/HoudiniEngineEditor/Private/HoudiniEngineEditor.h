@@ -218,6 +218,8 @@ class HOUDINIENGINEEDITOR_API FHoudiniEngineEditor : public IHoudiniEngineEditor
 		// TODO: FHoudiniToolsEditor should be converted to an editor subsystem
 		FHoudiniToolsEditor& GetHoudiniTools() const { return *HoudiniToolsPtr; }
 
+		TSharedPtr<class SHoudiniNodeSyncPanel> GetNodeSyncPanel() { return NodeSyncPanel; }
+
 	protected:
 
 		// Binds the commands used by the menus
@@ -435,6 +437,10 @@ class HOUDINIENGINEEDITOR_API FHoudiniEngineEditor : public IHoudiniEngineEditor
 		//HoudiniTools Tab
 		TSharedRef<class SDockTab> OnSpawnHoudiniToolsTab(const class FSpawnTabArgs& SpawnTabArgs);
 
+		TSharedPtr<class SHoudiniNodeSyncPanel> NodeSyncPanel;
+
 		// Houdini Tools utility.
 		TSharedPtr<FHoudiniToolsEditor> HoudiniToolsPtr;
+
+
 };

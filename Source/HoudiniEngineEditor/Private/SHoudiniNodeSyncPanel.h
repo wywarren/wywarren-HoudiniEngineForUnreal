@@ -30,8 +30,11 @@
 #include "HoudiniInput.h"
 #include "HoudiniRuntimeSettings.h"
 
+#include "IDetailsView.h"
+#include "IStructureDetailsView.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SCompoundWidget.h"
+#include "UObject/StructOnScope.h"
 
 class SHoudiniNodeSyncPanel : public SCompoundWidget
 {
@@ -44,11 +47,30 @@ public:
 
     void Construct( const FArguments& InArgs );
 
+    FMenuBuilder Helper_CreateSelectionWidget();
+
+    void RebuildSelectionView();
+
+    //TSharedRef<SWidget> MakeMBSDetailsView();
+
+    //TSharedRef<SWidget> MakeHSMGPDetailsView();
 
 private:
 
-    TSharedPtr<SVerticalBox> WorldINVBox;
     TSharedPtr<SVerticalBox> ExportOptionsVBox;
     TSharedPtr<SVerticalBox> LandscapeOptionsVBox;
     TSharedPtr<SVerticalBox> LandscapeSplineOptionsVBox; 
+
+
+    TSharedPtr<SVerticalBox> SelectionContainer;
+
+    /*TSharedPtr<TStructOnScope<FMeshBuildSettings>> MBS_Ptr;
+    TSharedPtr<TStructOnScope<FHoudiniStaticMeshGenerationProperties>> HSMGP_Ptr;*/
+
+    FMenuBuilder SelectedActors;
+
+    // Details view for MeshBuildSettings
+    //TSharedPtr<IStructureDetailsView> MBS_DetailsView;
+    // Details view for HoudiniStaticMeshGenerationProperties
+    //TSharedPtr<IStructureDetailsView> HSMGP_DetailsView;
 };

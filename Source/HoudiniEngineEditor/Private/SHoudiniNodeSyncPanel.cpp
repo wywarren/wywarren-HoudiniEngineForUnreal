@@ -37,10 +37,12 @@
 #include "SNewFilePathPicker.h"
 #include "SSelectFolderPathDialog.h"
 
+#include "ActorTreeItem.h"
 #include "DetailsViewArgs.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "PropertyCustomizationHelpers.h"
 #include "PropertyEditorModule.h"
+#include "SceneOutlinerModule.h"
 #include "SlateOptMacros.h"
 #include "UObject/UObjectGlobals.h"
 #include "Widgets/Images/SImage.h"
@@ -57,7 +59,10 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 SHoudiniNodeSyncPanel::SHoudiniNodeSyncPanel()
-{
+	: SelectedActors(true, nullptr)
+{	
+/*	MBS_Ptr = MakeShared<TStructOnScope<FMeshBuildSettings>>();
+	HSMGP_Ptr = MakeShared<TStructOnScope<FHoudiniStaticMeshGenerationProperties>>();*/
 }
 
 
@@ -73,8 +78,10 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	TSharedPtr<SHorizontalBox> HoudiniLogoBox;
 	TSharedPtr<SExpandableArea> ImportOptionsArea;
 	TSharedPtr<SExpandableArea> FetchToWorldOptionsArea;
-	
-	WorldINVBox = SNew(SVerticalBox);
+
+	SelectionContainer = SNew(SVerticalBox);
+	RebuildSelectionView();
+
 	ExportOptionsVBox = SNew(SVerticalBox);
 	LandscapeOptionsVBox = SNew(SVerticalBox);
 	LandscapeSplineOptionsVBox = SNew(SVerticalBox);
@@ -584,6 +591,34 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 					]
 				]
 			]
+			/*
+			// Build Settings
+			+SVerticalBox::Slot()
+			.HAlign(HAlign_Center)
+			.AutoHeight()
+			.Padding(5.0, 5.0, 5.0, 5.0)
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				[
+					MakeMBSDetailsView()
+				]
+			]
+
+			// MeshGenerationProeprties
+			+SVerticalBox::Slot()
+			.HAlign(HAlign_Center)
+			.AutoHeight()
+			.Padding(5.0, 5.0, 5.0, 5.0)
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				[
+					MakeHSMGPDetailsView()
+				]
+			]
+			*/
+
 			// FETCH BUTTON
 			+ SVerticalBox::Slot()
 			.HAlign(HAlign_Center)
@@ -844,7 +879,55 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 			.AutoHeight()
 			.Padding(10.0, 0.0, 0.0, 5.0)
 			[
-				WorldINVBox.ToSharedRef()
+				SelectionContainer.ToSharedRef()
+			]
+
+			// World IN UI
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(10.0, 0.0, 0.0, 5.0)
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.HAlign(HAlign_Left)
+				[
+					SNew(SButton)
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.ToolTipText(LOCTEXT("UpdateAll", "Update All Sent Data"))
+					.Visibility(EVisibility::Visible)
+					.OnClicked_Lambda([]()
+					{
+						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+						HoudiniEditorNodeSyncSubsystem->UpdateAllSelection();
+						return FReply::Handled();
+					})
+					.Content()
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString("Update All"))
+					]
+				]
+				+ SHorizontalBox::Slot()
+				.HAlign(HAlign_Left)
+				[
+					SNew(SButton)
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.ToolTipText(LOCTEXT("DeleteAll", "Delete All Sent Data"))
+					.Visibility(EVisibility::Visible)
+					.OnClicked_Lambda([]()
+					{
+						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+						HoudiniEditorNodeSyncSubsystem->DeleteAllSelection();
+						return FReply::Handled();
+					})
+					.Content()
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString("Delete All"))
+					]
+				]
 			]
 		]
 	];
@@ -861,24 +944,12 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 	TArray<TWeakObjectPtr<UHoudiniInput>> FakeInputs;
 	FakeInputs.Add(NodeSyncInput);
 
-	//
-	// TODO: World selection Widget?
-	// 
-	{
-		FMenuBuilder MenuBuilder = FHoudiniInputDetails::Helper_CreateWorldActorPickerWidget(FakeInputs);
-		WorldINVBox->AddSlot()
-		.Padding(2, 2, 5, 2)
-		.AutoHeight()
-		[
-			MenuBuilder.MakeWidget()
-		];
-	}
-
 	// ... so we can reuse the input UI code
 	FHoudiniInputDetails::AddExportOptions(ExportOptionsVBox.ToSharedRef(), FakeInputs);
 	FHoudiniInputDetails::AddLandscapeOptions(LandscapeOptionsVBox.ToSharedRef(), FakeInputs);
 	FHoudiniInputDetails::AddLandscapeSplinesOptions(LandscapeSplineOptionsVBox.ToSharedRef(), FakeInputs);
 
+	// Handle the Houdini logo box
 	TSharedPtr<SImage> Image;
 	HoudiniLogoBox->AddSlot()
 	.AutoWidth()
@@ -905,6 +976,163 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		)));
 	}
 }
+
+
+FMenuBuilder
+SHoudiniNodeSyncPanel::Helper_CreateSelectionWidget()
+{
+	auto OnShouldFilter = [](const AActor* const Actor)
+	{
+		if (!IsValid(Actor))
+			return false;
+
+		UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+		if (!HoudiniEditorNodeSyncSubsystem)
+			return false;
+
+		// Get the NodeSync input from the editor subsystem
+		UHoudiniInput* NodeSyncInput = nullptr;
+		if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncInput(NodeSyncInput))
+			return false;
+
+		const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+		if (!InputObjects)
+			return false;
+
+		// Only return actors that are currently selected by our input
+		for (const auto& CurInputObject : *InputObjects)
+		{
+			AActor* CurActor = Cast<AActor>(CurInputObject->GetObject());
+			if (!IsValid(CurActor))
+			{
+				// See if the input object is a HAC, if it is, get its parent actor
+				UHoudiniAssetComponent* CurHAC = Cast<UHoudiniAssetComponent>(CurInputObject->GetObject());
+				if (IsValid(CurHAC))
+					CurActor = CurHAC->GetOwner();
+			}
+
+			if (!IsValid(CurActor))
+				continue;
+
+			if (CurActor == Actor)
+				return true;
+		}
+
+		return false;
+	};
+
+
+	auto OnSelected = [](AActor* Actor)
+	{
+		// Do Nothing
+	};
+
+	FMenuBuilder MenuBuilder(true, nullptr);
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("WorldInputSentData", "Sent Data"));
+	{
+		FSceneOutlinerModule& SceneOutlinerModule =
+			FModuleManager::Get().LoadModuleChecked<FSceneOutlinerModule>(TEXT("SceneOutliner"));
+		FSceneOutlinerInitializationOptions InitOptions;
+		{
+			InitOptions.Filters->AddFilterPredicate<FActorTreeItem>(FActorTreeItem::FFilterPredicate::CreateLambda(OnShouldFilter));
+			InitOptions.bFocusSearchBoxWhenOpened = true;
+			InitOptions.bShowCreateNewFolder = false;
+			
+			// Add the gutter so we can change the selection's visibility
+			InitOptions.ColumnMap.Add(FSceneOutlinerBuiltInColumnTypes::Gutter(), FSceneOutlinerColumnInfo(ESceneOutlinerColumnVisibility::Visible, 0, FCreateSceneOutlinerColumn(), true, TOptional<float>(), FSceneOutlinerBuiltInColumnTypes::Gutter_Localized()));
+			InitOptions.ColumnMap.Add(FSceneOutlinerBuiltInColumnTypes::Label(), FSceneOutlinerColumnInfo(ESceneOutlinerColumnVisibility::Visible, 10, FCreateSceneOutlinerColumn(), true, TOptional<float>(), FSceneOutlinerBuiltInColumnTypes::Label_Localized()));
+			InitOptions.ColumnMap.Add(FSceneOutlinerBuiltInColumnTypes::ActorInfo(), FSceneOutlinerColumnInfo(ESceneOutlinerColumnVisibility::Visible, 20, FCreateSceneOutlinerColumn(), true, TOptional<float>(), FSceneOutlinerBuiltInColumnTypes::ActorInfo_Localized()));
+		}
+
+		static const FVector2D SceneOutlinerWindowSize(350.0f, 200.0f);
+		TSharedRef< SWidget > MenuWidget =
+			SNew(SBox)
+			.WidthOverride(SceneOutlinerWindowSize.X)
+			.HeightOverride(SceneOutlinerWindowSize.Y)
+			[
+				SNew(SBorder)
+				.BorderImage(_GetEditorStyle().GetBrush("Menu.Background"))
+				[
+					SceneOutlinerModule.CreateActorPicker(
+						InitOptions,
+						FOnActorPicked::CreateLambda(OnSelected))
+				]
+			];
+
+		MenuBuilder.AddWidget(MenuWidget, FText::GetEmpty(), true);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder;
+}
+
+
+
+void
+SHoudiniNodeSyncPanel::RebuildSelectionView()
+{
+	// Clear the Box that contains the current sent data
+	SelectionContainer->ClearChildren();
+
+	// Recreate the actor picker with updated contents
+	FMenuBuilder MenuBuilder = Helper_CreateSelectionWidget();
+	SelectionContainer->AddSlot()
+	.Padding(2, 2, 5, 2)
+	.AutoHeight()
+	[
+		MenuBuilder.MakeWidget()
+	];
+}
+
+
+/*
+// Create the widget that displays the Mesh Build Settings struct
+TSharedRef<SWidget>
+SHoudiniNodeSyncPanel::MakeMBSDetailsView()
+{
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.bUpdatesFromSelection = false;
+	DetailsViewArgs.bLockable = false;
+	DetailsViewArgs.bShowPropertyMatrixButton = false;
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	DetailsViewArgs.ViewIdentifier = NAME_None;
+	DetailsViewArgs.bShowCustomFilterOption = false;
+	DetailsViewArgs.bShowOptions = false;
+	DetailsViewArgs.bAllowSearch = false;
+
+	FStructureDetailsViewArgs StructDetailsArgs;	
+	MBS_DetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructDetailsArgs, MBS_Ptr);
+
+	return MBS_DetailsView->GetWidget().ToSharedRef();
+}
+
+
+// Create the widget that displays the Houdini Static Mesh Generation Settings struct
+TSharedRef<SWidget>
+SHoudiniNodeSyncPanel::MakeHSMGPDetailsView()
+{
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.bUpdatesFromSelection = false;
+	DetailsViewArgs.bLockable = false;
+	DetailsViewArgs.bShowPropertyMatrixButton = false;
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	DetailsViewArgs.ViewIdentifier = NAME_None;
+	DetailsViewArgs.bShowCustomFilterOption = false;
+	DetailsViewArgs.bShowOptions = false;
+	DetailsViewArgs.bAllowSearch = false;
+
+	FStructureDetailsViewArgs StructDetailsArgs;
+	HSMGP_DetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructDetailsArgs, HSMGP_Ptr);
+
+	return HSMGP_DetailsView->GetWidget().ToSharedRef();
+}
+*/
+
+
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 

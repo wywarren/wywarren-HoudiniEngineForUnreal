@@ -2042,9 +2042,9 @@ FHoudiniEngineEditor::OnSpawnNodeSyncTab(const FSpawnTabArgs& SpawnTabArgs)
 	.TabRole(ETabRole::NomadTab)
 	//.Icon(FHoudiniEngineStyle::Get()->GetBrush("HoudiniEngine.HoudiniEngineLogo"))
 	[
-		SNew(SHoudiniNodeSyncPanel)
+		SAssignNew(NodeSyncPanel, SHoudiniNodeSyncPanel)
 	];
-		
+
 	SpawnedTab->SetTabIcon(FHoudiniEngineStyle::Get()->GetBrush("HoudiniEngine.HoudiniEngineLogo"));
 
 	return SpawnedTab;

@@ -20,6 +20,7 @@
 #include "HoudiniNodeSyncComponent.h"
 #include "HoudiniSkeletalMeshTranslator.h"
 #include "HoudiniOutputTranslator.h"
+#include "SHoudiniNodeSyncPanel.h"
 #include "UnrealMeshTranslator.h"
 #include "UnrealSkeletalMeshTranslator.h"
 
@@ -221,16 +222,17 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 		ObjectNeedingUpload.Add(CurObject);
 	}
 
-	// Full refresh
-	if (false)
-	{
-		SendToHoudini(WorldSelection, 0);
-	}
+	// See if our previously sent nodes are still valid
+	if (CheckNodeSyncInputNodesValid())
+		UpdateNodeSyncInputs();	
 
 	if (ObjectNeedingUpload.Num() > 0)
 	{
 		SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
 	}	
+
+	// Rebuild the NodeSync selection view
+	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
 }
 
 
@@ -238,7 +240,12 @@ void
 UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedAssets, int32 ObjectIndex)
 {
 	if (SelectedAssets.Num() <= 0)
+	{
+		LastSendStatus = EHoudiniNodeSyncStatus::Success;
+		SendStatusMessage = "Send Success";
+		SendStatusDetails = "Houdini Node Sync - Send success - No new data to be sent was found!";
 		return;
+	}
 
 	// Add a slate notification
 	FString Notification = TEXT("Sending selected assets to Houdini...");
@@ -274,11 +281,17 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 	}
 
 	// Make sure the NodeSync input has been initialized
-	if (!InitNodeSyncInputIfNeeded())
-		return;
+	if (!InitNodeSyncInputIfNeeded() || !IsValid(NodeSyncInput))
+	{
+		// For now, just warn the session is not session sync
+		HOUDINI_LOG_WARNING(TEXT("HoudiniNodeSync: the current session is not session-sync one!"));
 
-	if (!IsValid(NodeSyncInput))
-		return;
+		LastSendStatus = EHoudiniNodeSyncStatus::Failed;
+		SendStatusMessage = "Error: Unable to initialize/access the Node Sync Input!";
+		SendStatusDetails = SendStatusMessage;
+
+		return;	
+	}
 
 	// Default input options
 	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
@@ -396,6 +409,83 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 	// Start ticking if needed once we send something
 	if(NodeSyncOptions.bSyncWorldInput)
 		StartTicking();
+}
+
+
+void
+UHoudiniEditorNodeSyncSubsystem::UpdateAllSelection()
+{
+	LastSendStatus = EHoudiniNodeSyncStatus::Running;
+	SendStatusMessage = "Updating...";
+
+	// Get current world selection
+	TArray<UObject*> CurrentWorldSelection;
+	int32 SelectedHoudiniAssets = FHoudiniEngineEditorUtils::GetWorldSelection(CurrentWorldSelection, false);
+	if (WorldSelection.Num() <= 0)
+	{
+		LastSendStatus = EHoudiniNodeSyncStatus::Success;
+		SendStatusMessage = "Update Success.";
+		SendStatusDetails = "Houdini Node Sync - Update success: nothing to update!";
+		return;
+	}
+
+	// Make sure that the input is properly set to world
+	bool bOutBPModif = false;
+	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
+
+	// Resend all the WorldSelection
+	SendToHoudini(WorldSelection, 0);
+
+	// Rebuild the NodeSync selection view
+	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
+}
+
+void
+UHoudiniEditorNodeSyncSubsystem::DeleteAllSelection()
+{
+	LastSendStatus = EHoudiniNodeSyncStatus::Running;
+	SendStatusMessage = "Deleting...";
+
+	// Shortly authorize the input to delete its node
+	NodeSyncInput->SetCanDeleteHoudiniNodes(true);
+
+	// Make sure that the input is properly set to world
+	bool bOutBPModif = false;
+	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
+
+	const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	if (InputObjects)
+	{
+		//NodeSyncInput->MarkInputNodeAsPendingDelete();
+
+		
+		for (int32 Idx = 0; Idx < InputObjects->Num(); Idx++)
+		{
+			// Delete the data for the selected object
+			NodeSyncInput->DeleteInputObjectAt(EHoudiniInputType::World, Idx);
+		}
+	}
+
+	bool bReturn = FHoudiniInputTranslator::DisconnectAndDestroyInput(NodeSyncInput, EHoudiniInputType::World);
+
+	WorldSelection.Empty();
+	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
+
+	if (bReturn)
+	{
+		LastSendStatus = EHoudiniNodeSyncStatus::Success;
+		SendStatusMessage = "Delete Success.";
+		SendStatusDetails = "Houdini Node Sync - Delete Success: Successfully deleted all sent data!";
+	}
+	else
+	{
+		LastSendStatus = EHoudiniNodeSyncStatus::Failed;
+		SendStatusMessage = "Delete Failed.";
+		SendStatusDetails = "Houdini Node Sync - Delete Failed: Unable to delete all sent data!";
+	}
+
+	// Rebuild the NodeSync selection view
+	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
 }
 
 
@@ -926,6 +1016,36 @@ UHoudiniEditorNodeSyncSubsystem::ValidateFetchedNodePath(const FString& InFetchN
 
 
 bool
+UHoudiniEditorNodeSyncSubsystem::CheckNodeSyncInputNodesValid()
+{
+	if (!IsValid(NodeSyncInput))
+		return false;
+
+	// No need to tick if we dont have any input objects
+	if (NodeSyncInput->GetNumberOfInputObjects(EHoudiniInputType::World) <= 0)
+	{
+		StopTicking();
+		return false;
+	}
+
+	const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	if (!InputObjects)
+		return false;
+
+	bool bReturn = false;
+	for (const auto& CurInputObject : *InputObjects)
+	{
+		if (FHoudiniEngineUtils::IsHoudiniNodeValid(CurInputObject->GetInputObjectNodeId()))
+			continue;
+
+		CurInputObject->MarkChanged(true);
+		bReturn = true;
+	}
+
+	return bReturn;
+}
+
+bool
 UHoudiniEditorNodeSyncSubsystem::UpdateNodeSyncInputs()
 {
 	if (!IsValid(NodeSyncInput))
@@ -981,6 +1101,22 @@ UHoudiniEditorNodeSyncSubsystem::UpdateNodeSyncInputs()
 					bSuccess = false;
 			}
 		}
+
+		/*
+		// We've created the input nodes for this object, now, we need to object merge them into the content node in the path specified by the user
+		bool bObjMergeSuccess = false;
+		for (int32 CreatedNodeIdx = 0; CreatedNodeIdx < CreatedNodeIds.Num(); CreatedNodeIdx++)
+		{
+			// todo: if we've created more than one node, merge them together?
+			if (CreatedNodeIds.Num() > 1)
+				ObjectName += TEXT("_") + FString::FromInt(CreatedNodeIdx + 1);
+
+			HAPI_NodeId ObjectMergeNodeId = -1;
+			HAPI_NodeId GeoObjectMergeNodeId = -1;
+			bObjMergeSuccess &= FHoudiniInputTranslator::HapiCreateOrUpdateGeoObjectMergeAndSetTransform(
+				CurrentObjectNodeId, CreatedNodeIds[CreatedNodeIdx], ObjectName, ObjectMergeNodeId, CurrentObjectNodeId, true, FTransform::Identity, 1);
+		}
+		*/
 
 		NodeSyncInput->MarkDataUploadNeeded(!bSuccess);
 	}

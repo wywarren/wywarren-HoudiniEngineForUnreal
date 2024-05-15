@@ -123,7 +123,13 @@ public:
 	bool IsTicking() const;
 	bool Tick(float DeltaTime);
 
+	bool CheckNodeSyncInputNodesValid();
+
 	bool UpdateNodeSyncInputs();
+
+	void UpdateAllSelection();
+
+	void DeleteAllSelection();
 
 	//
 	// Public Members
