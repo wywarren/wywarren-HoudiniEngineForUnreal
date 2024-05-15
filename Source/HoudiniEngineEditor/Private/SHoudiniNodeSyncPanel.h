@@ -30,6 +30,7 @@
 #include "HoudiniInput.h"
 #include "HoudiniRuntimeSettings.h"
 
+#include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "IDetailsView.h"
 #include "IStructureDetailsView.h"
 #include "Widgets/SBoxPanel.h"
