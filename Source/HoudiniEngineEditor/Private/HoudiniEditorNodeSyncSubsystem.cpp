@@ -204,6 +204,9 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 		return;
 	}
 
+	// Ensure that the NodeSync input is valid
+	InitNodeSyncInputIfNeeded();
+
 	// Make sure that the input is properly set to world
 	bool bOutBPModif = false;
 	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
@@ -226,10 +229,8 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 	if (CheckNodeSyncInputNodesValid())
 		UpdateNodeSyncInputs();	
 
-	if (ObjectNeedingUpload.Num() > 0)
-	{
-		SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
-	}	
+	// Send the selected data to Houdini
+	SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
 
 	// Rebuild the NodeSync selection view
 	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
@@ -420,21 +421,25 @@ UHoudiniEditorNodeSyncSubsystem::UpdateAllSelection()
 
 	// Get current world selection
 	TArray<UObject*> CurrentWorldSelection;
-	int32 SelectedHoudiniAssets = FHoudiniEngineEditorUtils::GetWorldSelection(CurrentWorldSelection, false);
-	if (WorldSelection.Num() <= 0)
-	{
-		LastSendStatus = EHoudiniNodeSyncStatus::Success;
-		SendStatusMessage = "Update Success.";
-		SendStatusDetails = "Houdini Node Sync - Update success: nothing to update!";
-		return;
-	}
+
+	// Make sure the node sync input is valid
+	InitNodeSyncInputIfNeeded();
 
 	// Make sure that the input is properly set to world
 	bool bOutBPModif = false;
 	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
 
+	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	if (InputObjects)
+	{
+		for (const auto& CurInputObject : *InputObjects)
+		{
+			CurrentWorldSelection.Add(CurInputObject->GetObject());
+		}
+	}
+
 	// Resend all the WorldSelection
-	SendToHoudini(WorldSelection, 0);
+	SendToHoudini(CurrentWorldSelection, 0);
 
 	// Rebuild the NodeSync selection view
 	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
@@ -446,6 +451,9 @@ UHoudiniEditorNodeSyncSubsystem::DeleteAllSelection()
 	LastSendStatus = EHoudiniNodeSyncStatus::Running;
 	SendStatusMessage = "Deleting...";
 
+	// Make sure the node sync input is valid
+	InitNodeSyncInputIfNeeded();
+
 	// Shortly authorize the input to delete its node
 	NodeSyncInput->SetCanDeleteHoudiniNodes(true);
 
@@ -453,22 +461,14 @@ UHoudiniEditorNodeSyncSubsystem::DeleteAllSelection()
 	bool bOutBPModif = false;
 	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
 
-	const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
-	if (InputObjects)
-	{
-		//NodeSyncInput->MarkInputNodeAsPendingDelete();
-
-		
-		for (int32 Idx = 0; Idx < InputObjects->Num(); Idx++)
-		{
-			// Delete the data for the selected object
-			NodeSyncInput->DeleteInputObjectAt(EHoudiniInputType::World, Idx);
-		}
-	}
-
 	bool bReturn = FHoudiniInputTranslator::DisconnectAndDestroyInput(NodeSyncInput, EHoudiniInputType::World);
 
 	WorldSelection.Empty();
+
+TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);	
+	if (InputObjects)
+		InputObjects->Empty();
+
 	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
 
 	if (bReturn)
