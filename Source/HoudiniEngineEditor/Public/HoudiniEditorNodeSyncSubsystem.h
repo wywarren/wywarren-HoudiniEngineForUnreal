@@ -90,7 +90,7 @@ public:
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Houdini")
-	void SendToHoudini(const TArray<UObject*>& SelectedAssets, int32 ObjectIndex);
+	void SendToHoudini(const TArray<UObject*>& SelectedAssets, int32 ObjectIndex, const bool& bSendWorld);
 
 	UFUNCTION(BlueprintCallable, Category = "Houdini")
 	void FetchFromHoudini();
@@ -106,7 +106,9 @@ public:
 	// Returns the color corresponding to a given node sync status
 	static FLinearColor GetStatusColor(const EHoudiniNodeSyncStatus& Status);
 
-	bool GetNodeSyncInput(UHoudiniInput*& OutInput);
+	bool GetNodeSyncWorldInput(UHoudiniInput*& OutInput);
+
+	bool GetNodeSyncCBInput(UHoudiniInput*& OutInput);
 
 	bool GatherAllFetchedNodeIds(
 		HAPI_NodeId UnrealFetchNodeId,
@@ -150,16 +152,13 @@ public:
 
 private:
 
-	bool InitNodeSyncInputIfNeeded();
+	bool InitNodeSyncInputsIfNeeded();
 
 	UPROPERTY()
-	UHoudiniInput* NodeSyncInput;
+	UHoudiniInput* NodeSyncWorldInput;
 
 	UPROPERTY()
-	TArray<UObject*> WorldSelection;
-
-	UPROPERTY()
-	TArray<UObject*> ContentBrowserSelection;
+	UHoudiniInput* NodeSyncCBInput;
 
 	// Ticker handle, used for processing HAC.
 	FTSTicker::FDelegateHandle TickerHandle;

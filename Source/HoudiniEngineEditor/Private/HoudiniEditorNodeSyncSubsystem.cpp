@@ -36,13 +36,34 @@
 void 
 UHoudiniEditorNodeSyncSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	// Register our extensions
 	FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.OnRegisterLayoutExtensions().AddUObject(this, &UHoudiniEditorNodeSyncSubsystem::RegisterLayoutExtensions);
+
+	// Initialize our input objects
+	InitNodeSyncInputsIfNeeded();
 }
 
 void 
 UHoudiniEditorNodeSyncSubsystem::Deinitialize()
 {
+	// Allow the inputs to delete their node
+	NodeSyncWorldInput->SetCanDeleteHoudiniNodes(true);
+	NodeSyncCBInput->SetCanDeleteHoudiniNodes(true);
+
+	// Clean the world input
+	FHoudiniInputTranslator::DisconnectAndDestroyInput(NodeSyncWorldInput, EHoudiniInputType::World);
+	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncWorldInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	if (InputObjects)
+		InputObjects->Empty();
+	
+	// Clean the CB input
+	FHoudiniInputTranslator::DisconnectAndDestroyInput(NodeSyncCBInput, EHoudiniInputType::World);
+	InputObjects = NodeSyncCBInput->GetHoudiniInputObjectArray(EHoudiniInputType::Geometry);
+	if (InputObjects)
+		InputObjects->Empty();
+
+	// Unregister our extensions
 	FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.OnRegisterLayoutExtensions().RemoveAll(this);
 }
@@ -74,59 +95,91 @@ UHoudiniEditorNodeSyncSubsystem::CreateSessionIfNeeded()
 
 
 bool
-UHoudiniEditorNodeSyncSubsystem::GetNodeSyncInput(UHoudiniInput*& OutInput)
+UHoudiniEditorNodeSyncSubsystem::GetNodeSyncWorldInput(UHoudiniInput*& OutInput)
 {
-	if (!InitNodeSyncInputIfNeeded())
+	if (!InitNodeSyncInputsIfNeeded())
 		return false;
 
-	if (!IsValid(NodeSyncInput))
+	if (!IsValid(NodeSyncWorldInput))
 		return false;
 
-	OutInput = NodeSyncInput;
+	OutInput = NodeSyncWorldInput;
 
 	return true;
 }
 
 bool
-UHoudiniEditorNodeSyncSubsystem::InitNodeSyncInputIfNeeded()
+UHoudiniEditorNodeSyncSubsystem::GetNodeSyncCBInput(UHoudiniInput*& OutInput)
 {
-	if (IsValid(NodeSyncInput))
-		return true;
-
-	// Create a fake HoudiniInput/HoudiniInputObject so we can use the input Translator to send the data to H
-	FString InputObjectName = TEXT("NodeSyncInput");
-	NodeSyncInput = NewObject<UHoudiniInput>(
-		this, UHoudiniInput::StaticClass(), FName(*InputObjectName), RF_Transactional);
-
-	if (!IsValid(NodeSyncInput))
+	if (!InitNodeSyncInputsIfNeeded())
 		return false;
 
-	// Set the default input options
-	// TODO: Fill those from the NodeSync UI?!
-	NodeSyncInput->SetExportColliders(false);
-	NodeSyncInput->SetExportLODs(false);
-	NodeSyncInput->SetExportSockets(false);
-	NodeSyncInput->SetLandscapeExportType(EHoudiniLandscapeExportType::Heightfield);
-	NodeSyncInput->SetAddRotAndScaleAttributes(false);
-	NodeSyncInput->SetImportAsReference(false);
-	NodeSyncInput->SetImportAsReferenceRotScaleEnabled(false);
-	NodeSyncInput->SetKeepWorldTransform(true);
-	NodeSyncInput->SetPackBeforeMerge(false);
-	NodeSyncInput->SetUnrealSplineResolution(50.0f);
-	NodeSyncInput->SetExportLevelInstanceContent(true);
+	if (!IsValid(NodeSyncCBInput))
+		return false;
 
-	// default input options
-	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
-	NodeSyncInput->SetUseLegacyInputCurve(true);
+	OutInput = NodeSyncCBInput;
 
-	// TODO: Check?
-	NodeSyncInput->SetAssetNodeId(-1);
-	//NodeSyncInput->SetInputNodeId(UnrealFetchNodeIdId);
+	return true;
+}
 
-	// Input type? switch to world if actors in the selection ?
-	bool bOutBPModif = false;
-	NodeSyncInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
-	NodeSyncInput->SetName(TEXT("NodeSyncInput"));
+bool
+UHoudiniEditorNodeSyncSubsystem::InitNodeSyncInputsIfNeeded()
+{
+	if (IsValid(NodeSyncWorldInput) && IsValid(NodeSyncCBInput))
+		return true;
+
+	// Lambda used for initializing both NodeSyncInputs
+	auto InitInputOptions = [&](UHoudiniInput* Input, const FString& InName, const bool& bIsWorld)
+	{
+		if (!IsValid(Input))
+			return false;
+
+		// Set the input type and name
+		bool bOutBPModif = false;
+		Input->SetInputType(bIsWorld ? EHoudiniInputType::World : EHoudiniInputType::Geometry, bOutBPModif);
+		Input->SetName(InName);
+
+		// Set the default input options
+		Input->SetExportColliders(false);
+		Input->SetExportLODs(false);
+		Input->SetExportSockets(false);
+		Input->SetLandscapeExportType(EHoudiniLandscapeExportType::Heightfield);
+		Input->SetAddRotAndScaleAttributes(false);
+		Input->SetImportAsReference(false);
+		Input->SetImportAsReferenceRotScaleEnabled(false);
+		Input->SetKeepWorldTransform(true);
+		Input->SetPackBeforeMerge(false);
+		Input->SetUnrealSplineResolution(50.0f);
+		Input->SetExportLevelInstanceContent(true);
+		Input->SetCanDeleteHoudiniNodes(false);
+		Input->SetUseLegacyInputCurve(true);
+
+		Input->SetAssetNodeId(-1);
+
+		return true;
+	};
+
+	if (!IsValid(NodeSyncWorldInput))
+	{
+		// Create a fake HoudiniInput/HoudiniInputObject so we can use the input Translator to send the data to H
+		FString InputObjectName = TEXT("NodeSyncWorldInput");
+		NodeSyncWorldInput = NewObject<UHoudiniInput>(
+			this, UHoudiniInput::StaticClass(), FName(*InputObjectName), RF_Transactional);
+
+		if (!InitInputOptions(NodeSyncWorldInput, InputObjectName, true))
+			return false;
+	}
+
+	if (!IsValid(NodeSyncCBInput))
+	{
+		// Create a fake HoudiniInput/HoudiniInputObject so we can use the input Translator to send the data to H
+		FString InputObjectName = TEXT("NodeSyncCBInput");
+		NodeSyncCBInput = NewObject<UHoudiniInput>(
+			this, UHoudiniInput::StaticClass(), FName(*InputObjectName), RF_Transactional);
+
+		if (!InitInputOptions(NodeSyncCBInput, InputObjectName, false))
+			return false;
+	}
 
 	return true;
 }
@@ -149,38 +202,29 @@ UHoudiniEditorNodeSyncSubsystem::SendContentBrowserSelection(const TArray<UObjec
 		return;
 	}
 
-	// Switch the input type to GEO
-	EHoudiniInputType NSInputType = NodeSyncInput->GetInputType();
-	bool bOutBPModif = false;
-	NodeSyncInput->SetInputType(EHoudiniInputType::Geometry, bOutBPModif);
+	// No need to upload something we've already sent ... 
+	TArray<UObject*> ObjectsToSend = CurrentCBSelection;
+	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncCBInput->GetHoudiniInputObjectArray(EHoudiniInputType::Geometry);
+	if (InputObjects)
+	{
+		// ... so remove all selected objects that were previously sent
+		for (const auto& CurInputObject : *InputObjects)
+		{
+			UObject* CurrentObject = CurInputObject ? CurInputObject->GetObject() : nullptr;
+			if (!CurrentObject)
+				continue;
+
+			int32 FoundIdx = ObjectsToSend.Find(CurrentObject);
+			if (FoundIdx != INDEX_NONE)
+				ObjectsToSend.RemoveAt(FoundIdx);
+		}
+	}
 
 	// Keep track of the index where we add new things
 	// New objects are appended at the end, and we don't want to resend the whole array
-	int32 AddedObjectIndex = ContentBrowserSelection.Num();
+	int32 AddedObjectIndex = NodeSyncCBInput->GetNumberOfInputObjects(EHoudiniInputType::Geometry);
 
-	TArray<UObject*> ObjectNeedingUpload;
-	for (auto& CurObject : CurrentCBSelection)
-	{
-		if (ContentBrowserSelection.Contains(CurObject))
-			continue;
-
-		ContentBrowserSelection.Add(CurObject);
-		ObjectNeedingUpload.Add(CurObject);
-	}
-
-	// Full refresh
-	if (false)
-	{
-		SendToHoudini(ContentBrowserSelection, 0);
-	}
-
-	if (ObjectNeedingUpload.Num() > 0)
-	{
-		SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
-	}
-
-	// Switch back to previous input type
-	NodeSyncInput->SetInputType(NSInputType, bOutBPModif);
+	SendToHoudini(ObjectsToSend, AddedObjectIndex, false);
 }
 
 
@@ -204,33 +248,36 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 		return;
 	}
 
-	// Ensure that the NodeSync input is valid
-	InitNodeSyncInputIfNeeded();
+	// Ensure that the NodeSync inputs are valid
+	InitNodeSyncInputsIfNeeded();
 
-	// Make sure that the input is properly set to world
-	bool bOutBPModif = false;
-	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
+	// No need to upload something we've already sent
+	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncWorldInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	if (InputObjects)
+	{
+		// Remove all selected objects that were previously sent
+		for (const auto& CurInputObject : *InputObjects)
+		{
+			UObject* CurrentObject = CurInputObject ? CurInputObject->GetObject() : nullptr;
+			if (!CurrentObject)
+				continue;
+
+			int32 FoundIdx = CurrentWorldSelection.Find(CurrentObject);
+			if (FoundIdx != INDEX_NONE)
+				CurrentWorldSelection.RemoveAt(FoundIdx);
+		}
+	}
 
 	// Keep track of the index where we add new things
 	// New objects are appended at the end, and we don't want to resend the whole array
-	int32 AddedObjectIndex = WorldSelection.Num();
-
-	TArray<UObject*> ObjectNeedingUpload;
-	for (auto& CurObject : CurrentWorldSelection)
-	{
-		if (WorldSelection.Contains(CurObject))
-			continue;
-
-		WorldSelection.Add(CurObject);
-		ObjectNeedingUpload.Add(CurObject);
-	}
+	int32 AddedObjectIndex = NodeSyncWorldInput->GetNumberOfInputObjects(EHoudiniInputType::World);
 
 	// See if our previously sent nodes are still valid
 	if (CheckNodeSyncInputNodesValid())
 		UpdateNodeSyncInputs();	
 
 	// Send the selected data to Houdini
-	SendToHoudini(ObjectNeedingUpload, AddedObjectIndex);
+	SendToHoudini(CurrentWorldSelection, AddedObjectIndex, true);
 
 	// Rebuild the NodeSync selection view
 	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
@@ -238,7 +285,7 @@ UHoudiniEditorNodeSyncSubsystem::SendWorldSelection()
 
 
 void 
-UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedAssets, int32 ObjectIndex)
+UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedAssets, int32 ObjectIndex, const bool& bSendWorld)
 {
 	if (SelectedAssets.Num() <= 0)
 	{
@@ -281,8 +328,11 @@ UHoudiniEditorNodeSyncSubsystem::SendToHoudini(const TArray<UObject*>& SelectedA
 		result = FHoudiniEngineUtils::CreateNode( - 1, "Object/subnet", TCHAR_TO_ANSI(*Name), true, &UnrealContentNodeId);
 	}
 
-	// Make sure the NodeSync input has been initialized
-	if (!InitNodeSyncInputIfNeeded() || !IsValid(NodeSyncInput))
+	// Decide wether we want to use to World or CB Input
+	UHoudiniInput* NodeSyncInput = bSendWorld ? NodeSyncWorldInput : NodeSyncCBInput;
+
+	// Make sure the NodeSync input have been initialized
+	if (!InitNodeSyncInputsIfNeeded() || !IsValid(NodeSyncInput))
 	{
 		// For now, just warn the session is not session sync
 		HOUDINI_LOG_WARNING(TEXT("HoudiniNodeSync: the current session is not session-sync one!"));
@@ -422,14 +472,11 @@ UHoudiniEditorNodeSyncSubsystem::UpdateAllSelection()
 	// Get current world selection
 	TArray<UObject*> CurrentWorldSelection;
 
-	// Make sure the node sync input is valid
-	InitNodeSyncInputIfNeeded();
+	// Make sure the node sync inputs are valid
+	InitNodeSyncInputsIfNeeded();
 
-	// Make sure that the input is properly set to world
-	bool bOutBPModif = false;
-	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
-
-	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	// Build an array of all previously sent actors
+	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncWorldInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
 	if (InputObjects)
 	{
 		for (const auto& CurInputObject : *InputObjects)
@@ -439,7 +486,7 @@ UHoudiniEditorNodeSyncSubsystem::UpdateAllSelection()
 	}
 
 	// Resend all the WorldSelection
-	SendToHoudini(CurrentWorldSelection, 0);
+	SendToHoudini(CurrentWorldSelection, 0, true);
 
 	// Rebuild the NodeSync selection view
 	FHoudiniEngineEditor::Get().GetNodeSyncPanel()->RebuildSelectionView();
@@ -452,24 +499,18 @@ UHoudiniEditorNodeSyncSubsystem::DeleteAllSelection()
 	SendStatusMessage = "Deleting...";
 
 	// Make sure the node sync input is valid
-	InitNodeSyncInputIfNeeded();
+	InitNodeSyncInputsIfNeeded();
 
 	// Shortly authorize the input to delete its node
-	NodeSyncInput->SetCanDeleteHoudiniNodes(true);
+	NodeSyncWorldInput->SetCanDeleteHoudiniNodes(true);
 
-	// Make sure that the input is properly set to world
-	bool bOutBPModif = false;
-	NodeSyncInput->SetInputType(EHoudiniInputType::World, bOutBPModif);
-
-	bool bReturn = FHoudiniInputTranslator::DisconnectAndDestroyInput(NodeSyncInput, EHoudiniInputType::World);
-
-	WorldSelection.Empty();
-
-TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);	
+	// Clean the world input
+	bool bReturn = FHoudiniInputTranslator::DisconnectAndDestroyInput(NodeSyncWorldInput, EHoudiniInputType::World);
+	TArray<UHoudiniInputObject*>* InputObjects = NodeSyncWorldInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
 	if (InputObjects)
 		InputObjects->Empty();
 
-	NodeSyncInput->SetCanDeleteHoudiniNodes(false);
+	NodeSyncWorldInput->SetCanDeleteHoudiniNodes(false);
 
 	if (bReturn)
 	{
@@ -1018,17 +1059,17 @@ UHoudiniEditorNodeSyncSubsystem::ValidateFetchedNodePath(const FString& InFetchN
 bool
 UHoudiniEditorNodeSyncSubsystem::CheckNodeSyncInputNodesValid()
 {
-	if (!IsValid(NodeSyncInput))
+	if (!IsValid(NodeSyncWorldInput))
 		return false;
 
 	// No need to tick if we dont have any input objects
-	if (NodeSyncInput->GetNumberOfInputObjects(EHoudiniInputType::World) <= 0)
+	if (NodeSyncWorldInput->GetNumberOfInputObjects(EHoudiniInputType::World) <= 0)
 	{
 		StopTicking();
 		return false;
 	}
 
-	const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+	const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncWorldInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
 	if (!InputObjects)
 		return false;
 
@@ -1048,27 +1089,27 @@ UHoudiniEditorNodeSyncSubsystem::CheckNodeSyncInputNodesValid()
 bool
 UHoudiniEditorNodeSyncSubsystem::UpdateNodeSyncInputs()
 {
-	if (!IsValid(NodeSyncInput))
+	if (!IsValid(NodeSyncWorldInput))
 		return false;
 
 	// No need to tick if we dont have any input objects
-	if (NodeSyncInput->GetNumberOfInputObjects(EHoudiniInputType::World) <= 0)
+	if (NodeSyncWorldInput->GetNumberOfInputObjects(EHoudiniInputType::World) <= 0)
 	{		
 		StopTicking();
 		return true;
 	}
 
 	// See if we need to update some of the node sync inputs
-	if (!FHoudiniInputTranslator::UpdateWorldInput(NodeSyncInput))
+	if (!FHoudiniInputTranslator::UpdateWorldInput(NodeSyncWorldInput))
 		return false;
 
-	if (!NodeSyncInput->NeedsToTriggerUpdate())
+	if (!NodeSyncWorldInput->NeedsToTriggerUpdate())
 		return false;
 
 	bool bSuccess = true;
-	if (NodeSyncInput->IsDataUploadNeeded())
+	if (NodeSyncWorldInput->IsDataUploadNeeded())
 	{
-		TArray<UHoudiniInputObject*>* InputObjectsArray = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
+		TArray<UHoudiniInputObject*>* InputObjectsArray = NodeSyncWorldInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
 
 		// Iterate on all the input objects and see if they need to be uploaded
 		TArray<int32> CreatedNodeIds;
@@ -1097,7 +1138,7 @@ UHoudiniEditorNodeSyncSubsystem::UpdateNodeSyncInputs()
 			{
 				// Upload the current input object to Houdini
 				if (!FHoudiniInputTranslator::UploadHoudiniInputObject(
-					NodeSyncInput, ChangedInputObject, FTransform::Identity, CreatedNodeIds, Handles, ChangedInputObject->CanDeleteHoudiniNodes()))
+					NodeSyncWorldInput, ChangedInputObject, FTransform::Identity, CreatedNodeIds, Handles, ChangedInputObject->CanDeleteHoudiniNodes()))
 					bSuccess = false;
 			}
 		}
@@ -1118,28 +1159,28 @@ UHoudiniEditorNodeSyncSubsystem::UpdateNodeSyncInputs()
 		}
 		*/
 
-		NodeSyncInput->MarkDataUploadNeeded(!bSuccess);
+		NodeSyncWorldInput->MarkDataUploadNeeded(!bSuccess);
 	}
 
-	if (NodeSyncInput->IsTransformUploadNeeded())
+	if (NodeSyncWorldInput->IsTransformUploadNeeded())
 	{
-		bSuccess &= FHoudiniInputTranslator::UploadInputTransform(NodeSyncInput);
+		bSuccess &= FHoudiniInputTranslator::UploadInputTransform(NodeSyncWorldInput);
 	}
 
 	// Update the input properties AFTER eventually uploading it
-	bSuccess = FHoudiniInputTranslator::UpdateInputProperties(NodeSyncInput);
+	bSuccess = FHoudiniInputTranslator::UpdateInputProperties(NodeSyncWorldInput);
 
 	if (bSuccess)
 	{
-		NodeSyncInput->MarkChanged(false);
-		NodeSyncInput->MarkAllInputObjectsChanged(false);
+		NodeSyncWorldInput->MarkChanged(false);
+		NodeSyncWorldInput->MarkAllInputObjectsChanged(false);
 	}
 
-	if (NodeSyncInput->HasInputTypeChanged())
-		NodeSyncInput->SetPreviousInputType(EHoudiniInputType::Invalid);
+	if (NodeSyncWorldInput->HasInputTypeChanged())
+		NodeSyncWorldInput->SetPreviousInputType(EHoudiniInputType::Invalid);
 
 	// Even if we failed, no need to try updating again.
-	NodeSyncInput->SetNeedsToTriggerUpdate(false);
+	NodeSyncWorldInput->SetNeedsToTriggerUpdate(false);
 
 	return true;
 }

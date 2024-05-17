@@ -934,22 +934,24 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		]
 	];
 	
-	// Get the NodeSync input from the editor subsystem
-	UHoudiniInput* NodeSyncInput = nullptr;
-	if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncInput(NodeSyncInput))
+	// Get the NodeSync inputs from the editor subsystem
+	UHoudiniInput* NodeSyncWorldInput = nullptr;
+	if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncWorldInput(NodeSyncWorldInput))
 		return;
 
-	bool bUselessBool;
-	NodeSyncInput->SetInputType(EHoudiniInputType::World, bUselessBool);
+	UHoudiniInput* NodeSyncCBInput = nullptr;
+	if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncCBInput(NodeSyncCBInput))
+		return;
 
-	// ... and a fake input array ...
-	TArray<TWeakObjectPtr<UHoudiniInput>> FakeInputs;
-	FakeInputs.Add(NodeSyncInput);
+	// ... and create an input array ...
+	TArray<TWeakObjectPtr<UHoudiniInput>> NodeSyncInputs;
+	NodeSyncInputs.Add(NodeSyncWorldInput);
+	NodeSyncInputs.Add(NodeSyncCBInput);
 
 	// ... so we can reuse the input UI code
-	FHoudiniInputDetails::AddExportOptions(ExportOptionsVBox.ToSharedRef(), FakeInputs);
-	FHoudiniInputDetails::AddLandscapeOptions(LandscapeOptionsVBox.ToSharedRef(), FakeInputs);
-	FHoudiniInputDetails::AddLandscapeSplinesOptions(LandscapeSplineOptionsVBox.ToSharedRef(), FakeInputs);
+	FHoudiniInputDetails::AddExportOptions(ExportOptionsVBox.ToSharedRef(), NodeSyncInputs);
+	FHoudiniInputDetails::AddLandscapeOptions(LandscapeOptionsVBox.ToSharedRef(), NodeSyncInputs);
+	FHoudiniInputDetails::AddLandscapeSplinesOptions(LandscapeSplineOptionsVBox.ToSharedRef(), NodeSyncInputs);
 
 	// Handle the Houdini logo box
 	TSharedPtr<SImage> Image;
@@ -994,7 +996,7 @@ SHoudiniNodeSyncPanel::Helper_CreateSelectionWidget()
 
 		// Get the NodeSync input from the editor subsystem
 		UHoudiniInput* NodeSyncInput = nullptr;
-		if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncInput(NodeSyncInput))
+		if (!HoudiniEditorNodeSyncSubsystem || !HoudiniEditorNodeSyncSubsystem->GetNodeSyncWorldInput(NodeSyncInput))
 			return false;
 
 		const TArray<UHoudiniInputObject*>* InputObjects = NodeSyncInput->GetHoudiniInputObjectArray(EHoudiniInputType::World);
