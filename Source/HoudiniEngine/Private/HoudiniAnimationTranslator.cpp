@@ -27,6 +27,7 @@
 #include "HoudiniAnimationTranslator.h"
 
 #include "HoudiniEngine.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniInputObject.h"
@@ -168,10 +169,10 @@ FString FHoudiniAnimationTranslator::GetUnrealSkeletonPath(const TArray<FHoudini
 		// First, check whether we have it anywhere on the packed prim (as a detail, prim or point attribute).
 		if (FHoudiniEngineUtils::HapiCheckAttributeExists(InstancerHGPO.GeoId, InstancerHGPO.PartId, HAPI_UNREAL_ATTRIB_SKELETON))
 		{
-			HAPI_AttributeInfo SkeletonAttrInfo;
-			FHoudiniApi::AttributeInfo_Init(&SkeletonAttrInfo);
 			TArray<FString> SkeletonAttrData;
-			FHoudiniEngineUtils::HapiGetAttributeDataAsString(InstancerHGPO.GeoId, InstancerHGPO.PartId, HAPI_UNREAL_ATTRIB_SKELETON, SkeletonAttrInfo, SkeletonAttrData);
+			FHoudiniHapiAccessor Accessor(InstancerHGPO.GeoId, InstancerHGPO.PartId, HAPI_UNREAL_ATTRIB_SKELETON);
+			Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, SkeletonAttrData);
+
 			if (SkeletonAttrData.Num() > 0)
 			{
 				return SkeletonAttrData[0];
@@ -192,10 +193,9 @@ FString FHoudiniAnimationTranslator::GetUnrealSkeletonPath(const TArray<FHoudini
 
 		if (FHoudiniEngineUtils::HapiCheckAttributeExists(InstancerHGPO.GeoId, MeshPartId, HAPI_UNREAL_ATTRIB_SKELETON))
 		{
-			HAPI_AttributeInfo SkeletonAttrInfo;
-			FHoudiniApi::AttributeInfo_Init(&SkeletonAttrInfo);
 			TArray<FString> SkeletonAttrData;
-			FHoudiniEngineUtils::HapiGetAttributeDataAsString(InstancerHGPO.GeoId, MeshPartId, HAPI_UNREAL_ATTRIB_SKELETON, SkeletonAttrInfo, SkeletonAttrData);
+			FHoudiniHapiAccessor Accessor(InstancerHGPO.GeoId, MeshPartId, HAPI_UNREAL_ATTRIB_SKELETON);
+			Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, SkeletonAttrData);
 			if (SkeletonAttrData.Num() > 0)
 			{
 				return SkeletonAttrData[0];
@@ -429,7 +429,10 @@ bool FHoudiniAnimationTranslator::CreateAnimationFromMotionClip(UHoudiniOutput* 
 		"name", HAPI_AttributeOwner::HAPI_ATTROWNER_POINT, &BoneNameInfo);
 
 	TArray<FString> BoneNameData;
-	FHoudiniEngineUtils::HapiGetAttributeDataAsString(TopologyHGPO.GeoId, TopologyPartId, "name", BoneNameInfo, BoneNameData);
+
+	FHoudiniHapiAccessor Accessor(TopologyHGPO.GeoId, TopologyPartId, "name");
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, BoneNameData);
+
 	if (BoneNameData.Num() <= 0)
 	{
 		HOUDINI_LOG_WARNING(TEXT("Could not translate MotionClip. Missing BoneName data."));

@@ -19,6 +19,8 @@
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 1
 	#include "MaterialDomain.h"
 #endif
+#include "HoudiniEngineAttributes.h"
+#include "Animation/AnimRootMotionProvider.h"
 #include "Materials/Material.h"
 
 void
@@ -508,8 +510,11 @@ FHoudiniGeometryCollectionTranslator::GetFracturePieceAttribute(
 
 	TArray<int> IntData;
 	IntData.Empty();
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_PIECE, AttriInfo, IntData, 1))
+
+	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_PIECE);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, IntData);
+
+	if (bSuccess)
 	{
 		if (IntData.Num() > 0)
 		{
@@ -533,8 +538,10 @@ FHoudiniGeometryCollectionTranslator::GetClusterPieceAttribute(
 	TArray<int> IntData;
 	IntData.Empty();
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(GeoId, PartId,
-	HAPI_UNREAL_ATTRIB_GC_CLUSTER_PIECE, AttriInfo, IntData, 1))
+	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_CLUSTER_PIECE);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, IntData);
+
+	if (bSuccess)
 	{
 		if (IntData.Num() > 0)
 		{
@@ -561,14 +568,13 @@ FHoudiniGeometryCollectionTranslator::GetGeometryCollectionNameAttribute(
 	TArray<FString> StrData;
 	StrData.Empty();
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_NAME, AttriInfo, StrData, 1))
+	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_NAME);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, StrData);
+
+	if (bSuccess && StrData.Num() > 0)
 	{
-		if (StrData.Num() > 0)
-		{
-			HasAttribute = true;
-			OutName = StrData[0];
-		}
-			
+		HasAttribute = true;
+		OutName = StrData[0];
 	}
 
 	if (!HasAttribute)
@@ -762,13 +768,13 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 		TArray<int32> IntData;
 		IntData.Empty();
 
-		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_CLUSTERING_CLUSTER_CONNECTION_TYPE;
-
 		HAPI_AttributeInfo AttributeInfo;
 		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-		
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(GeoId, PartId,
-                AttributeName, AttriInfo, IntData, 1))
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_CLUSTERING_CLUSTER_CONNECTION_TYPE);
+		bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, IntData, 0, 1);
+
+		if (bSuccess)
 		{
 			if (IntData.Num() > 0)
 			{
@@ -796,13 +802,13 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 		TArray<int32> IntData;
 		IntData.Empty();
 	
-		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MASS_AS_DENSITY;
-	
 		HAPI_AttributeInfo AttributeInfo;
 		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-			
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(GeoId, PartId,
-                AttributeName, AttriInfo, IntData, 1))
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MASS_AS_DENSITY);
+		bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, IntData, 0, 1);
+
+		if (bSuccess)
 		{
 			if (IntData.Num() > 0)
 			{
@@ -819,13 +825,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 		TArray<float> FloatData;
 		FloatData.Empty();
 	
-		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MASS;
-	
 		HAPI_AttributeInfo AttributeInfo;
 		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-			
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(GeoId, PartId,
-                AttributeName, AttriInfo, FloatData, 1))
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MASS);
+		if (Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1,  FloatData))
 		{
 			if (FloatData.Num() > 0)
 			{
@@ -841,13 +845,12 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 		TArray<float> FloatData;
 		FloatData.Empty();
 	
-		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MINIMUM_MASS_CLAMP;
-	
 		HAPI_AttributeInfo AttributeInfo;
 		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 			
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(GeoId, PartId,
-            AttributeName, AttriInfo, FloatData, 1))
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MINIMUM_MASS_CLAMP);
+		if (Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, FloatData))
+
 		{
 			if (FloatData.Num() > 0)
 			{
@@ -886,7 +889,13 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 		TArray<float> Data;
 		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MAX_SIZE;
-		if (FHoudiniEngineUtils::HapiGetAttributeFloatOrFloatArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, AttributeName);
+		Accessor.bCanBeArray = true;
+
+		bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data);
+
+		if (bSuccess)
 		{
 			if (Data.Num() > 0)
 			{
@@ -903,11 +912,12 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 	{
 		// Collisions - Size specific data - Damage threshold.
 		// Only add new size specific data if we actually have the sizes
-		HAPI_AttributeInfo AttributeInfo;
-		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 		TArray<int32> Data;
-		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_DAMAGE_THRESHOLD;
-		if (FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_GC_COLLISIONS_DAMAGE_THRESHOLD);
+		Accessor.bCanBeArray = true;
+		bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data);
+		if (bSuccess)
 		{
 			if (Data.Num() > 0)
 			{
@@ -938,9 +948,13 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			FString AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_COLLISION_TYPE;
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
-			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+			if (!bUseDefaultName) 
+				AttributeName = AttributeNameWithPostfix;
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -968,8 +982,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -999,8 +1016,12 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1022,8 +1043,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1046,7 +1070,10 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
 
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+			
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1068,8 +1095,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1091,7 +1121,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeFloatOrFloatArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1113,7 +1147,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeFloatOrFloatArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1135,8 +1173,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeFloatOrFloatArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{
@@ -1158,8 +1199,11 @@ FHoudiniGeometryCollectionTranslator::ApplyGeometryCollectionAttributes(
 			const FString AttributeNameWithPostfix = FString::Printf(TEXT("%s_%d"), *AttributeName, GCSizeSpecIdx);
 			bool bUseDefaultName = (GCSizeSpecIdx == 0 && AttributeNames.Contains(AttributeName));
 			if (!bUseDefaultName) AttributeName = AttributeNameWithPostfix;
-			
-			if (AttributeNames.Contains(AttributeName) && FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(GeoId, PartId, AttributeName, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, AttributeInfo, Data))
+
+			FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_UTF8(*AttributeName));
+			Accessor.bCanBeArray = true;
+
+			if (AttributeNames.Contains(AttributeName) && Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Data))
 			{
 				if (Data.Num() > 0)
 				{

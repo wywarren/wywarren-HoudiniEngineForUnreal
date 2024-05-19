@@ -34,6 +34,7 @@
 #include "HoudiniMaterialTranslator.h"
 
 #include "CoreMinimal.h"
+#include "HoudiniEngineAttributes.h"
 #include "UObject/ObjectMacros.h"
 #include "PhysicsEngine/AggregateGeom.h"
 
@@ -555,7 +556,6 @@ struct HOUDINIENGINE_API FHoudiniMeshTranslator
 
 		// LOD Screensize
 		TArray<float> PartLODScreensize;
-		HAPI_AttributeInfo AttribInfoLODScreensize;
 
 		// When building a mesh, if an associated material already exists, treat
 		// it as up to date, regardless of the MaterialInfo.bHasChanged flag

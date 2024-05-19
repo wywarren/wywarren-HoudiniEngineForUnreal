@@ -26,6 +26,7 @@
 
 #include "HoudiniLevelInstanceUtils.h"
 #include "Editor.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineUtils.h"
 #include "LevelInstance/LevelInstanceActor.h"
 #include "LevelInstance/LevelInstanceTypes.h"
@@ -34,12 +35,11 @@
 TOptional<FHoudiniLevelInstanceParams> FHoudiniLevelInstanceUtils::GetParams(int NodeId, int PartId)
 {
 	// See if a level instance was specified. If it wasn't ignore.
+
+
 	FString OutputName;
-	bool bSuccess = FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
-		NodeId, PartId,
-		HAPI_UNREAL_ATTRIB_LEVEL_INSTANCE_NAME,
-		HAPI_ATTROWNER_INVALID,
-		OutputName);
+	FHoudiniHapiAccessor Accessor(NodeId, PartId, HAPI_UNREAL_ATTRIB_LEVEL_INSTANCE_NAME);
+	bool bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, OutputName);
 
 	if (!bSuccess || OutputName.IsEmpty())
 		return {};
@@ -51,11 +51,11 @@ TOptional<FHoudiniLevelInstanceParams> FHoudiniLevelInstanceUtils::GetParams(int
 
 	// See if a type was specified.
 	int32 Type = 0;
-	bSuccess = FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
-				NodeId, PartId, 
-				HAPI_UNREAL_ATTRIB_LEVEL_INSTANCE_TYPE, 
-				HAPI_ATTROWNER_INVALID, 
-				Type);
+
+
+	Accessor.Init(NodeId, PartId, HAPI_UNREAL_ATTRIB_LEVEL_INSTANCE_TYPE);
+	bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, Type);
+
 	if (bSuccess)
 	{
 		Params.Type = Type == 0 ? ELevelInstanceCreationType::LevelInstance : ELevelInstanceCreationType::PackedLevelActor;
