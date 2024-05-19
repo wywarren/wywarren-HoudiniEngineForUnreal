@@ -72,21 +72,19 @@ class HOUDINIENGINE_API FHoudiniEngineString
 			const HAPI_Session* InSession = nullptr);
 
 		// Array converter, uses a map to avoid redudant calls to HAPI
-		static bool SHArrayToFStringArray(
-			const TArray<int32>& InStringIdArray,
-			TArray<FString>& OutStringArray,
-			const HAPI_Session* InSession = nullptr);
+		static bool SHArrayToFStringArray( const TArray<int32>& InStringIdArray, FString* OutStringArray, const HAPI_Session* InSession = nullptr);
+		static bool SHArrayToFStringArray(const TArray<int32>& InStringIdArray, TArray<FString> & OutStringArray, const HAPI_Session* InSession = nullptr);
 
 		// Array converter, uses string batches and a map to reduce HAPI calls
 		static bool SHArrayToFStringArray_Batch(
 			const TArray<int32>& InStringIdArray,
-			TArray<FString>& OutStringArray,
+			FString* OutStringArray,
 			const HAPI_Session* InSession = nullptr);
 		
 		// Array converter, uses a map to reduce HAPI calls
 		static bool SHArrayToFStringArray_Singles(
 			const TArray<int32>& InStringIdArray,
-			TArray<FString>& OutStringArray,
+			FString*  OutStringArray,
 			const HAPI_Session* InSession = nullptr);
 
 		// Return id of this string.

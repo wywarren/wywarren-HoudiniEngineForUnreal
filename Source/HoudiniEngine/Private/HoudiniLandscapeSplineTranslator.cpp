@@ -28,6 +28,7 @@
 
 #include "HoudiniAssetComponent.h"
 #include "HoudiniEngine.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniLandscapeRuntimeUtils.h"
@@ -702,19 +703,16 @@ FHoudiniLandscapeSplineTranslator::CreateOutputLandscapeSplinesFromHoudiniGeoPar
 
 	// Extract all target landscapes refs as prim attributes
 	TArray<FString> LandscapeRefs;
-	HAPI_AttributeInfo AttrLandscapeRefs;
-	FHoudiniApi::AttributeInfo_Init(&AttrLandscapeRefs);
-	FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_TARGET_LANDSCAPE, AttrLandscapeRefs, LandscapeRefs, 1, HAPI_ATTROWNER_PRIM);
+
+	FHoudiniHapiAccessor Accessor(CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_TARGET_LANDSCAPE);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, LandscapeRefs);
 
 	// Extract all custom output name as prim attributes (used for landscape spline actor names in WP, not applicable to non-WP).
 	TArray<FString> OutputNames;
 	if (bIsUsingWorldPartition)
 	{
-		HAPI_AttributeInfo AttrOutputNames;
-		FHoudiniApi::AttributeInfo_Init(&AttrOutputNames);
-		FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2, AttrOutputNames, OutputNames, 1, HAPI_ATTROWNER_PRIM);
+		Accessor.Init(CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2);
+		Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, OutputNames);
 	}
 
 	// Iterate over curves first, use prim attributes to find the landscape that the splines should be attached to,
@@ -1226,61 +1224,37 @@ FHoudiniLandscapeSplineTranslator::CopySegmentMeshAttributesFromHoudini(
 		bool bFoundDataForMeshIndex = false;
 		
 		FLandscapeSplineSegmentMeshAttributes SegmentAttributes;
-		
-		// mesh ref
-		static constexpr int32 TupleSizeOne = 1;
-		HAPI_AttributeInfo MeshRefAttrInfo;
-		SegmentAttributes.bHasMeshRefAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InNodeId,
-			InPartId,
-			TCHAR_TO_ANSI(*AttrNamePrefix),
-			MeshRefAttrInfo,
-			SegmentAttributes.MeshRef,
-			TupleSizeOne,
-			InAttrOwner,
-			InStartIndex,
-			InCount);
+
+		FHoudiniHapiAccessor Accessor;
+		Accessor.Init(InNodeId, InPartId, TCHAR_TO_ANSI(*AttrNamePrefix));
+		SegmentAttributes.bHasMeshRefAttribute = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, SegmentAttributes.MeshRef);
+
 		if (SegmentAttributes.bHasMeshRefAttribute)
 			bFoundDataForMeshIndex = true;
 
 		// mesh scale
-		static constexpr int32 MeshScaleTupleSize = 3;
-		const FString MeshScaleAttrName = FString::Printf(
-			TEXT("%s%s"), *AttrNamePrefix, TEXT(HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_SCALE_SUFFIX));
+		{
+			static constexpr int32 MeshScaleTupleSize = 3;
+			const FString MeshScaleAttrName = FString::Printf(TEXT("%s%s"), *AttrNamePrefix, TEXT(HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_SCALE_SUFFIX));
 
-		HAPI_AttributeInfo MeshScaleAttrInfo;
-		SegmentAttributes.bHasMeshScaleAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			InNodeId,
-			InPartId,
-			TCHAR_TO_ANSI(*MeshScaleAttrName),
-			MeshScaleAttrInfo,
-			SegmentAttributes.MeshScale,
-			MeshScaleTupleSize,
-			InAttrOwner,
-			InStartIndex,
-			InCount);
-		if (SegmentAttributes.bHasMeshScaleAttribute)
-			bFoundDataForMeshIndex = true;
+			Accessor.Init(InNodeId, InPartId, TCHAR_TO_ANSI(*MeshScaleAttrName));
+			SegmentAttributes.bHasMeshScaleAttribute = Accessor.GetAttributeData(InAttrOwner, 3, SegmentAttributes.MeshScale, InStartIndex, InCount );
+
+			if (SegmentAttributes.bHasMeshScaleAttribute)
+				bFoundDataForMeshIndex = true;
+		}
 
 		// center adjust
-		static constexpr int32 MeshCenterAdjustTupleSize = 2;
-		const FString MeshCenterAdjustAttrName = FString::Printf(
-			TEXT("%s%s"), *AttrNamePrefix, TEXT(HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_CENTER_ADJUST_SUFFIX));
-		
-		HAPI_AttributeInfo MeshCenterAdjustAttrInfo;
-		SegmentAttributes.bHasMeshCenterAdjustAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			InNodeId,
-			InPartId,
-			TCHAR_TO_ANSI(*MeshCenterAdjustAttrName),
-			MeshCenterAdjustAttrInfo,
-			SegmentAttributes.CenterAdjust,
-			MeshCenterAdjustTupleSize,
-			InAttrOwner,
-			InStartIndex,
-			InCount);
-		if (SegmentAttributes.bHasMeshCenterAdjustAttribute)
-			bFoundDataForMeshIndex = true;
+		{
+			static constexpr int32 MeshCenterAdjustTupleSize = 2;
+			const FString MeshCenterAdjustAttrName = FString::Printf(TEXT("%s%s"), *AttrNamePrefix, TEXT(HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_CENTER_ADJUST_SUFFIX));
 
+			Accessor.Init(InNodeId, InPartId, TCHAR_TO_ANSI(*MeshCenterAdjustAttrName));
+			SegmentAttributes.bHasMeshCenterAdjustAttribute = Accessor.GetAttributeData(InAttrOwner, MeshCenterAdjustTupleSize, SegmentAttributes.CenterAdjust, InStartIndex, InCount);
+
+			if (SegmentAttributes.bHasMeshCenterAdjustAttribute)
+				bFoundDataForMeshIndex = true;
+		}
 		// material overrides
 		const FString MaterialAttrNamePrefix = AttrNamePrefix + TEXT(HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_MATERIAL_OVERRIDE_SUFFIX);
 		SegmentAttributes.MeshMaterialOverrideRefs.Reset();
@@ -1297,17 +1271,10 @@ FHoudiniLandscapeSplineTranslator::CopySegmentMeshAttributesFromHoudini(
 				? MaterialAttrNamePrefix + FString::Printf(TEXT("%d"), MaterialOverrideIdx)
 				: MaterialAttrNamePrefix;
 
-			HAPI_AttributeInfo MaterialOverrideAttrInfo;
-			if (!FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-					InNodeId,
-					InPartId,
-					TCHAR_TO_ANSI(*MaterialOverrideAttrName),
-					MaterialOverrideAttrInfo,
-					MaterialOverrides,
-					TupleSizeOne,
-					InAttrOwner,
-					InStartIndex,
-					InCount))
+			Accessor.Init(InNodeId, InPartId, TCHAR_TO_ANSI(*MaterialOverrideAttrName));
+			bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, MaterialOverrides);
+
+			if (!bSuccess)
 			{
 				break;
 			}
@@ -1346,89 +1313,30 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	static constexpr int32 NumPrimsOne = 1;
 
 	// point positions
-	static constexpr int32 PositionTupleSize = 3;
-	HAPI_AttributeInfo PositionAttrInfo;
-	FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_POSITION,
-		PositionAttrInfo,
-		OutCurveAttributes.PointPositions,
-		PositionTupleSize,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	FHoudiniHapiAccessor Accessor(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_POSITION);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 3, OutCurveAttributes.PointPositions, InFirstPointIndex, InNumPoints);
 
 	// rot attribute (quaternion) -- control point rotations
-	static constexpr int32 RotationTupleSize = 4;
-	HAPI_AttributeInfo RotationAttrInfo;
-	OutCurveAttributes.bHasPointRotationAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_ROTATION,
-		RotationAttrInfo,
-		OutCurveAttributes.PointRotations,
-		RotationTupleSize,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_ROTATION);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 4, OutCurveAttributes.PointRotations, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasPointRotationAttribute = bSuccess;
 
-	// control point paint layer names
-	HAPI_AttributeInfo LayerNameAttrInfo;
-	OutCurveAttributes.bHasPointPaintLayerNameAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_PAINT_LAYER_NAME,
-		LayerNameAttrInfo,
-		OutCurveAttributes.PointPaintLayerNames,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_PAINT_LAYER_NAME);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointPaintLayerNames, InFirstPointIndex, InNumPoints);
 
-	// control point raise terrains
-	HAPI_AttributeInfo RaiseTerrainAttrInfo;
-	OutCurveAttributes.bHasPointRaiseTerrainAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_RAISE_TERRAIN,
-		RaiseTerrainAttrInfo,
-		OutCurveAttributes.PointRaiseTerrains,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_RAISE_TERRAIN);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointRaiseTerrains, InFirstPointIndex, InNumPoints);
 
-	// control point lower terrains
-	HAPI_AttributeInfo LowerTerrainAttrInfo;
-	OutCurveAttributes.bHasPointLowerTerrainAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_LOWER_TERRAIN,
-		LowerTerrainAttrInfo,
-		OutCurveAttributes.PointLowerTerrains,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_LOWER_TERRAIN);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointLowerTerrains, InFirstPointIndex, InNumPoints);
 
-	// control point meshes
-	HAPI_AttributeInfo ControlPointMeshAttrInfo;
-	OutCurveAttributes.bHasPointMeshRefAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_MESH,
-		ControlPointMeshAttrInfo,
-		OutCurveAttributes.PointMeshRefs,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_MESH);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointMeshRefs, InFirstPointIndex, InNumPoints);
+
 
 	// control point material overrides
 	OutCurveAttributes.PerMaterialOverridePointRefs.Reset();
-	const FString ControlPointMaterialOverrideAttrNamePrefix = TEXT(
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_MATERIAL_OVERRIDE_SUFFIX);
+	const FString ControlPointMaterialOverrideAttrNamePrefix = TEXT(HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_MATERIAL_OVERRIDE_SUFFIX);
 
 	// Loop until the first iteration where we don't find any material override attributes.
 	int32 MaterialOverrideIdx = 0;
@@ -1441,17 +1349,10 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 			? ControlPointMaterialOverrideAttrNamePrefix + FString::Printf(TEXT("%d"), MaterialOverrideIdx)
 			: ControlPointMaterialOverrideAttrNamePrefix;
 
-		HAPI_AttributeInfo AttrInfo;
-		if (!FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InNodeId,
-			InPartId,
-			TCHAR_TO_ANSI(*AttrName),
-			AttrInfo,
-			MaterialOverrides,
-			TupleSizeOne,
-			HAPI_ATTROWNER_POINT,
-			InFirstPointIndex,
-			InNumPoints))
+		Accessor.Init(InNodeId, InPartId, TCHAR_TO_ANSI(*AttrName));
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, MaterialOverrides);
+
+		if (!bSuccess)
 		{
 			break;
 		}
@@ -1461,70 +1362,21 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	}
 
 	// control point mesh scales
-	static constexpr int32 MeshScaleTupleSize = 3;
-	HAPI_AttributeInfo MeshScaleAttrInfo;
-	OutCurveAttributes.bHasPointMeshScaleAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_MESH HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_SCALE_SUFFIX,
-		MeshScaleAttrInfo,
-		OutCurveAttributes.PointMeshScales,
-		MeshScaleTupleSize,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
 
-	// control point ids
-	HAPI_AttributeInfo ControlPointNameAttrInfo;
-	OutCurveAttributes.bHasPointIdAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_ID,
-		ControlPointNameAttrInfo,
-		OutCurveAttributes.PointIds,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId,InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_MESH HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_MESH_SCALE_SUFFIX);
+	OutCurveAttributes.bHasPointIdAttribute = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 3, OutCurveAttributes.PointMeshScales, InFirstPointIndex, InNumPoints);
 
-	// point half-widths
-	HAPI_AttributeInfo HalfWidthAttrInfo;
-	OutCurveAttributes.bHasPointHalfWidthAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_HALF_WIDTH,
-		HalfWidthAttrInfo,
-		OutCurveAttributes.PointHalfWidths,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_CONTROL_POINT_ID);
+	OutCurveAttributes.bHasPointMeshScaleAttribute = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointIds, InFirstPointIndex, InNumPoints);
 
-	// point side-falloff
-	HAPI_AttributeInfo SideFalloffAttrInfo;
-	OutCurveAttributes.bHasPointSideFalloffAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SIDE_FALLOFF,
-		SideFalloffAttrInfo,
-		OutCurveAttributes.PointSideFalloffs,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_HALF_WIDTH);
+	OutCurveAttributes.bHasPointHalfWidthAttribute = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointHalfWidths, InFirstPointIndex, InNumPoints);
 
-	// point end-falloff
-	HAPI_AttributeInfo EndFalloffAttrInfo;
-	OutCurveAttributes.bHasPointEndFalloffAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_END_FALLOFF,
-		EndFalloffAttrInfo,
-		OutCurveAttributes.PointEndFalloffs,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SIDE_FALLOFF);
+	OutCurveAttributes.bHasPointSideFalloffAttribute = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointSideFalloffs, InFirstPointIndex, InNumPoints);
+
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_END_FALLOFF);
+	OutCurveAttributes.bHasPointEndFalloffAttribute = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointEndFalloffs, InFirstPointIndex, InNumPoints);
 
 	// Connection attributes -- there are separate attributes for the two ends of the connection
 	static const char* ConnectionMeshSocketNameAttrNames[]
@@ -1540,46 +1392,27 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	for (int32 ConnectionIndex = 0; ConnectionIndex < 2; ++ConnectionIndex)
 	{
 		// segment connection[ConnectionIndex] socket names -- vertex/point attribute
-		HAPI_AttributeInfo MeshSocketNameAttrInfo;
-		OutCurveAttributes.bHasVertexConnectionSocketNameAttribute[ConnectionIndex] = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InNodeId,
-			InPartId,
-			ConnectionMeshSocketNameAttrNames[ConnectionIndex],
-			MeshSocketNameAttrInfo,
-			OutCurveAttributes.VertexConnectionSocketNames[ConnectionIndex],
-			TupleSizeOne,
-			HAPI_ATTROWNER_POINT,
-			InFirstPointIndex,
-			InNumPoints);
 
-		// segment connection[ConnectionIndex] tangents -- vertex/point attribute
-		HAPI_AttributeInfo TangentLengthAttrInfo;
-		OutCurveAttributes.bHasVertexConnectionTangentLengthAttribute[ConnectionIndex] = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			InNodeId,
-			InPartId,
-			ConnectionTangentLengthAttrNames[ConnectionIndex],
-			TangentLengthAttrInfo,
-			OutCurveAttributes.VertexConnectionTangentLengths[ConnectionIndex],
-			TupleSizeOne,
-			HAPI_ATTROWNER_POINT,
-			InFirstPointIndex,
-			InNumPoints);
+		Accessor.Init(InNodeId, InPartId, ConnectionMeshSocketNameAttrNames[ConnectionIndex]);
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, OutCurveAttributes.VertexConnectionSocketNames[ConnectionIndex]);
 
-		// segment connection[ConnectionIndex] socket names -- prim attribute
+		OutCurveAttributes.bHasVertexConnectionSocketNameAttribute[ConnectionIndex] = bSuccess;
+
+
+		Accessor.Init(InNodeId, InPartId, ConnectionTangentLengthAttrNames[ConnectionIndex]);
+		OutCurveAttributes.bHasVertexConnectionTangentLengthAttribute[ConnectionIndex] = 
+			Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.PointEndFalloffs, InFirstPointIndex, InNumPoints);
+
+			// segment connection[ConnectionIndex] socket names -- prim attribute
 		if (!OutCurveAttributes.bHasVertexConnectionSocketNameAttribute[ConnectionIndex])
 		{
 			TArray<FString> SocketNames;
-			HAPI_AttributeInfo PrimMeshSocketNameAttrInfo;
-			OutCurveAttributes.bHasPrimConnectionSocketNameAttribute[ConnectionIndex] = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-				InNodeId,
-				InPartId,
-				ConnectionMeshSocketNameAttrNames[ConnectionIndex],
-				PrimMeshSocketNameAttrInfo,
-				SocketNames,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne);
+			Accessor.Init(InNodeId, InPartId, ConnectionMeshSocketNameAttrNames[ConnectionIndex]);
+			bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, SocketNames, InPrimIndex, NumPrimsOne);
+
+			OutCurveAttributes.bHasPrimConnectionSocketNameAttribute[ConnectionIndex] = bSuccess;
+				
+
 			if (OutCurveAttributes.bHasPrimConnectionSocketNameAttribute[ConnectionIndex] && SocketNames.Num() > 0)
 			{
 				OutCurveAttributes.PrimConnectionSocketNames[ConnectionIndex] = SocketNames[0];
@@ -1594,17 +1427,10 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 		if (!OutCurveAttributes.bHasVertexConnectionTangentLengthAttribute[ConnectionIndex])
 		{
 			TArray<float> Tangents;
-			HAPI_AttributeInfo PrimTangentLengthAttrInfo;
-			OutCurveAttributes.bHasPrimConnectionTangentLengthAttribute[ConnectionIndex] = FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-				InNodeId,
-				InPartId,
-				ConnectionTangentLengthAttrNames[ConnectionIndex],
-				PrimTangentLengthAttrInfo,
-				Tangents,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne);
+			Accessor.Init(InNodeId, InPartId, ConnectionTangentLengthAttrNames[ConnectionIndex]);
+			bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, Tangents, InFirstPointIndex, NumPrimsOne);
+			OutCurveAttributes.bHasPrimConnectionTangentLengthAttribute[ConnectionIndex] = bSuccess;
+
 			if (OutCurveAttributes.bHasPrimConnectionTangentLengthAttribute[ConnectionIndex] && Tangents.Num() > 0)
 			{
 				OutCurveAttributes.PrimConnectionTangentLengths[ConnectionIndex] = Tangents[0];
@@ -1617,98 +1443,42 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	}
 
 	// segment paint layer name -- vertex/point
-	HAPI_AttributeInfo VertexLayerNameAttrInfo;
-	OutCurveAttributes.bHasVertexPaintLayerNameAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_PAINT_LAYER_NAME,
-		VertexLayerNameAttrInfo,
-		OutCurveAttributes.VertexPaintLayerNames,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_PAINT_LAYER_NAME);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, OutCurveAttributes.VertexPaintLayerNames, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasVertexPaintLayerNameAttribute = bSuccess;
 
 	// segment raise terrains -- vertex/point
-	HAPI_AttributeInfo VertexRaiseTerrainAttrInfo;
-	OutCurveAttributes.bHasVertexRaiseTerrainAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_RAISE_TERRAIN,
-		VertexRaiseTerrainAttrInfo,
-		OutCurveAttributes.VertexRaiseTerrains,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
 
-	// segment lower terrains -- vertex/point
-	HAPI_AttributeInfo VertexLowerTerrainAttrInfo;
-	OutCurveAttributes.bHasVertexLowerTerrainAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_LOWER_TERRAIN,
-		VertexLowerTerrainAttrInfo,
-		OutCurveAttributes.VertexLowerTerrains,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
-	
-	// segment edit layer -- vertex/point
-	HAPI_AttributeInfo VertexEditLayerAttrInfo;
-	OutCurveAttributes.bHasVertexEditLayerAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_NAME,
-		VertexEditLayerAttrInfo,
-		OutCurveAttributes.VertexEditLayers,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_RAISE_TERRAIN);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1,  OutCurveAttributes.VertexRaiseTerrains, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasVertexRaiseTerrainAttribute = bSuccess;
 
-	// segment clear edit layer -- vertex/point
-	HAPI_AttributeInfo VertexEditLayerClearAttrInfo;
-	OutCurveAttributes.bHasVertexEditLayerClearAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_CLEAR,
-		VertexEditLayerClearAttrInfo,
-		OutCurveAttributes.VertexEditLayersClear,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_LOWER_TERRAIN);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.VertexLowerTerrains, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasVertexLowerTerrainAttribute = bSuccess;
 
-	// segment clear edit layer -- vertex/point
-	HAPI_AttributeInfo VertexEditLayerAfterAttrInfo;
-	OutCurveAttributes.bHasVertexEditLayerAfterAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InNodeId,
-		InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_AFTER,
-		VertexEditLayerAfterAttrInfo,
-		OutCurveAttributes.VertexEditLayersAfter,
-		TupleSizeOne,
-		HAPI_ATTROWNER_POINT,
-		InFirstPointIndex,
-		InNumPoints);
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_NAME);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.VertexEditLayers, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasVertexEditLayerAttribute = bSuccess;
+
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_CLEAR);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.VertexEditLayersClear, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasVertexEditLayerClearAttribute = bSuccess;
+
+	Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_AFTER);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, OutCurveAttributes.VertexEditLayersAfter, InFirstPointIndex, InNumPoints);
+	OutCurveAttributes.bHasVertexEditLayerAfterAttribute = bSuccess;
 
 	// segment paint layer name
 	if (!OutCurveAttributes.bHasVertexPaintLayerNameAttribute)
 	{
 		TArray<FString> SegmentPaintLayerName;
-		HAPI_AttributeInfo PrimLayerNameAttrInfo;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-				InNodeId,
-				InPartId,
-				HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_PAINT_LAYER_NAME,
-				PrimLayerNameAttrInfo,
-				SegmentPaintLayerName,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne) && SegmentPaintLayerName.Num() > 0)
+
+		Accessor.Init(InNodeId, InPartId,HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_PAINT_LAYER_NAME);
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, SegmentPaintLayerName, InPrimIndex, NumPrimsOne);
+
+		if (bSuccess && SegmentPaintLayerName.Num() > 0)
 		{
 			OutCurveAttributes.PrimPaintLayerName = SegmentPaintLayerName[0];
 			OutCurveAttributes.bHasPrimPaintLayerNameAttribute = true;
@@ -1729,16 +1499,13 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	{
 		TArray<int32> RaiseTerrains;
 		HAPI_AttributeInfo PrimRaiseTerrainAttrInfo;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-				InNodeId,
-				InPartId,
-				HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_RAISE_TERRAIN,
-				PrimRaiseTerrainAttrInfo,
-				RaiseTerrains,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne) && RaiseTerrains.Num() > 0)
+
+		Accessor.Init(InNodeId,InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_RAISE_TERRAIN);
+		Accessor.GetInfo(PrimRaiseTerrainAttrInfo, HAPI_ATTROWNER_INVALID);
+		PrimRaiseTerrainAttrInfo.tupleSize = 1;
+		bSuccess = Accessor.GetAttributeData(PrimRaiseTerrainAttrInfo, RaiseTerrains, InPrimIndex, NumPrimsOne);
+
+		if (bSuccess && RaiseTerrains.Num() > 0)
 		{
 			OutCurveAttributes.bPrimRaiseTerrain = RaiseTerrains[0];
 			OutCurveAttributes.bHasPrimRaiseTerrainAttribute = true;
@@ -1758,17 +1525,13 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	if (!OutCurveAttributes.bHasVertexLowerTerrainAttribute)
 	{
 		TArray<int32> LowerTerrains;
+
 		HAPI_AttributeInfo PrimLowerTerrainAttrInfo;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-				InNodeId,
-				InPartId,
-				HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_LOWER_TERRAIN,
-				PrimLowerTerrainAttrInfo,
-				LowerTerrains,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne) && LowerTerrains.Num() > 0)
+		Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE_SEGMENT_LOWER_TERRAIN);
+		Accessor.GetInfo(PrimLowerTerrainAttrInfo, HAPI_ATTROWNER_PRIM);
+		bSuccess = Accessor.GetAttributeData(PrimLowerTerrainAttrInfo, LowerTerrains);
+
+		if (bSuccess && LowerTerrains.Num() > 0)
 		{
 			OutCurveAttributes.bPrimLowerTerrain = LowerTerrains[0];
 			OutCurveAttributes.bHasPrimLowerTerrainAttribute = true;
@@ -1788,17 +1551,10 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	if (!OutCurveAttributes.bHasVertexEditLayerAttribute)
 	{
 		TArray<FString> EditLayers;
-		HAPI_AttributeInfo PrimEditLayerAttrInfo;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-				InNodeId,
-				InPartId,
-				HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_NAME,
-				PrimEditLayerAttrInfo,
-				EditLayers,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne) && EditLayers.Num() > 0)
+		Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_NAME);
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, EditLayers);
+
+		if (bSuccess && EditLayers.Num() > 0)
 		{
 			OutCurveAttributes.PrimEditLayer = EditLayers[0];
 			OutCurveAttributes.bHasPrimEditLayerAttribute = true;
@@ -1818,16 +1574,12 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	{
 		TArray<int32> EditLayersClear;
 		HAPI_AttributeInfo PrimEditLayerClearAttrInfo;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-				InNodeId,
-				InPartId,
-				HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_CLEAR,
-				PrimEditLayerClearAttrInfo,
-				EditLayersClear,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne) && EditLayersClear.Num() > 0)
+
+		Accessor.Init(InNodeId,InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_CLEAR);
+
+		bSuccess = Accessor.GetAttributeData(PrimEditLayerClearAttrInfo, EditLayersClear, InPrimIndex, NumPrimsOne);
+
+		if (bSuccess && EditLayersClear.Num() > 0)
 		{
 			OutCurveAttributes.bPrimEditLayerClear = static_cast<bool>(EditLayersClear[0]);
 			OutCurveAttributes.bHasPrimEditLayerClearAttribute = true;
@@ -1846,17 +1598,10 @@ FHoudiniLandscapeSplineTranslator::CopyCurveAttributesFromHoudini(
 	if (!OutCurveAttributes.bHasVertexEditLayerAfterAttribute)
 	{
 		TArray<FString> EditLayersAfter;
-		HAPI_AttributeInfo PrimEditLayerAfterAttrInfo;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-				InNodeId,
-				InPartId,
-				HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_AFTER,
-				PrimEditLayerAfterAttrInfo,
-				EditLayersAfter,
-				TupleSizeOne,
-				HAPI_ATTROWNER_PRIM,
-				InPrimIndex,
-				NumPrimsOne) && EditLayersAfter.Num() > 0)
+		Accessor.Init(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_AFTER);
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, EditLayersAfter, InPrimIndex, NumPrimsOne);
+
+		if (bSuccess && EditLayersAfter.Num() > 0)
 		{
 			OutCurveAttributes.PrimEditLayerAfter = EditLayersAfter[0];
 			OutCurveAttributes.bHasPrimEditLayerAfterAttribute = true;

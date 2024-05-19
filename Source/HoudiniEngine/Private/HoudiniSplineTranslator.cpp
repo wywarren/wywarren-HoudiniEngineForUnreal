@@ -39,6 +39,7 @@
 #include "Components/SplineComponent.h"
 
 #include "EditorViewportClient.h"
+#include "HoudiniEngineAttributes.h"
 #include "Engine/Selection.h"
 
 #include "HoudiniEnginePrivatePCH.h"
@@ -324,8 +325,9 @@ FHoudiniSplineTranslator::UpdateHoudiniCurve(UHoudiniSplineComponent* HoudiniSpl
 	TArray<float> RefinedCurvePositions;
 	HAPI_AttributeInfo AttributeRefinedCurvePositions;
 	FHoudiniApi::AttributeInfo_Init(&AttributeRefinedCurvePositions);
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		CurveNode_id, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeRefinedCurvePositions, RefinedCurvePositions))
+
+	FHoudiniHapiAccessor Accessor(CurveNode_id, 0, HAPI_UNREAL_ATTRIB_POSITION);
+	if (!Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, RefinedCurvePositions))
 	{
 		return false;
 	}
@@ -392,14 +394,14 @@ bool FHoudiniSplineTranslator::UpdateHoudiniCurveLegacy(UHoudiniSplineComponent*
 	// We need to get the NodeInfo to get the parent id
 	HAPI_NodeInfo NodeInfo;
 	FHoudiniApi::NodeInfo_Init(&NodeInfo);
-	HOUDINI_CHECK_ERROR_RETURN(	FHoudiniApi::GetNodeInfo(
-		FHoudiniEngine::Get().GetSession(), CurveNode_id, &NodeInfo), false);
+	HOUDINI_CHECK_ERROR_RETURN(	FHoudiniApi::GetNodeInfo(FHoudiniEngine::Get().GetSession(), CurveNode_id, &NodeInfo), false);
 
 	TArray<float> RefinedCurvePositions;
 	HAPI_AttributeInfo AttributeRefinedCurvePositions;
 	FHoudiniApi::AttributeInfo_Init(&AttributeRefinedCurvePositions);
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		CurveNode_id, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeRefinedCurvePositions, RefinedCurvePositions))
+
+	FHoudiniHapiAccessor Accessor(CurveNode_id, 0 , HAPI_UNREAL_ATTRIB_POSITION);
+	if (!Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, RefinedCurvePositions))
 	{
 		return false;
 	}
@@ -1801,23 +1803,21 @@ FHoudiniSplineTranslator::CreateOutputSplinesFromHoudiniGeoPartObject(
 		return false;	
 
 	// Extract all curve points from this HGPO
+
 	TArray<float> RefinedCurvePositions;
-	HAPI_AttributeInfo AttributeRefinedCurvePositions;
-	FHoudiniApi::AttributeInfo_Init(&AttributeRefinedCurvePositions);
-	FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_POSITION, AttributeRefinedCurvePositions, RefinedCurvePositions);
+	FHoudiniHapiAccessor Accessor;
+	Accessor.Init(CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_POSITION);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, RefinedCurvePositions);
 
 	TArray<float> RefinedCurveRotations;
 	HAPI_AttributeInfo AttributeRefinedCurveRotations;
-	FHoudiniApi::AttributeInfo_Init(&AttributeRefinedCurveRotations);
-	FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_ROTATION, AttributeRefinedCurveRotations, RefinedCurveRotations);
+	Accessor.Init(CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_ROTATION);
+	Accessor.GetInfo(AttributeRefinedCurveRotations, HAPI_ATTROWNER_INVALID);
+	Accessor.GetAttributeData(AttributeRefinedCurveRotations, RefinedCurveRotations);
 
 	TArray<float> RefinedCurveScales;
-	HAPI_AttributeInfo AttributeRefinedCurveScales;
-	FHoudiniApi::AttributeInfo_Init(&AttributeRefinedCurveScales);
-	FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_SCALE, AttributeRefinedCurveScales, RefinedCurveScales);
+	Accessor.Init(CurveNodeId, CurvePartId, HAPI_UNREAL_ATTRIB_SCALE);
+	Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, RefinedCurveScales);
 
 	HAPI_CurveInfo CurveInfo;
 	FHoudiniApi::CurveInfo_Init(&CurveInfo);
@@ -2167,15 +2167,9 @@ FHoudiniSplineTranslator::CreateAllSplinesFromHoudiniOutput(UHoudiniOutput* InOu
 		TArray<int> IntData;
 		IntData.Empty();
 
-		if (!FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-			CurHGPO.GeoId, CurHGPO.PartId, HAPI_UNREAL_ATTRIB_OUTPUT_UNREAL_CURVE, 
-			CurveOutputAttriInfo, IntData, 1, HAPI_ATTROWNER_PRIM, 0, 1))
-			continue;
-
-		if (IntData.Num() <= 0)
-			continue;
-		
-		if (IntData[0] == 0)
+		FHoudiniHapiAccessor Accessor(CurHGPO.GeoId, CurHGPO.PartId, HAPI_UNREAL_ATTRIB_OUTPUT_UNREAL_CURVE);
+		bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, IntData, 0, 1);
+		if (!bSuccess || IntData.Num() <= 0 || IntData[0] == 0)
 			continue;
 
 		HAPI_AttributeInfo LinearAttriInfo;
@@ -2183,9 +2177,10 @@ FHoudiniSplineTranslator::CreateAllSplinesFromHoudiniOutput(UHoudiniOutput* InOu
 		IntData.Empty();
 
 		bool bIsLinear = false;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-			CurHGPO.GeoId, CurHGPO.PartId, HAPI_UNREAL_ATTRIB_OUTPUT_UNREAL_CURVE_LINEAR,
-			LinearAttriInfo, IntData, 1, HAPI_ATTROWNER_PRIM, 0, 1))
+
+
+		Accessor.Init(CurHGPO.GeoId, CurHGPO.PartId, HAPI_UNREAL_ATTRIB_OUTPUT_UNREAL_CURVE_LINEAR);
+		if (Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, IntData, 0, 1))
 		{
 			if (IntData.Num() > 0)
 				bIsLinear = IntData[0] != 0;
@@ -2195,14 +2190,11 @@ FHoudiniSplineTranslator::CreateAllSplinesFromHoudiniOutput(UHoudiniOutput* InOu
 		FHoudiniApi::AttributeInfo_Init(&ClosedAttriInfo);
 		IntData.Empty();
 
+		Accessor.Init(CurHGPO.GeoId, CurHGPO.PartId, HAPI_UNREAL_ATTRIB_OUTPUT_UNREAL_CURVE_CLOSED);
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, IntData, 0, 1 );
 		bool bIsClosed = false;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-			CurHGPO.GeoId, CurHGPO.PartId, HAPI_UNREAL_ATTRIB_OUTPUT_UNREAL_CURVE_CLOSED,
-			ClosedAttriInfo, IntData, 1, HAPI_ATTROWNER_PRIM, 0, 1))
-		{
-			if (IntData.Num() > 0)
-				bIsClosed = IntData[0] != 0;
-		}
+		if (IntData.Num() > 0)
+			bIsClosed = IntData[0] != 0;
 
 		// We output curve to Unreal Spline only for now
 		// May support output to Houdini Spline later

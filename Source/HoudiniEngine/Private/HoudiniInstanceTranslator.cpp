@@ -69,6 +69,7 @@
 	#include "LevelEditorViewport.h"
 	#include "MeshPaintHelpers.h"
 #endif
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniFoliageUtils.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE
@@ -3305,7 +3306,9 @@ FHoudiniInstanceTranslator::GetMaterialOverridesFromAttributes(
 			OutMaterialAttributes.Add("");
 		}
 
-		bool Res = FHoudiniEngineUtils::HapiGetAttributeDataAsString(InGeoNodeId, InPartId, TCHAR_TO_ANSI(*AttribName), MaterialAttributeInfo, MatName, 0, HAPI_ATTROWNER_INVALID, InAttributeIndex, 1);
+		FHoudiniHapiAccessor Accessor(InGeoNodeId, InPartId, TCHAR_TO_ANSI(*AttribName));
+		bool Res = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, MatName, InAttributeIndex, 1);
+
 		if (!Res)
 		{
 			HOUDINI_LOG_WARNING(TEXT("[FHoudiniInstanceTranslator::GetMaterialOverridesFromAttributes]: Failed to get material override index %d."), OverrideIdx);
@@ -3471,25 +3474,22 @@ FHoudiniInstanceTranslator::IsSplitInstancer(const int32& InGeoId, const int32& 
 	{
 		// Try on primitive
 		Owner = HAPI_ATTROWNER_PRIM;
-		bSplitMeshInstancer = FHoudiniEngineUtils::HapiCheckAttributeExists(
-			InGeoId, InPartId, HAPI_UNREAL_ATTRIB_SPLIT_INSTANCES, Owner);
+		bSplitMeshInstancer = FHoudiniEngineUtils::HapiCheckAttributeExists(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_SPLIT_INSTANCES, Owner);
 	}
 
 	if (!bSplitMeshInstancer)
 		return false;
 
-	HAPI_AttributeInfo AttributeInfo;
 	TArray<int32> IntData;
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_SPLIT_INSTANCES,
-		AttributeInfo, IntData, 0, Owner, 0, 1))
+
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_SPLIT_INSTANCES);
+	bool bSuccess = Accessor.GetAttributeData(Owner, IntData, 0, 1);
+
+	if (!bSuccess || IntData.IsEmpty())
 	{
 		return false;
 	}
 	
-	if (!AttributeInfo.exists || AttributeInfo.count <= 0)
-		return false;
-
 	return (IntData[0] != 0);
 }
 
@@ -3525,11 +3525,12 @@ FHoudiniInstanceTranslator::IsFoliageInstancer(const int32& InGeoId, const int32
 	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
 	// Get the first attribute value as Int
-	FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_FOLIAGE_INSTANCER,
-		AttributeInfo, IntData, 0, Owner, 0, 1);
 
-	if (!AttributeInfo.exists || AttributeInfo.count <= 0)
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_FOLIAGE_INSTANCER);
+
+	bool bSuccess = Accessor.GetAttributeData(Owner, IntData, 0, 1);
+
+	if (!bSuccess || IntData.IsEmpty())
 		return false;
 
 	return (IntData[0] != 0);
@@ -3666,15 +3667,13 @@ FHoudiniInstanceTranslator::GetInstancerSplitAttributesAndValues(
 
 	// Look for the unreal_split_attr attribute
 	// This attribute indicates the name of the point attribute that we'll use to split the instances further
-	HAPI_AttributeInfo SplitAttribInfo;
-	FHoudiniApi::AttributeInfo_Init(&SplitAttribInfo);
 
 	TArray<FString> StringData;
-	bHasSplitAttribute = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_SPLIT_ATTR,
-		SplitAttribInfo, StringData, 1, InSplitAttributeOwner, 0, 1);
 
-	if (!bHasSplitAttribute || !SplitAttribInfo.exists || StringData.Num() <= 0)
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_SPLIT_ATTR);
+	bHasSplitAttribute = Accessor.GetAttributeData(InSplitAttributeOwner, 1, StringData, 0, 1);
+
+	if (!bHasSplitAttribute || StringData.Num() <= 0)
 		return false;
 
 	OutSplitAttributeName = StringData[0];
@@ -3683,16 +3682,8 @@ FHoudiniInstanceTranslator::GetInstancerSplitAttributesAndValues(
 	OutAllSplitAttributeValues.Empty();
 	if (!OutSplitAttributeName.IsEmpty())
 	{
-		//HAPI_AttributeInfo SplitAttribInfo;
-		FHoudiniApi::AttributeInfo_Init(&SplitAttribInfo);
-		bool bSplitAttrFound = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InGeoId,
-			InPartId,
-			TCHAR_TO_ANSI(*OutSplitAttributeName),
-			SplitAttribInfo, 
-			OutAllSplitAttributeValues,
-			1,
-			InSplitAttributeOwner);
+		Accessor.Init(InGeoId, InPartId, TCHAR_TO_ANSI(*OutSplitAttributeName));
+		bool bSplitAttrFound = Accessor.GetAttributeData(InSplitAttributeOwner, 1, OutAllSplitAttributeValues);
 
 		if (!bSplitAttrFound || OutAllSplitAttributeValues.Num() <= 0)
 		{
@@ -3726,9 +3717,10 @@ FHoudiniInstanceTranslator::HasHISMAttribute(const HAPI_NodeId& GeoId, const HAP
 	TArray<int32> IntData;
 	IntData.Empty();
 
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_HIERARCHICAL_INSTANCED_SM,
-		AttriInfo, IntData, 1, HAPI_ATTROWNER_INVALID, 0, 1))
+	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_HIERARCHICAL_INSTANCED_SM);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1,  IntData, 0, 1);
+
+	if (!bSuccess)
 	{
 		return false;
 	}
@@ -3749,9 +3741,10 @@ FHoudiniInstanceTranslator::HasForceInstancerAttribute(const HAPI_NodeId& GeoId,
 	TArray<int32> IntData;
 	IntData.Empty();
 
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_FORCE_INSTANCER,
-		AttriInfo, IntData, 1, HAPI_ATTROWNER_INVALID, 0, 1))
+	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_FORCE_INSTANCER);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, IntData, 0, 1);
+
+	if (!bSuccess)
 	{
 		return false;
 	}
@@ -3914,15 +3907,17 @@ FHoudiniInstanceTranslator::GetPerInstanceCustomData(
 	// First look for the number of custom floats
 	// If we dont have the attribute, or it is set to zero, we dont have PerInstanceCustomData
 	// HAPI_UNREAL_ATTRIB_INSTANCE_NUM_CUSTOM_FLOATS "unreal_num_custom_floats"	
-	HAPI_AttributeInfo AttribInfoNumCustomFloats;
-	FHoudiniApi::AttributeInfo_Init(&AttribInfoNumCustomFloats);
 
 	TArray<int32> CustomFloatsArray;
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InGeoNodeId, InPartId,
-		HAPI_UNREAL_ATTRIB_INSTANCE_NUM_CUSTOM_FLOATS,
-		AttribInfoNumCustomFloats,
-		CustomFloatsArray))
+
+	FHoudiniHapiAccessor Accessor(InGeoNodeId, InPartId, HAPI_UNREAL_ATTRIB_INSTANCE_NUM_CUSTOM_FLOATS);
+	HAPI_AttributeInfo AttribInfo;
+	Accessor.GetInfo(AttribInfo);
+
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, CustomFloatsArray);
+
+
+	if (!bSuccess)
 	{
 		return false;
 	}
@@ -3954,16 +3949,11 @@ FHoudiniInstanceTranslator::GetPerInstanceCustomData(
 		FString CurrentAttr = TEXT(HAPI_UNREAL_ATTRIB_INSTANCE_CUSTOM_DATA_PREFIX) + FString::FromInt(nIdx);
 		
 		// TODO? Tuple values Array attributes?
-		HAPI_AttributeInfo AttribInfo;
-		FHoudiniApi::AttributeInfo_Init(&AttribInfo);
+		Accessor.Init(InGeoNodeId, InPartId, TCHAR_TO_ANSI(*CurrentAttr));
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, AllCustomDataAttributeValues[nIdx]);
 
 		// Retrieve the custom data values
-		if (!FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			InGeoNodeId, InPartId,
-			TCHAR_TO_ANSI(*CurrentAttr),
-			AttribInfo,
-			AllCustomDataAttributeValues[nIdx],
-			1))
+		if (!bSuccess)
 		{
 			// Skip, we'll fill the values with zeros later on
 			continue;

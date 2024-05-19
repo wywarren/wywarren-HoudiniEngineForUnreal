@@ -43,7 +43,6 @@
 #include "HoudiniAssetActor.h"
 #include "HoudiniAssetComponent.h"
 #include "HoudiniEngine.h"
-#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineEditorSettings.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineRuntime.h"
@@ -93,6 +92,8 @@
 
 #include <vector>
 
+#include "HoudiniEngineAttributes.h"
+#include "HoudiniEngineAttributesTemp.h"
 #include "Serialization/JsonSerializer.h"
 
 #if WITH_EDITOR
@@ -3471,18 +3472,8 @@ FHoudiniEngineUtils::HapiSetAttributeFloatData(
 	if (InFloatData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	return FHoudiniEngineAttributes::SetFloat(Args, InAttributeInfo, InFloatData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
     return FHoudiniEngineUtils::HapiSetAttributeFloatData(InFloatData.GetData(), InNodeId, InPartId, InAttributeName,
                                                           InAttributeInfo, bAttemptRunLengthEncoding);
-	*/
 }
 
 
@@ -3500,16 +3491,6 @@ FHoudiniEngineUtils::HapiSetAttributeFloatData(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const float> FloatData(InFloatData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetFloat(Args, InAttributeInfo, FloatData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 
 	if (bAttemptRunLengthEncoding)
@@ -3564,7 +3545,6 @@ FHoudiniEngineUtils::HapiSetAttributeFloatData(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -3579,18 +3559,8 @@ FHoudiniEngineUtils::HapiSetAttributeIntData(
 	if (InIntData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int32> Data(InIntData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, InIntData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeIntData(InIntData.GetData(), InNodeId, InPartId, InAttributeName,
                                                         InAttributeInfo, bAttemptRunLengthEncoding);
-	*/
 }
 
 HAPI_Result
@@ -3649,15 +3619,6 @@ FHoudiniEngineUtils::HapiSetAttributeIntData(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const int32> Data(InIntData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	if (bAttemptRunLengthEncoding)
 	{
         TArray<int> RunLengths = RunLengthEncode(InIntData, InAttributeInfo.tupleSize, InAttributeInfo.count);
@@ -3713,7 +3674,6 @@ FHoudiniEngineUtils::HapiSetAttributeIntData(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -3724,20 +3684,8 @@ FHoudiniEngineUtils::HapiSetAttributeUIntData(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
-	UE_DEPRECATED(5.4, "Implement the FHoudiniEngineAttributes::SetXXX version instead.")
-
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int64> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InIntData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InIntData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -3748,19 +3696,8 @@ FHoudiniEngineUtils::HapiSetAttributeUIntData(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const int64> Data(InIntData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InIntData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -3774,18 +3711,8 @@ FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 	if (InByteData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt8(Args, InAttributeInfo, InByteData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 		InByteData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -3800,16 +3727,7 @@ FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
-	
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
 
-	TArrayView<const int8> Data(InByteData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt8(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -3840,7 +3758,6 @@ FHoudiniEngineUtils::HapiSetAttributeInt8Data(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -3854,18 +3771,8 @@ FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 	if (InByteData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetUInt8(Args, InAttributeInfo, InByteData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 		InByteData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -3881,16 +3788,6 @@ FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const uint8> Data(InByteData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetUInt8(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -3921,7 +3818,6 @@ FHoudiniEngineUtils::HapiSetAttributeUInt8Data(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -3937,21 +3833,8 @@ FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 	if (InShortData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
-		return HAPI_RESULT_INVALID_ARGUMENT;
-
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt16(Args, InAttributeInfo, InShortData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 		InShortData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -3967,16 +3850,6 @@ FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt16(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -4007,7 +3880,6 @@ FHoudiniEngineUtils::HapiSetAttributeInt16Data(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -4018,18 +3890,8 @@ FHoudiniEngineUtils::HapiSetAttributeUInt16Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int16> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, InShortData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeIntData(
 		InShortData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -4040,18 +3902,8 @@ FHoudiniEngineUtils::HapiSetAttributeUInt16Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const int32> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt32(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeIntData(
 		InShortData, InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -4065,18 +3917,8 @@ FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 	if (InInt64Data.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int32> Data(InShortData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InInt64Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InInt64Data.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -4092,16 +3934,6 @@ FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const int64> Data(InInt64Data, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 #if PLATFORM_LINUX
 	TArray<HAPI_Int64> HData;
 	HData.Reserve(InAttributeInfo.count * InAttributeInfo.tupleSize);
@@ -4180,7 +4012,6 @@ FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -4191,18 +4022,8 @@ FHoudiniEngineUtils::HapiSetAttributeUInt64Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const int64> Data(InInt64Data, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InInt64Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InInt64Data, InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -4213,19 +4034,8 @@ FHoudiniEngineUtils::HapiSetAttributeUInt64Data(
 	const FString& InAttributeName,
 	const HAPI_AttributeInfo& InAttributeInfo)
 {
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const int64> Data(InInt64Data, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	/*
-	return FHoudiniEngineAttributes::SetInt64(Args, InAttributeInfo, InInt64Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
 	return FHoudiniEngineUtils::HapiSetAttributeInt64Data(
 		InInt64Data, InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -4239,18 +4049,8 @@ FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 	if (InDoubleData.Num() != InAttributeInfo.count * InAttributeInfo.tupleSize)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-	
-	return FHoudiniEngineAttributes::SetDouble(Args, InAttributeInfo, InDoubleData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	return FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 		InDoubleData.GetData(), InNodeId, InPartId, InAttributeName, InAttributeInfo);
-	*/
 }
 
 HAPI_Result
@@ -4266,16 +4066,6 @@ FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 	if (InAttributeInfo.count <= 0 || InAttributeInfo.tupleSize < 1)
 		return HAPI_RESULT_INVALID_ARGUMENT;
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	TArrayView<const double> Data(InDoubleData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetDouble(Args, InAttributeInfo, Data) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	HAPI_Result Result = HAPI_RESULT_FAILURE;
 	int32 ChunkSize = THRIFT_MAX_CHUNKSIZE / InAttributeInfo.tupleSize;
 	if (InAttributeInfo.count > ChunkSize)
@@ -4306,7 +4096,6 @@ FHoudiniEngineUtils::HapiSetAttributeDoubleData(
 	}
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -4419,7 +4208,7 @@ FHoudiniEngineUtils::HapiSetAttributeStringMap(
 
 	FHoudiniEngineRawStrings IndexedRawStrings = InIndexedStringMap.GetRawStrings();
 	TArray<int> IndexArray = InIndexedStringMap.GetIds();
-	
+
 	HAPI_Result Result = FHoudiniApi::SetAttributeIndexedStringData(
 	    FHoudiniEngine::Get().GetSession(),
 		InNodeId, InPartId, TCHAR_TO_ANSI(*InAttributeName),
@@ -4438,16 +4227,6 @@ FHoudiniEngineUtils::HapiSetAttributeStringData(
 {
     H_SCOPED_FUNCTION_DYNAMIC_LABEL(InAttributeName);
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const double> Data(InDoubleData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetString(Args, InAttributeInfo, InStringArray) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	TArray<const char *> StringDataArray;
 	for (const auto& CurrentString : InStringArray)
 	{
@@ -4490,7 +4269,6 @@ FHoudiniEngineUtils::HapiSetAttributeStringData(
 	FreeRawStringMemory(StringDataArray);
 
 	return Result;
-	*/
 }
 
 HAPI_Result
@@ -4504,16 +4282,6 @@ FHoudiniEngineUtils::HapiSetAttributeStringArrayData(
 {
     H_SCOPED_FUNCTION_DYNAMIC_LABEL(InAttributeName);
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	//TArrayView<const double> Data(InDoubleData, InAttributeInfo.count);
-	return FHoudiniEngineAttributes::SetStringArray(Args, InAttributeInfo, InStringArray, SizesFixedArray) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-
-	/*
 	TArray<const char*> StringDataArray;
 	for (const auto& CurrentString : InStringArray)
 	{
@@ -4564,7 +4332,6 @@ FHoudiniEngineUtils::HapiSetAttributeStringArrayData(
 	FreeRawStringMemory(StringDataArray);
 
 	return Result;
-	*/
 }
 
 
@@ -4575,15 +4342,6 @@ FHoudiniEngineUtils::HapiSetAttributeDictionaryData(const TArray<FString>& JSOND
 {
 	H_SCOPED_FUNCTION_DYNAMIC_LABEL(InAttributeName);
 
-	FHoudiniEngineAttributeArgs Args;
-	Args.NodeId = InNodeId;
-	Args.PartId = InPartId;
-	Args.AttributeName = StringCast<ANSICHAR>(*InAttributeName).Get();
-	Args.Flags = EHoudiniEngineAttributeFlags::AllowMultithreading | EHoudiniEngineAttributeFlags::AllowTypeConversion;
-
-	return FHoudiniEngineAttributes::SetDictionary(Args, InAttributeInfo, JSONData) ? HAPI_RESULT_SUCCESS : HAPI_RESULT_FAILURE;
-	
-	/*
 	TArray<const char *> RawStringData;
 	for (const FString& Data : JSONData)
 	{
@@ -4625,7 +4383,6 @@ FHoudiniEngineUtils::HapiSetAttributeDictionaryData(const TArray<FString>& JSOND
 	FreeRawStringMemory(RawStringData);
 
 	return Result;
-	*/
 }
 
 
@@ -5055,553 +4812,6 @@ FHoudiniEngineUtils::HapiGetGroupMembership(
 }
 
 bool
-FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-	const HAPI_NodeId& InGeoId,
-	const HAPI_PartId& InPartId,
-	const char * InAttribName,
-	HAPI_AttributeInfo& OutAttributeInfo,
-	TArray<float>& OutData,
-	int32 InTupleSize,
-	HAPI_AttributeOwner InOwner,
-	const int32& InStartIndex,
-	const int32& InCount)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniEngineUtils::HapiGetAttributeDataAsFloat"));
-
-	OutAttributeInfo.exists = false;
-
-	// Reset container size.
-	OutData.SetNumUninitialized(0);
-
-	int32 OriginalTupleSize = InTupleSize;
-
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-	if (InOwner == HAPI_ATTROWNER_INVALID)
-	{
-		for (int32 AttrIdx = 0; AttrIdx < HAPI_ATTROWNER_MAX; ++AttrIdx)
-		{
-			HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-				FHoudiniEngine::Get().GetSession(),
-				InGeoId, InPartId, InAttribName,
-				(HAPI_AttributeOwner)AttrIdx, &AttributeInfo), false);
-
-			if (AttributeInfo.exists)
-				break;
-		}
-	}
-	else
-	{
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-			FHoudiniEngine::Get().GetSession(), 
-			InGeoId, InPartId, InAttribName,
-			InOwner, &AttributeInfo), false);
-	}
-
-	if (!AttributeInfo.exists)
-		return false;
-
-	if (OriginalTupleSize > 0)
-		AttributeInfo.tupleSize = OriginalTupleSize;
-
-	// Store the retrieved attribute information.
-	OutAttributeInfo = AttributeInfo;
-
-	// Handle partial reading of attributes
-	int32 Start = 0;
-	if (InStartIndex > 0 && InStartIndex < AttributeInfo.count)
-		Start = InStartIndex;
-
-	int32 Count = AttributeInfo.count;
-	if (InCount > 0)
-	{
-		if ((Start + InCount) <= AttributeInfo.count)
-			Count = InCount;
-		else
-			Count = AttributeInfo.count - Start;
-	}
-
-	if (AttributeInfo.storage == HAPI_STORAGETYPE_FLOAT)
-	{
-		// Allocate sufficient buffer for data.
-		OutData.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the values
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeFloatData(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &OutData[0],
-			Start, Count), false);
-
-		return true;
-	}
-    else if (AttributeInfo.storage == HAPI_STORAGETYPE_FLOAT64)
-    {
-        // Allocate sufficient buffer for data.
-        OutData.SetNum(Count * AttributeInfo.tupleSize);
-
-		TArray<double> Float64Data;
-        Float64Data.SetNum(OutData.Num());
-
-        // Fetch the values
-        HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeFloat64Data(
-		    FHoudiniEngine::Get().GetSession(), InGeoId,
-            InPartId, InAttribName, &AttributeInfo, -1,
-            &Float64Data[0], Start, Count), false);
-
-		for (int Index = 0; Index < OutData.Num(); Index++)
-            OutData[Index] = static_cast<float>(Float64Data[Index]);
-
-        return true;
-    }
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_INT)
-	{
-		// Expected Float, found an int, try to convert the attribute
-
-		// Allocate sufficient buffer for data.
-		TArray<int32> IntData;
-		IntData.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the values
-		if(HAPI_RESULT_SUCCESS == FHoudiniApi::GetAttributeIntData(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo,	-1,	&IntData[0],
-			Start, Count))
-		{
-			OutData.SetNum(IntData.Num());
-			for (int32 Idx = 0; Idx < IntData.Num(); Idx++)
-			{
-				OutData[Idx] = (float)IntData[Idx];
-			}
-
-			HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be a float attribute, its value had to be converted from integer."), *FString(InAttribName));
-			return true;
-		}
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_STRING)
-	{
-		// Expected Float, found a string, try to convert the attribute
-		TArray<FString> StringData;
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsStringFromInfo(
-			InGeoId, InPartId, InAttribName,
-			AttributeInfo, StringData,
-			Start, Count))
-		{
-			bool bConversionError = false;
-			OutData.SetNum(StringData.Num());
-			for (int32 Idx = 0; Idx < StringData.Num(); Idx++)
-			{
-				if (StringData[Idx].IsNumeric())
-					OutData[Idx] = FCString::Atof(*StringData[Idx]);
-				else
-					bConversionError = true;
-			}
-
-			if (!bConversionError)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be a float attribute, its value had to be converted from string."), *FString(InAttribName));
-				return true;
-			}
-		}
-	}
-
-	HOUDINI_LOG_WARNING(TEXT("Found attribute %s, but it was expected to be a float attribute and is of an invalid type."), *FString(InAttribName));
-	return false;
-}
-
-bool
-FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
-	const HAPI_NodeId& InGeoId,
-	const HAPI_PartId& InPartId,
-	const char* InAttribName,
-	const HAPI_AttributeOwner InAttribOwner,
-	int32& OutData)
-{
-	TArray<int> IntData;
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InGeoId, InPartId, InAttribName,
-		AttributeInfo, IntData, 1, InAttribOwner, 0, 1) &&
-		IntData.Num() > 0)
-	{
-		OutData = IntData[0];
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool
-FHoudiniEngineUtils::HapiGetFirstAttributeValueAsFloat(
-	const HAPI_NodeId& InGeoId,
-	const HAPI_PartId& InPartId,
-	const char* InAttribName,
-	const HAPI_AttributeOwner InAttribOwner,
-	float& OutData)
-{
-	TArray<float> FloatData;
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		InGeoId, InPartId, InAttribName,
-		AttributeInfo, FloatData, 1, InAttribOwner, 0, 1) &&
-		FloatData.Num() > 0)
-	{
-		OutData = FloatData[0];
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool
-FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
-	const HAPI_NodeId& InGeoId,
-	const HAPI_PartId& InPartId,
-	const char* InAttribName,
-	const HAPI_AttributeOwner InAttribOwner,
-	FString& OutData)
-{
-	TArray<FString> StringData;
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, InAttribName,
-		AttributeInfo, StringData, 1, InAttribOwner, 0, 1) &&
-		StringData.Num() > 0)
-	{
-		OutData = StringData[0];
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-
-bool
-FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-	const HAPI_NodeId InGeoId,
-	const HAPI_PartId InPartId,
-	const char * InAttribName,
-	HAPI_AttributeInfo& OutAttributeInfo,
-	TArray<int32>& OutData,
-	const int32 InTupleSize,
-	const HAPI_AttributeOwner& InOwner,
-	const int32 InStartIndex,
-	const int32 InCount)
-{
-	OutAttributeInfo.exists = false;
-
-	// Reset container size.
-	OutData.SetNumUninitialized(0);
-
-	int32 OriginalTupleSize = InTupleSize;
-
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-	if (InOwner == HAPI_ATTROWNER_INVALID)
-	{
-		for (int32 AttrIdx = 0; AttrIdx < HAPI_ATTROWNER_MAX; ++AttrIdx)
-		{
-			HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-				FHoudiniEngine::Get().GetSession(),
-				InGeoId, InPartId, InAttribName,
-				(HAPI_AttributeOwner)AttrIdx, &AttributeInfo), false);
-
-			if (AttributeInfo.exists)
-				break;
-		}
-	}
-	else
-	{
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			InOwner, &AttributeInfo), false);
-	}
-
-	if (!AttributeInfo.exists)
-		return false;
-
-	if (OriginalTupleSize > 0)
-		AttributeInfo.tupleSize = OriginalTupleSize;
-
-	// Store the retrieved attribute information.
-	OutAttributeInfo = AttributeInfo;
-
-	// Handle partial reading of attributes
-	int32 Start = 0;
-	if (InStartIndex > 0 && InStartIndex < AttributeInfo.count)
-		Start = InStartIndex;
-
-	int32 Count = AttributeInfo.count;
-	if (InCount > 0)
-	{
-		if ((Start + InCount) <= AttributeInfo.count)
-			Count = InCount;
-		else
-			Count = AttributeInfo.count - Start;
-	}
-
-	if (AttributeInfo.storage == HAPI_STORAGETYPE_INT)
-	{
-		// Allocate sufficient buffer for data.
-		OutData.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the values
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeIntData(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &OutData[0], Start, Count), false);
-
-		return true;
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_INT16)
-	{
-		// Expected Int32, found an Int16, try to convert the attribute
-
-		// Allocate sufficient buffer for data.
-		TArray<int16> Int16Data;
-		Int16Data.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the float values
-		if(HAPI_RESULT_SUCCESS == FHoudiniApi::GetAttributeInt16Data(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &Int16Data[0], Start, Count))
-		{
-			OutData.SetNum(Int16Data.Num());
-			for (int32 Idx = 0; Idx < Int16Data.Num(); Idx++)
-			{
-				OutData[Idx] = (int32)Int16Data[Idx];
-			}
-
-			HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be an integer attribute, its value had to be converted from int16."), *FString(InAttribName));
-
-			return true;
-		}
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_INT8)
-	{
-		// Expected Int32, found an Int8, try to convert the attribute
-
-		// Allocate sufficient buffer for data.
-		TArray<int8> Int8Data;
-		Int8Data.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the float values
-		if(HAPI_RESULT_SUCCESS == FHoudiniApi::GetAttributeInt8Data(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &Int8Data[0], Start, Count))
-		{
-			OutData.SetNum(Int8Data.Num());
-			for (int32 Idx = 0; Idx < Int8Data.Num(); Idx++)
-			{
-				OutData[Idx] = (int32)Int8Data[Idx];
-			}
-
-			HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be an integer attribute, its value had to be converted from int8."), *FString(InAttribName));
-
-			return true;
-		}
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_FLOAT)
-	{
-		// Expected Int, found a float, try to convert the attribute
-
-		// Allocate sufficient buffer for data.
-		TArray<float> FloatData;
-		FloatData.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the float values
-		if(HAPI_RESULT_SUCCESS == FHoudiniApi::GetAttributeFloatData(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &FloatData[0], Start, Count))
-		{
-			OutData.SetNum(FloatData.Num());
-			for (int32 Idx = 0; Idx < FloatData.Num(); Idx++)
-			{
-				OutData[Idx] = (int32)FloatData[Idx];
-			}
-
-			HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be an integer attribute, its value had to be converted from float."), *FString(InAttribName));
-
-			return true;
-		}
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_STRING)
-	{
-		// Expected Int, found a string, try to convert the attribute
-		TArray<FString> StringData;
-		if(FHoudiniEngineUtils::HapiGetAttributeDataAsStringFromInfo(
-			InGeoId, InPartId, InAttribName,
-			AttributeInfo, StringData,
-			Start, Count))
-		{
-			bool bConversionError = false;
-			OutData.SetNum(StringData.Num());
-			for (int32 Idx = 0; Idx < StringData.Num(); Idx++)
-			{
-				if (StringData[Idx].IsNumeric())
-					OutData[Idx] = FCString::Atoi(*StringData[Idx]);
-				else
-					bConversionError = true;
-			}
-
-			if (!bConversionError)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be an integer attribute, its value had to be converted from string."), *FString(InAttribName));
-				return true;
-			}
-		}
-	}
-
-	HOUDINI_LOG_WARNING(TEXT("Found attribute %s, but it was expected to be an integer attribute and is of an invalid type."), *FString(InAttribName));
-	return false;
-}
-
-
-bool
-FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-	const HAPI_NodeId& InGeoId,
-	const HAPI_PartId& InPartId,
-	const char * InAttribName,
-	HAPI_AttributeInfo& OutAttributeInfo,
-	TArray<FString>& OutData,
-	int32 InTupleSize,
-	HAPI_AttributeOwner InOwner,
-	const int32& InStartIndex,
-	const int32& InCount)
-{
-	OutAttributeInfo.exists = false;
-
-	// Reset container size.
-	OutData.SetNumUninitialized(0);
-
-	int32 OriginalTupleSize = InTupleSize;
-
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-	if (InOwner == HAPI_ATTROWNER_INVALID)
-	{
-		for (int32 AttrIdx = 0; AttrIdx < HAPI_ATTROWNER_MAX; ++AttrIdx)
-		{
-			HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-				FHoudiniEngine::Get().GetSession(),
-				InGeoId, InPartId, InAttribName,
-				(HAPI_AttributeOwner)AttrIdx, &AttributeInfo), false);
-
-			if (AttributeInfo.exists)
-				break;
-		}
-	}
-	else
-	{
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			InOwner, &AttributeInfo), false);
-	}
-
-	if (!AttributeInfo.exists)
-		return false;
-
-	// Store the retrieved attribute information.
-	OutAttributeInfo = AttributeInfo;
-
-	if (OriginalTupleSize > 0)
-		AttributeInfo.tupleSize = OriginalTupleSize;
-
-	// Handle partial reading of attributes
-	int32 Start = 0;
-	if (InStartIndex > 0 && InStartIndex < AttributeInfo.count)
-		Start = InStartIndex;
-
-	int32 Count = AttributeInfo.count;
-	if (InCount > 0)
-	{
-		if ((Start + InCount) <= AttributeInfo.count)
-			Count = InCount;
-		else
-			Count = AttributeInfo.count - Start;
-	}
-
-	if (AttributeInfo.storage == HAPI_STORAGETYPE_STRING)
-	{
-		return FHoudiniEngineUtils::HapiGetAttributeDataAsStringFromInfo(
-			InGeoId, InPartId, InAttribName, 
-			AttributeInfo, OutData,
-			Start, Count);
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_FLOAT)
-	{
-		// Expected string, found a float, try to convert the attribute
-		
-		// Allocate sufficient buffer for data.
-		TArray<float> FloatData;
-		FloatData.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the float values
-		if (HAPI_RESULT_SUCCESS == FHoudiniApi::GetAttributeFloatData(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &FloatData[0], 
-			Start, Count))
-		{
-			OutData.SetNum(FloatData.Num());
-			for (int32 Idx = 0; Idx < FloatData.Num(); Idx++)
-			{
-				OutData[Idx] = FString::SanitizeFloat(FloatData[Idx]);
-			}
-
-			HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be a string attribute, its value had to be converted from float."), *FString(InAttribName));
-			return true;
-		}
-	}
-	else if (AttributeInfo.storage == HAPI_STORAGETYPE_INT)
-	{
-		// Expected String, found an int, try to convert the attribute
-		
-		// Allocate sufficient buffer for data.
-		TArray<int32> IntData;
-		IntData.SetNum(Count * AttributeInfo.tupleSize);
-
-		// Fetch the values
-		if (HAPI_RESULT_SUCCESS == FHoudiniApi::GetAttributeIntData(
-			FHoudiniEngine::Get().GetSession(),
-			InGeoId, InPartId, InAttribName,
-			&AttributeInfo, -1, &IntData[0],
-			Start, Count))
-		{
-			OutData.SetNum(IntData.Num());
-			for (int32 Idx = 0; Idx < IntData.Num(); Idx++)
-			{
-				OutData[Idx] = FString::FromInt(IntData[Idx]);
-			}
-
-			HOUDINI_LOG_MESSAGE(TEXT("Attribute %s was expected to be a string attribute, its value had to be converted from integer."), *FString(InAttribName));
-			return true;
-		}
-	}
-		
-	HOUDINI_LOG_WARNING(TEXT("Found attribute %s, but it was expected to be a string attribute and is of an invalid type."), *FString(InAttribName));
-	return false;
-}
-
-bool
 FHoudiniEngineUtils::HapiGetAttributeDataAsStringFromInfo(
 	const HAPI_NodeId& InGeoId,
 	const HAPI_PartId& InPartId,
@@ -5748,9 +4958,10 @@ FHoudiniEngineUtils::IsLandscapeSpline(const HAPI_NodeId& GeoId, const HAPI_Part
 	// Check for 
 	// - HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE on points/prim/detail with true/non-zero value
 	TArray<int32> OutData;
-	HAPI_AttributeInfo AttrInfo;
-	if (!HapiGetAttributeDataAsInteger(
-			GeoId, PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE, AttrInfo, OutData, 1, HAPI_ATTROWNER_INVALID, 0, 1))
+	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SPLINE);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1,  OutData, 0, 1);
+
+	if (!bSuccess)
 	{
 		return false;
 	}
@@ -5864,106 +5075,6 @@ FHoudiniEngineUtils::HapiGetParameterDataAsFloat(
 	OutValue = Value;
 
 	return true;
-}
-
-bool FHoudiniEngineUtils::HapiGetAttributeIntOrIntArray(const HAPI_NodeId& GeoId, const HAPI_NodeId& PartId,
-	const FString& AttribName, const HAPI_AttributeOwner& AttributeOwner, HAPI_AttributeInfo& OutAttributeInfo,
-	TArray<int32>& OutData)
-{
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-		FHoudiniEngine::Get().GetSession(),
-		GeoId, PartId,
-		TCHAR_TO_UTF8(*AttribName), AttributeOwner, &OutAttributeInfo), false);
-
-	if (!OutAttributeInfo.exists)
-	{
-		OutData.SetNum(0);
-		return false;
-	}
-
-	if (OutAttributeInfo.storage == HAPI_STORAGETYPE_INT)
-	{
-		OutData.SetNumZeroed(1);
-		
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeIntData(
-			FHoudiniEngine::Get().GetSession(),
-			GeoId, PartId,
-			TCHAR_TO_UTF8(*AttribName), &OutAttributeInfo, -1, OutData.GetData(), 0, 1), false);
-
-		return true;
-	}
-	else if (OutAttributeInfo.storage == HAPI_STORAGETYPE_INT_ARRAY)
-	{
-		TArray<int32> ArraySizes;
-		
-		OutData.SetNumZeroed(OutAttributeInfo.totalArrayElements);
-		ArraySizes.SetNumZeroed(OutAttributeInfo.totalArrayElements);
-
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeIntArrayData(
-			FHoudiniEngine::Get().GetSession(),
-			GeoId, PartId,
-			TCHAR_TO_UTF8(*AttribName),
-			&OutAttributeInfo,
-			OutData.GetData(),
-			OutAttributeInfo.totalArrayElements,
-			ArraySizes.GetData(),
-			0,
-			OutAttributeInfo.count), false);
-		
-		if (OutData.Num() > 0)
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-bool FHoudiniEngineUtils::HapiGetAttributeFloatOrFloatArray(const HAPI_NodeId& GeoId, const HAPI_NodeId& PartId, const FString & AttribName,
-	const HAPI_AttributeOwner& AttributeOwner, HAPI_AttributeInfo& OutAttributeInfo, TArray<float>& OutData)
-{
-
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeInfo(
-		FHoudiniEngine::Get().GetSession(),
-		GeoId, PartId,
-		TCHAR_TO_UTF8(*AttribName), AttributeOwner, &OutAttributeInfo), false);
-
-	if (OutAttributeInfo.storage == HAPI_STORAGETYPE_FLOAT)
-	{
-		OutData.SetNumZeroed(1);
-		
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeFloatData(
-			FHoudiniEngine::Get().GetSession(),
-			GeoId, PartId,
-			TCHAR_TO_UTF8(*AttribName), &OutAttributeInfo, -1, (float*)OutData.GetData(), 0, 1), false);
-
-		return true;
-	}
-	else if (OutAttributeInfo.storage == HAPI_STORAGETYPE_FLOAT_ARRAY)
-	{
-		TArray<int32> FloatDataSizes;
-		
-		OutData.SetNumZeroed(OutAttributeInfo.totalArrayElements);
-		FloatDataSizes.SetNumZeroed(OutAttributeInfo.totalArrayElements);
-
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeFloatArrayData(
-			FHoudiniEngine::Get().GetSession(),
-			GeoId, PartId,
-			TCHAR_TO_UTF8(*AttribName),
-			&OutAttributeInfo,
-			(float*)OutData.GetData(),
-			OutAttributeInfo.totalArrayElements,
-			FloatDataSizes.GetData(),
-			0,
-			OutAttributeInfo.count), false);
-		
-		if (OutData.Num() > 0)
-		{
-			return true;
-		}
-	}
-	
-	return false;
 }
 
 HAPI_ParmId
@@ -6268,9 +5379,12 @@ FHoudiniEngineUtils::AddMeshSocketsToArray_DetailAttribute(
 
 		// Retrieve position data.
 		FString SocketPosAttr = SocketAttrPrefix + TEXT("_pos");
-		if (!FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			GeoId, PartId, TCHAR_TO_ANSI(*SocketPosAttr),
-			AttribInfoPositions, Positions, 0, HAPI_ATTROWNER_DETAIL))
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_ANSI(*SocketPosAttr));
+
+		bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Positions);
+
+		if (!bSuccess)
 			break;
 
 		if (!AttribInfoPositions.exists)
@@ -6282,38 +5396,31 @@ FHoudiniEngineUtils::AddMeshSocketsToArray_DetailAttribute(
 
 		// Retrieve rotation data.
 		FString SocketRotAttr = SocketAttrPrefix + TEXT("_rot");
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			GeoId, PartId,
-			TCHAR_TO_ANSI(*SocketRotAttr), AttribInfoRotations, Rotations, 0, HAPI_ATTROWNER_DETAIL))
+
+		Accessor.Init(GeoId, PartId, TCHAR_TO_ANSI(*SocketRotAttr));
+		if (Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Rotations))
 			bHasRotation = true;
 
 		// Retrieve scale data.
 		FString SocketScaleAttr = SocketAttrPrefix + TEXT("_scale");
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			GeoId, PartId,
-			TCHAR_TO_ANSI(*SocketScaleAttr), AttribInfoScales, Scales, 0, HAPI_ATTROWNER_DETAIL))
+		Accessor.Init(GeoId, PartId, TCHAR_TO_ANSI(*SocketScaleAttr));
+		if (Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, Scales))
 			bHasScale = true;
 
 		// Retrieve mesh socket names.
 		FString SocketNameAttr = SocketAttrPrefix + TEXT("_name");
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			GeoId, PartId,
-			TCHAR_TO_ANSI(*SocketNameAttr), AttribInfoNames, Names))
-			bHasNames = true;
+		Accessor.Init(GeoId, PartId, TCHAR_TO_ANSI(*SocketNameAttr));
+		bHasNames = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, Names);
 
 		// Retrieve mesh socket actor.
 		FString SocketActorAttr = SocketAttrPrefix + TEXT("_actor");
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			GeoId, PartId,
-			TCHAR_TO_ANSI(*SocketActorAttr), AttribInfoActors, Actors))
-			bHasActors = true;
+		Accessor.Init(GeoId, PartId, TCHAR_TO_ANSI(*SocketActorAttr));
+		bHasActors = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, Actors);
 
 		// Retrieve mesh socket tags.
 		FString SocketTagAttr = SocketAttrPrefix + TEXT("_tag");
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			GeoId, PartId,
-			TCHAR_TO_ANSI(*SocketTagAttr), AttribInfoTags, Tags))
-			bHasTags = true;
+		Accessor.Init(GeoId, PartId, TCHAR_TO_ANSI(*SocketTagAttr));
+		bHasTags = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, Tags);
 
 		// Add the socket to the array
 		AddSocketToArray(0);
@@ -6333,29 +5440,14 @@ FHoudiniEngineUtils::AddMeshSocketsToArray_Group(
 	TArray<FHoudiniMeshSocket>& AllSockets,
 	const bool& isPackedPrim)
 {
-	// Attributes we are interested in.
-	// Position
 	TArray<float> Positions;
-	HAPI_AttributeInfo AttribInfoPositions;
-	FHoudiniApi::AttributeInfo_Init(&AttribInfoPositions);
-
-	// Rotation
 	bool bHasRotation = false;
 	TArray<float> Rotations;
-	HAPI_AttributeInfo AttribInfoRotations;
-	FHoudiniApi::AttributeInfo_Init(&AttribInfoRotations);
-
-	// Scale
 	bool bHasScale = false;
 	TArray<float> Scales;
-	HAPI_AttributeInfo AttribInfoScales;
-	FHoudiniApi::AttributeInfo_Init(&AttribInfoScales);
-
-	// We can also get the sockets rotation from the normal
 	bool bHasNormals = false;
 	TArray<float> Normals;
-	HAPI_AttributeInfo AttribInfoNormals;
-	FHoudiniApi::AttributeInfo_Init(&AttribInfoNormals);
+
 
 	// Socket Name
 	bool bHasNames = false;
@@ -6448,22 +5540,18 @@ FHoudiniEngineUtils::AddMeshSocketsToArray_Group(
 	{
 		// Position
 		Positions.Empty();
-		FHoudiniApi::AttributeInfo_Init(&AttribInfoPositions);
 
 		// Rotation
 		bHasRotation = false;
 		Rotations.Empty();
-		FHoudiniApi::AttributeInfo_Init(&AttribInfoRotations);
 
 		// Scale
 		bHasScale = false;
 		Scales.Empty();
-		FHoudiniApi::AttributeInfo_Init(&AttribInfoScales);
 
 		// When using socket groups, we can also get the sockets rotation from the normal
 		bHasNormals = false;
 		Normals.Empty();
-		FHoudiniApi::AttributeInfo_Init(&AttribInfoNormals);
 
 		// Socket Name
 		bHasNames = false;
@@ -6519,49 +5607,50 @@ FHoudiniEngineUtils::AddMeshSocketsToArray_Group(
 	// Reset the data arrays and attributes
 	ResetArraysAndAttr();	
 
-	// Retrieve position data.
-	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_POSITION, AttribInfoPositions, Positions))
+	FHoudiniHapiAccessor Accessor;
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_POSITION);
+	if (!Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Positions))
 		return false;
 
-	// Retrieve rotation data.
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_ROTATION, AttribInfoRotations, Rotations))
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_ROTATION);
+	if (Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Rotations))
 		bHasRotation = true;
 
-	// Retrieve normal data.
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_NORMAL, AttribInfoNormals, Normals))
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_NORMAL);
+	if (Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Normals))
 		bHasNormals = true;
 
-	// Retrieve scale data.
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_SCALE, AttribInfoScales, Scales))
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_SCALE);
+	if (Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Scales))
 		bHasScale = true;
 
-	// Retrieve mesh socket names.
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME, AttribInfoNames, Names))
-		bHasNames = true;
-	else if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME_OLD, AttribInfoNames, Names))
-		bHasNames = true;
 
-	// Retrieve mesh socket actor.
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_ACTOR, AttribInfoActors, Actors))
-		bHasActors = true;
-	else if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_ACTOR_OLD, AttribInfoActors, Actors))
-		bHasActors = true;
+	// Retrieve mesh socket names.
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME);
+	bHasNames = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Names);
+	if (!bHasNames)
+	{
+		Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME_OLD);
+		bHasNames = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Names);
+	}
+
+	//  Retrieve mesh actors
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_ACTOR);
+	bHasActors = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Actors);
+	if (!bHasActors)
+	{
+		Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_ACTOR_OLD);
+		bHasActors = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Actors);
+	}
 
 	// Retrieve mesh socket tags.
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_TAG, AttribInfoTags, Tags))
-		bHasTags = true;
-	else if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_TAG_OLD, AttribInfoTags, Tags))
-		bHasTags = true;
+	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_TAG);
+	bHasTags = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Tags);
+	if (!bHasTags)
+	{
+		Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_MESH_SOCKET_TAG_OLD);
+		bHasTags = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, Tags);
+	}
 
 	// Extracting Sockets vertices
 	for (int32 GeoGroupNameIdx = 0; GeoGroupNameIdx < GroupNames.Num(); ++GeoGroupNameIdx)
@@ -7985,16 +7074,16 @@ FHoudiniEngineUtils::GetLevelPathAttribute(
 	// ---------------------------------------------
 	// Attribute: unreal_level_path
 	// ---------------------------------------------
+
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_LEVEL_PATH);
+	bool bSuccess = Accessor.GetAttributeData(InAttributeOwner, 1, OutLevelPaths, InStartIndex, InCount);
+
+
 	HAPI_AttributeInfo AttributeInfo;
 	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_LEVEL_PATH, 
-		AttributeInfo, OutLevelPaths, 1, InAttributeOwner, InStartIndex, InCount))
-	{
-		if (OutLevelPaths.Num() > 0)
-			return true;
-	}
+	if (bSuccess && OutLevelPaths.Num() > 0)
+		return true;
 
 	OutLevelPaths.Empty();
 	return false;
@@ -8056,28 +7145,18 @@ FHoudiniEngineUtils::GetOutputNameAttribute(
 	const int32& InStartIndex,
 	const int32& InCount)
 {
-	// ---------------------------------------------
-	// Attribute: unreal_output_name
-	// ---------------------------------------------
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
-
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2, 
-		AttributeInfo, OutOutputNames, 1, HAPI_ATTROWNER_INVALID, InStartIndex, InCount))
-	{
-		if (OutOutputNames.Num() > 0)
-			return true;
-	}
+	FHoudiniHapiAccessor Accessor;
+	Accessor.Init(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, OutOutputNames, InStartIndex, InCount);
+	if (bSuccess && OutOutputNames.Num() > 0)
+		return true;
 
 	OutOutputNames.Empty();
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1,
-		AttributeInfo, OutOutputNames, 1, HAPI_ATTROWNER_INVALID, InStartIndex, InCount))
-	{
-		if (OutOutputNames.Num() > 0)
-			return true;
-	}
+
+	Accessor.Init(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1);
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, OutOutputNames, InStartIndex, InCount);
+	if (bSuccess && OutOutputNames.Num() > 0)
+		return true;
 
 	OutOutputNames.Empty();
 	return false;
@@ -8097,84 +7176,66 @@ FHoudiniEngineUtils::GetOutputNameAttribute(
 	HAPI_AttributeInfo AttributeInfo;
 	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
+	FHoudiniHapiAccessor Accessor;
+	Accessor.Init(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2);
+	bool bSuccess;
+
 	// HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2
 	if (InPointIndex >= 0)
 	{
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2, 
-			AttributeInfo, StringData, 1, HAPI_ATTROWNER_POINT, InPointIndex, Count))
-		{
-			if (StringData.Num() > 0)
-			{
-				OutOutputName = StringData[0];
-				return true;
-			}
-		}
-	}
-
-	if (InPrimIndex >= 0)
-	{
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2, 
-			AttributeInfo, StringData, 1, HAPI_ATTROWNER_PRIM, InPrimIndex, Count))
-		{
-			if (StringData.Num() > 0)
-			{
-				OutOutputName = StringData[0];
-				return true;
-			}
-		}
-	}
-
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2, 
-		AttributeInfo, StringData, 1, HAPI_ATTROWNER_DETAIL, 0, Count))
-	{
-		if (StringData.Num() > 0)
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, StringData, InPointIndex, Count);
+		if (bSuccess && StringData.Num() > 0)
 		{
 			OutOutputName = StringData[0];
 			return true;
 		}
 	}
-	
+
+	if (InPrimIndex >= 0)
+	{
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, StringData, InPointIndex, Count);
+		if (bSuccess && StringData.Num() > 0)
+		{
+			OutOutputName = StringData[0];
+			return true;
+		}
+	}
+
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, 1, StringData, InPointIndex, Count);
+	if (bSuccess && StringData.Num() > 0)
+	{
+		OutOutputName = StringData[0];
+		return true;
+	}
+
+	Accessor.Init(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1);
+
 	// HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1
 	if (InPointIndex >= 0)
 	{
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1, 
-			AttributeInfo, StringData, 1, HAPI_ATTROWNER_POINT, InPointIndex, Count))
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, 1, StringData, InPointIndex, Count);
+		if (bSuccess && StringData.Num() > 0)
 		{
-			if (StringData.Num() > 0)
-			{
-				OutOutputName = StringData[0];
-				return true;
-			}
+			OutOutputName = StringData[0];
+			return true;
 		}
 	}
 
 	if (InPrimIndex >= 0)
 	{
-		if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-			InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1, 
-			AttributeInfo, StringData, 1, HAPI_ATTROWNER_PRIM, InPrimIndex, Count))
-		{
-			if (StringData.Num() > 0)
-			{
-				OutOutputName = StringData[0];
-				return true;
-			}
-		}
-	}
-
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1, 
-		AttributeInfo, StringData, 1, HAPI_ATTROWNER_DETAIL, 0, Count))
-	{
-		if (StringData.Num() > 0)
+		bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, StringData, InPointIndex, Count);
+		if (bSuccess && StringData.Num() > 0)
 		{
 			OutOutputName = StringData[0];
 			return true;
 		}
+	}
+
+	bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_DETAIL, 1, StringData, InPointIndex, Count);
+	if (bSuccess && StringData.Num() > 0)
+	{
+		OutOutputName = StringData[0];
+		return true;
 	}
 
 	OutOutputName.Empty();
@@ -8193,16 +7254,12 @@ FHoudiniEngineUtils::GetBakeNameAttribute(
 	// ---------------------------------------------
 	// Attribute: unreal_bake_name
 	// ---------------------------------------------
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_NAME, 
-		AttributeInfo, OutBakeNames, 1, InAttribOwner, InStartIndex, InCount))
-	{
-		if (OutBakeNames.Num() > 0)
-			return true;
-	}
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_NAME);
+	bool bSuccess = Accessor.GetAttributeData(InAttribOwner, 1, OutBakeNames, InStartIndex, InCount);
+
+	if (bSuccess && OutBakeNames.Num() > 0)
+		return true;
 
 	OutBakeNames.Empty();
 	return false;
@@ -8268,12 +7325,11 @@ FHoudiniEngineUtils::GetTileAttribute(
 	// ---------------------------------------------
 	// Attribute: tile
 	// ---------------------------------------------
-	HAPI_AttributeInfo AttribInfoTile;
-	FHoudiniApi::AttributeInfo_Init(&AttribInfoTile);
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_TILE,
-		AttribInfoTile,	OutTileValues, 0, InAttribOwner, InStart, InCount))
+
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_TILE);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, OutTileValues, InStart, InCount);
+	if (bSuccess)
 	{
 		if (OutTileValues.Num() > 0)
 			return true;
@@ -8344,19 +7400,14 @@ FHoudiniEngineUtils::GetEditLayerName(
 	FHoudiniApi::AttributeInfo_Init(&AttribInfo);
 
 	TArray<FString> StrData;
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId,
-		HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_NAME,
-		AttribInfo,
-		StrData,
-		0,
-		InAttribOwner))
+
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_NAME);
+	bool bSuccess = Accessor.GetAttributeData(InAttribOwner, 1, StrData);
+
+	if (bSuccess && StrData.Num() > 0)
 	{
-		if (StrData.Num() > 0)
-		{
-			EditLayerName = StrData[0];
-			return true;
-		}
+		EditLayerName = StrData[0];
+		return true;
 	}
 
 	EditLayerName = FString();
@@ -8387,16 +7438,11 @@ FHoudiniEngineUtils::GetTempFolderAttribute(
 {
 	OutTempFolder.Empty();
 
-	HAPI_AttributeInfo TempFolderAttribInfo;
-	FHoudiniApi::AttributeInfo_Init(&TempFolderAttribInfo);
-	if (HapiGetAttributeDataAsString(
-		InNodeId, InPartId, HAPI_UNREAL_ATTRIB_TEMP_FOLDER,
-		TempFolderAttribInfo, OutTempFolder, 1, InAttributeOwner,
-		InStart, InCount))
-	{
-		if (OutTempFolder.Num() > 0)
-			return true;
-	}
+	FHoudiniHapiAccessor Accessor(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_TEMP_FOLDER);
+	bool bSuccess = Accessor.GetAttributeData(InAttributeOwner, 1, OutTempFolder, InStart, InCount);
+
+	if (bSuccess && OutTempFolder.Num() > 0)
+		return true;
 
 	OutTempFolder.Empty();
 	return false;
@@ -8435,7 +7481,7 @@ FHoudiniEngineUtils::GetTempFolderAttribute(
 
 bool
 FHoudiniEngineUtils::GetBakeFolderAttribute(
-	const HAPI_NodeId& InGeoId,
+	const HAPI_NodeId& InNodeId,
 	const HAPI_AttributeOwner& InAttributeOwner,
 	TArray<FString>& OutBakeFolder,
 	const HAPI_PartId& InPartId,
@@ -8443,17 +7489,12 @@ FHoudiniEngineUtils::GetBakeFolderAttribute(
 	const int32& InCount)
 {
 	OutBakeFolder.Empty();
-	
-	HAPI_AttributeInfo BakeFolderAttribInfo;
-	FHoudiniApi::AttributeInfo_Init(&BakeFolderAttribInfo);
-	if (HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_FOLDER,
-		BakeFolderAttribInfo, OutBakeFolder, 1, InAttributeOwner,
-		InStart, InCount))
-	{
-		if (OutBakeFolder.Num() > 0)
-			return true;
-	}
+
+	FHoudiniHapiAccessor Accessor(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_TEMP_FOLDER);
+	bool bSuccess = Accessor.GetAttributeData(InAttributeOwner, 1, OutBakeFolder, InStart, InCount);
+
+	if (bSuccess && OutBakeFolder.Num() > 0)
+		return true;
 
 	OutBakeFolder.Empty();
 	return false;
@@ -8530,7 +7571,7 @@ FHoudiniEngineUtils::GetBakeFolderAttribute(
 
 bool
 FHoudiniEngineUtils::GetBakeActorAttribute(
-	const HAPI_NodeId& InGeoId,
+	const HAPI_NodeId& InNodeId,
 	const HAPI_PartId& InPartId,
 	TArray<FString>& OutBakeActorNames,
 	const HAPI_AttributeOwner& InAttributeOwner,
@@ -8540,16 +7581,16 @@ FHoudiniEngineUtils::GetBakeActorAttribute(
 	// ---------------------------------------------
 	// Attribute: unreal_bake_actor
 	// ---------------------------------------------
+
+	FHoudiniHapiAccessor Accessor(InNodeId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_ACTOR);
+	bool bSuccess = Accessor.GetAttributeData(InAttributeOwner, 1, OutBakeActorNames, InStart, InCount);
+
+
 	HAPI_AttributeInfo AttributeInfo;
 	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_ACTOR,
-		AttributeInfo, OutBakeActorNames, 1, InAttributeOwner, InStart, InCount))
-	{
-		if (OutBakeActorNames.Num() > 0)
-			return true;
-	}
+	if (bSuccess && OutBakeActorNames.Num() > 0)
+		return true;
 
 	OutBakeActorNames.Empty();
 	return false;
@@ -8615,16 +7656,12 @@ FHoudiniEngineUtils::GetBakeActorClassAttribute(
 	// ---------------------------------------------
 	// Attribute: unreal_bake_actor
 	// ---------------------------------------------
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_ACTOR_CLASS,
-		AttributeInfo, OutBakeActorClassNames, 1, InAttributeOwner, InStart, InCount))
-	{
-		if (OutBakeActorClassNames.Num() > 0)
-			return true;
-	}
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_ACTOR_CLASS);
+	bool bSuccess = Accessor.GetAttributeData(InAttributeOwner, 1, OutBakeActorClassNames, InStart, InCount);
+
+	if (bSuccess && OutBakeActorClassNames.Num() > 0)
+		return true;
 
 	OutBakeActorClassNames.Empty();
 	return false;
@@ -8690,16 +7727,11 @@ FHoudiniEngineUtils::GetBakeOutlinerFolderAttribute(
 	// ---------------------------------------------
 	// Attribute: unreal_bake_outliner_folder
 	// ---------------------------------------------
-	HAPI_AttributeInfo AttributeInfo;
-	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
-	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(
-		InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_OUTLINER_FOLDER, 
-		AttributeInfo, OutBakeOutlinerFolders, 1, InAttributeOwner, InStart, InCount))
-	{
-		if (OutBakeOutlinerFolders.Num() > 0)
-			return true;
-	}
+	FHoudiniHapiAccessor Accessor(InGeoId, InPartId, HAPI_UNREAL_ATTRIB_BAKE_OUTLINER_FOLDER);
+	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, OutBakeOutlinerFolders, InStart, InCount);
+	if (bSuccess && OutBakeOutlinerFolders.Num() > 0)
+		return true;
 
 	OutBakeOutlinerFolders.Empty();
 	return false;
@@ -8969,7 +8001,7 @@ FHoudiniEngineUtils::UpdateMeshPartUVSets(
 	TArray<TArray<float>>& OutPartUVSets,
 	TArray<HAPI_AttributeInfo>& OutAttribInfoUVSets)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniEngineUtils::UpdateMeshPartUVSets"));
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UpdateMeshPartUVSets);
 
 	// Only Retrieve uvs if necessary
 	if (OutPartUVSets.Num() > 0)
@@ -8990,9 +8022,11 @@ FHoudiniEngineUtils::UpdateMeshPartUVSets(
 			UVAttributeName += FString::Printf(TEXT("%d"), bUV1Exists ? TexCoordIdx : TexCoordIdx + 1);
 
 		FHoudiniApi::AttributeInfo_Init(&OutAttribInfoUVSets[TexCoordIdx]);
-		FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
-			GeoId, PartId, TCHAR_TO_ANSI(*UVAttributeName),
-			OutAttribInfoUVSets[TexCoordIdx], OutPartUVSets[TexCoordIdx], 2);
+
+		FHoudiniHapiAccessor Accessor(GeoId, PartId, TCHAR_TO_ANSI(*UVAttributeName));
+		Accessor.GetInfo(OutAttribInfoUVSets[TexCoordIdx], HAPI_ATTROWNER_INVALID);
+		OutAttribInfoUVSets[TexCoordIdx].tupleSize = 2;
+		Accessor.GetAttributeData(OutAttribInfoUVSets[TexCoordIdx], OutPartUVSets[TexCoordIdx]);
 	}
 
 	// Also look for 16.5 uvs (attributes with a Texture type) 

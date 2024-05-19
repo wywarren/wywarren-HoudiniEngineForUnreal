@@ -29,354 +29,91 @@
 #include "HAPI/HAPI_Common.h"
 #include "HoudiniEnginePrivatePCH.h"
 
-enum class EHoudiniEngineAttributeFlags : uint8
+struct FHoudiniRawAttributeData;
+
+struct FHoudiniHapiAccessor
 {
-	None = 0,
+	// Initialization functions. use these functions to initialize the accessor.
+	FHoudiniHapiAccessor(HAPI_NodeId NodeId, HAPI_NodeId PartId, const char* Name);
+	FHoudiniHapiAccessor() {}
+	void Init(HAPI_NodeId InNodeId, HAPI_NodeId InPartId, const char * InName);
 
-	/**
-	 * Allow large attribute data operations to be distributed across multiple threads using
-	 * seperate sessions.
-	 */
-	AllowMultithreading = 1 << 0,
+	// Get HAPI_AttributeInfo from the accessor. 
+	bool GetInfo(HAPI_AttributeInfo& OutAttributeInfo, HAPI_AttributeOwner InOwner = HAPI_ATTROWNER_INVALID);
 
-	/**
-	 * Allow attribute data to be converted into a different type if there is a storage type
-	 * mismatch. Successful conversions are logged as warnings and failed conversions are logged as
-	 * errors.
-	 *
-	 * @note Currently only supported when getting attributes.
-	 */
-	AllowTypeConversion = 1 << 1,
+	// Templated functions to return data.
+	//
+	// If the attribute is a different from the templated data, conversion is optionally performed (bAllowTypeConversion)
+	// If the attribute owner is HAPI_ATTROWNER_INVALID, all attribute owners are searched.
+	// An optional tuple size can be specified.
+	// Note these templates are explicitly defined in the .cpp file.
 
-	// TODO: Add run length encoding option here. We can re-use run length encoding algorithm in
-	// HoudiniEngineUtils.cpp - consider moving it instead to HoudiniAlgorithm.h
-};
-ENUM_CLASS_FLAGS(EHoudiniEngineAttributeFlags)
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, TArray<DataType>& Results, int First=0, int Count=-1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, DataType* Results, int First = 0, int Count = -1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, TArray<DataType>& Results, int First = 0, int Count = -1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, DataType* Results, int First = 0, int Count = -1);
+	template<typename DataType> bool GetAttributeFirstValue(HAPI_AttributeOwner Owner, DataType & Result);
 
-/** Arguments for HAPI attribute operations. */
-struct FHoudiniEngineAttributeArgs
-{
+	template<typename DataType> bool GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& Results, int First=0, int Count=-1);
+	template<typename DataType> bool GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int First, int Count);
+	template<typename DataType> bool GetAttributeDataMain(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int First, int Count);
+
+	// Template functions to set data.
+	//
+
+	template<typename DataType> bool SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const TArray<DataType>& Data);
+	template<typename DataType> bool SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int First, int Count);
+	template<typename DataType> bool SetAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int StartIndex, int Count);
+
+	int CalculateNumberOfSessions() const;
+
+
+	bool GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data);
+	bool GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data, int Start, int Count) const;
+
 	HAPI_NodeId NodeId = -1;
 	HAPI_PartId PartId = -1;
 	const char* AttributeName = nullptr;
+	bool bAllowTypeConversion = true;
+	bool bAllowMultiThreading = true;
+	bool bCanBeArray = false;
 
-	/** Can be optionally set by caller. In most cases these default flags are good. */
-	EHoudiniEngineAttributeFlags Flags =
-		EHoudiniEngineAttributeFlags::AllowMultithreading;
+	template<typename DataType> bool GetAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int Start, int Count) const;
+
+	// Internal functions for actually getting data from HAPI.
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, uint8* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int8* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int16* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int64* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, float* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, double* Data, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FString* Data, int IndexStart, int IndexCount) const;
+
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, uint8* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int8* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int16* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int64* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, float* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, double* Data, int* Sizes, int IndexStart, int IndexCount) const;
+	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FString* Data, int* Sizes, int IndexStart, int IndexCount) const;
+
+	// Data conversion functions.
+	template<typename DataType> static void ConvertFromRawData(const FHoudiniRawAttributeData& RawData, DataType* Data, size_t Count);
+		template<typename SrcType, typename DestType> static void Convert(const SrcType* SourceData, DestType* DestData, int Count);
+	static FString ToString(int32 Number);
+	static FString ToString(float Number);
+	static FString ToString(double Number);
+	static double ToDouble(const FString& Str);
+	static int ToInt(const FString& Str);
+
+	template<typename DataType>
+	static HAPI_StorageType GetHapiType();
+
+	static bool IsHapiArrayType(HAPI_StorageType);
+
 };
 
-/**
- * Statics for working with Houdini attribute values. Using these wrappers is preferred over calling
- * HAPI directly as these can have Unreal Engine specific optimizations. They are also designed to
- * work with Unreal Engine's native types, and will convert between the types used by Unreal Engine
- * and HAPI when necessary.
- */
-class FHoudiniEngineAttributes
-{
-public:
 
-	static bool GetInfo(
-		const FHoudiniEngineAttributeArgs& Args,
-		HAPI_AttributeInfo& OutAttributeInfo,
-		const HAPI_AttributeOwner InOwner = HAPI_ATTROWNER_INVALID);
 
-	// TODO(alexanderk)
-	// These functions are implemented via IMPLEMENT_ATTRIBUTE_TYPE and IMPLEMENT_ARRAY_ATTRIBUTE_TYPE macros in HoudiniEngineAttributes.cpp
-
-	static bool SetUInt8(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const uint8> Data);
-
-	static bool GetUInt8NoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<uint8> Data);
-
-	static bool GetUInt8(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<uint8>& OutData);
-
-	static bool SetUInt8Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const uint8> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetUInt8ArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<uint8> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetUInt8Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<uint8>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetInt8(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int8> Data);
-
-	static bool GetInt8NoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int8> Data);
-
-	static bool GetInt8(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int8>& OutData);
-
-	static bool SetInt8Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int8> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetInt8ArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int8> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetInt8Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int8>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetInt16(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int16> Data);
-
-	static bool GetInt16NoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int16> Data);
-
-	static bool GetInt16(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int16>& OutData);
-
-	static bool SetInt16Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int16> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetInt16ArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int16> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetInt16Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int16>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetInt32(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int32> Data);
-
-	static bool GetInt32NoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int32> Data);
-
-	static bool GetInt32(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int32>& OutData);
-
-	static bool SetInt32Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int32> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetInt32ArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int32> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetInt32Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int32>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetInt64(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int64> Data);
-
-	static bool GetInt64NoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int64> Data);
-
-	static bool GetInt64(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int64>& OutData);
-
-	static bool SetInt64Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const int64> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetInt64ArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<int64> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetInt64Array(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<int64>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetFloat(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const float> Data);
-
-	static bool GetFloatNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<float> Data);
-
-	static bool GetFloat(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<float>& OutData);
-
-	static bool SetFloatArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const float> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetFloatArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<float> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetFloatArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<float>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetDouble(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const double> Data);
-
-	static bool GetDoubleNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<double> Data);
-
-	static bool GetDouble(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<double>& OutData);
-
-	static bool SetDoubleArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const double> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetDoubleArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<double> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetDoubleArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<double>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetString(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const FString> Data);
-
-	static bool GetStringNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<FString> Data);
-
-	static bool GetString(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<FString>& OutData);
-
-	static bool SetStringArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const FString> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetStringArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<FString> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetStringArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<FString>& OutData,
-		TArray<int32>& OutSizes);
-
-	static bool SetDictionary(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const FString> Data);
-
-	static bool GetDictionaryNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<FString> Data);
-
-	static bool GetDictionary(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<FString>& OutData);
-
-	static bool SetDictionaryArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<const FString> Data,
-		const TArrayView<const int32> Sizes);
-
-	static bool GetDictionaryArrayNoResize(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& AttributeInfo,
-		const TArrayView<FString> Data,
-		const TArrayView<int32> Sizes);
-
-	static bool GetDictionaryArray(
-		const FHoudiniEngineAttributeArgs& Args,
-		const HAPI_AttributeInfo& InAttributeInfo,
-		TArray<FString>& OutData,
-		TArray<int32>& OutSizes);
-};
