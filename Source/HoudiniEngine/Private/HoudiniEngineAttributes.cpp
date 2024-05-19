@@ -823,7 +823,8 @@ bool FHoudiniHapiAccessor::IsHapiArrayType(HAPI_StorageType StorageType)
 	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, TArray<DATA_TYPE>& Results, int First, int Count);\
 	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, DATA_TYPE * Results, int First, int Count);\
 	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, TArray<DATA_TYPE>& Results, int First, int Count);\
-	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, DATA_TYPE * Results, int First, int Count);
+	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, DATA_TYPE * Results, int First, int Count);\
+	template bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DATA_TYPE>& Results, int First , int Count);
 
 
 IMPLEMENT_HOUDINI_ACCESSOR(uint8);
