@@ -1986,11 +1986,7 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 					FHoudiniApi::AttributeInfo_Init(&AttrInfoKeepTag);
 
 					currentHGPO.bKeepTags = false;
-
-					FHoudiniHapiAccessor Accessor(currentHGPO.GeoId, currentHGPO.PartId, HAPI_UNREAL_ATTRIB_TAG_KEEP);
-					bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 1, KeepTagData);
-
-					if (bSuccess)
+					if (FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(currentHGPO.GeoId, currentHGPO.PartId, HAPI_UNREAL_ATTRIB_TAG_KEEP, AttrInfoKeepTag, KeepTagData, 1))
 					{
 						if (KeepTagData.Num() > 0)
 						{
@@ -2798,17 +2794,19 @@ FHoudiniOutputTranslator::GetCustomPartNameFromAttribute(const HAPI_NodeId & Nod
 	HAPI_AttributeInfo CustomPartNameInfo;
 	FHoudiniApi::AttributeInfo_Init(&CustomPartNameInfo);
 
+	bool bHasCustomName = false;
 	TArray<FString> CustomNames;
-
-	FHoudiniHapiAccessor Accessor(NodeId, PartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2);
-	bool bHasCustomName = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, CustomNames);
-
-	if (!bHasCustomName)
+	if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(NodeId, PartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2, CustomPartNameInfo, CustomNames))
 	{
-		Accessor.Init(NodeId, PartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1);
-		bHasCustomName = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, CustomNames);
+		// Look for the v2 attribute (unreal_output_name)
+		bHasCustomName = true;
 	}
-	
+	else if (FHoudiniEngineUtils::HapiGetAttributeDataAsString(NodeId, PartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V1, CustomPartNameInfo, CustomNames))
+	{
+		// If we couldnt find the new attribute, use the legacy v1 attribute (unreal_generated_mesh_name)
+		bHasCustomName = true;
+	}
+
 	if (!bHasCustomName)
 		return false;
 

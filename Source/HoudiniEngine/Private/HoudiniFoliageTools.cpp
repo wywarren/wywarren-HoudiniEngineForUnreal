@@ -38,7 +38,6 @@
 #include "Components/ModelComponent.h"
 #include "LandscapeHeightfieldCollisionComponent.h"
 #include "FoliageType_InstancedStaticMesh.h"
-#include "HoudiniEngineAttributes.h"
 #include "InstancedFoliageActor.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Spatial/PointHashGrid3.h"
@@ -364,12 +363,16 @@ TArray<FFoliageAttachmentInfo> FHoudiniFoliageTools::GetAttachmentInfo(int GeoId
 	TArray<FFoliageAttachmentInfo> Result;
 	Result.SetNum(Count);
 
+	HAPI_AttributeInfo AttributeInfo;
 	TArray<int32> IntData;
+	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
+		GeoId, PartId, HAPI_UNREAL_ATTRIB_FOLIAGE_ATTACHMENT_TYPE,
+		AttributeInfo, IntData, 0, HAPI_ATTROWNER_POINT, 0, Count))
+	{
+		return Result;
+	}
 
-	FHoudiniHapiAccessor Accessor(GeoId, PartId, HAPI_UNREAL_ATTRIB_FOLIAGE_ATTACHMENT_TYPE);
-	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, IntData, 0, Count);
-
-	if (!bSuccess || IntData.Num() != Count)
+	if (!AttributeInfo.exists || AttributeInfo.count <= 0 || IntData.Num() != Count)
 		return Result;
 
 	for(int Index = 0; Index < IntData.Num(); Index++)
@@ -385,9 +388,9 @@ TArray<FFoliageAttachmentInfo> FHoudiniFoliageTools::GetAttachmentInfo(int GeoId
 
 	// Get (optional) attachment distance
 	TArray<float> FloatData;
-	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_FOLIAGE_ATTACHMENT_DISTANCE);
-
-	if (!Accessor.GetAttributeData(HAPI_ATTROWNER_POINT, FloatData, 0, Count))
+	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
+		GeoId, PartId, HAPI_UNREAL_ATTRIB_FOLIAGE_ATTACHMENT_DISTANCE,
+		AttributeInfo, FloatData, 0, HAPI_ATTROWNER_POINT, 0, Count))
 	{
 		return Result;
 	}

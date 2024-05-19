@@ -30,7 +30,6 @@
 #include "HoudiniEngineUtils.h"
 #include "LevelEditorMenuContext.h"
 //#include "NaniteSceneProxy.h"
-#include "HoudiniEngineAttributes.h"
 #include "HAPI/HAPI_Common.h"
 #include "WorldPartition/DataLayer/WorldDataLayers.h"
 #include "HoudiniPackageParams.h"
@@ -157,10 +156,11 @@ FHoudiniDataLayerUtils::GetDataLayers(HAPI_NodeId NodeId, HAPI_PartId PartId)
 
 		// Create flag that indicates if we should create missing data layers.
 		int32 CreateFlags = 0;
-
-		FHoudiniHapiAccessor Accessor;
-		Accessor.Init(NodeId, PartId, HAPI_UNREAL_ATTRIB_CREATE_DATA_LAYERS);
-		bool bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_PRIM, CreateFlags);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+				NodeId, PartId, 
+				HAPI_UNREAL_ATTRIB_CREATE_DATA_LAYERS,
+				HAPI_ATTROWNER_PRIM,
+				CreateFlags);
 
 		Layer.bCreateIfNeeded = (CreateFlags == 1);
 

@@ -49,7 +49,6 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "HoudiniLandscapeUtils.h"
 #include "AssetToolsModule.h"
-#include "HoudiniEngineAttributes.h"
 #include "Misc/Guid.h"
 #include "Engine/LevelBounds.h"
 #include "HAL/IConsoleManager.h"
@@ -188,18 +187,24 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		//
 
 		// Get Edit layer type.
-    PartData.EditLayerType = HAPI_UNREAL_LANDSCAPE_EDITLAYER_TYPE_BASE;
-		FHoudiniHapiAccessor Accessor;
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_TYPE);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.EditLayerType);
+		PartData.EditLayerType = HAPI_UNREAL_LANDSCAPE_EDITLAYER_TYPE_BASE;
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_TYPE,
+			HAPI_ATTROWNER_INVALID,
+			PartData.EditLayerType);
 
 		//-----------------------------------------------------------------------------------------------------------------------------
 		// Get clear type.
 		//-----------------------------------------------------------------------------------------------------------------------------
 
 		int ClearLayer = 0;
-		Accessor.Init(PartObj.GeoId, PartObj.PartId,HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_CLEAR);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, ClearLayer);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_CLEAR,
+			HAPI_ATTROWNER_INVALID,
+			ClearLayer);
+
 		PartData.bClearLayer = (ClearLayer == 1);
 
 
@@ -208,17 +213,24 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		//-----------------------------------------------------------------------------------------------------------------------------
 
 		int UnitData = 0;
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_UNIT_LANDSCAPE_LAYER,
+			HAPI_ATTROWNER_INVALID,
+			UnitData);
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_UNIT_LANDSCAPE_LAYER);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, UnitData);
 		PartData.bIsUnitData = (UnitData == 1);
 
 		//-----------------------------------------------------------------------------------------------------------------------------
 		// After Layer name
 		//-----------------------------------------------------------------------------------------------------------------------------
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_AFTER);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.AfterLayerName);
+		PartData.AfterLayerName.Empty();
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_AFTER,
+			HAPI_ATTROWNER_INVALID,
+			PartData.AfterLayerName);
 
 		//-----------------------------------------------------------------------------------------------------------------------------
 		// Output Mode
@@ -233,14 +245,17 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		//-----------------------------------------------------------------------------------------------------------------------------
 
 		int LockValue = 0;
-
-		Accessor.Init(PartObj.GeoId, PartObj.PartId,HAPI_UNREAL_ATTRIB_LANDSCAPE_WRITE_LOCKED_LAYERS);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, LockValue);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_WRITE_LOCKED_LAYERS,
+			HAPI_ATTROWNER_INVALID,
+			LockValue);
 		PartData.bWriteLockedLayers = LockValue != 0;
 
 		LockValue = 0;
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LOCK_LAYERS);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, LockValue);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_LOCK_LAYERS,
+			HAPI_ATTROWNER_INVALID,
+			LockValue);
 		PartData.bLockLayer = LockValue != 0;
 
 		//-----------------------------------------------------------------------------------------------------------------------------
@@ -248,8 +263,10 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		//-----------------------------------------------------------------------------------------------------------------------------
 
 		int NormalizeValue = 0;
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_NORMALIZE);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, NormalizeValue);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_NORMALIZE,
+			HAPI_ATTROWNER_INVALID,
+			NormalizeValue);
 		PartData.bNormalizePaintLayers = NormalizeValue != 0;
 
 		//-----------------------------------------------------------------------------------------------------------------------------
@@ -257,8 +274,11 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		//-----------------------------------------------------------------------------------------------------------------------------
 
 		int SubtractiveMode = HAPI_UNREAL_LANDSCAPE_EDITLAYER_SUBTRACTIVE_OFF;
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_SUBTRACTIVE);
-		bool bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, SubtractiveMode);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_SUBTRACTIVE,
+			HAPI_ATTROWNER_INVALID,
+			SubtractiveMode);
 		PartData.bSubtractiveEditLayer = SubtractiveMode == HAPI_UNREAL_LANDSCAPE_EDITLAYER_SUBTRACTIVE_ON;
 
 		//-----------------------------------------------------------------------------------------------------------------------------
@@ -276,23 +296,25 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		bool bValid = true;
 
 		// Look for the landscape attribute
+		HAPI_AttributeInfo AttributeInfo;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 		TArray<int> LandscapeDimensions;
 		LandscapeDimensions.SetNumZeroed(2);
-
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SIZE);
-		bValid &= Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, 2, LandscapeDimensions, 0, 1);
-	
+		bValid &= FHoudiniEngineUtils::HapiGetAttributeDataAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_SIZE,
+			AttributeInfo, LandscapeDimensions, 2, HAPI_ATTROWNER_INVALID, 0, 1);
 
 		HAPI_AttributeInfo PositionInfo;
 		FHoudiniApi::AttributeInfo_Init(&PositionInfo);
 
 		// Get the center of the tile - this is stored in the "P" attribute.
-
+		HAPI_AttributeInfo AttribInfoPositions;
+		FHoudiniApi::AttributeInfo_Init(&AttribInfoPositions);
 		TArray<float> TIleCenterRelativeToOrigin;
 		TIleCenterRelativeToOrigin.SetNumZeroed(3);
-
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_POSITION);
-		bValid &= Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, TIleCenterRelativeToOrigin);
+		bValid &= FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
+			PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_POSITION, AttribInfoPositions, TIleCenterRelativeToOrigin);
 
 		if (bValid && TIleCenterRelativeToOrigin.Num() == 3)
 		{
@@ -320,14 +342,23 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		// If creating a new landscape, look for size info.
 		//-----------------------------------------------------------------------------------------------------------------------------
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_PARTITION_GRID_SIZE);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.SizeInfo.WorldPartitionGridSize);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_PARTITION_GRID_SIZE,
+			HAPI_ATTROWNER_INVALID,
+			PartData.SizeInfo.WorldPartitionGridSize);
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SECTION_SIZE);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.SizeInfo.NumQuadsPerSection);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_SECTION_SIZE,
+			HAPI_ATTROWNER_INVALID,
+			PartData.SizeInfo.NumQuadsPerSection);
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SECTIONS_PER_COMPONENT);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.SizeInfo.NumSectionsPerComponent);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_LANDSCAPE_SECTIONS_PER_COMPONENT,
+			HAPI_ATTROWNER_INVALID,
+			PartData.SizeInfo.NumSectionsPerComponent);
 
 		// Make sure both Sections Per Component and Section Size were specified.
 		bool bSectionSizeSet = PartData.SizeInfo.NumQuadsPerSection != 0;
@@ -393,8 +424,11 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		if (NonWeightBlendedLayers.Contains(PartData.TargetLayerName))
 			NonWeightBlend = HAPI_UNREAL_LANDSCAPE_LAYER_NOWEIGHTBLEND_ON;
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_NOWEIGHTBLEND);
-		Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, NonWeightBlend);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_NOWEIGHTBLEND,
+				HAPI_ATTROWNER_INVALID,
+				NonWeightBlend);
 
 		// Note layer stores Weight Blended, not NOT Weight Blended. I can't deal with double negatives.
 		PartData.bIsWeightBlended = NonWeightBlend == HAPI_UNREAL_LANDSCAPE_LAYER_NOWEIGHTBLEND_OFF;
@@ -403,34 +437,43 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		// Layer Info Object, if it exists.
 		//---------------------------------------------------------------------------------------------------------------------------------
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_INFO);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.LayerInfoObjectName);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_INFO,
+				HAPI_ATTROWNER_INVALID,
+				PartData.LayerInfoObjectName);
 
 		//-----------------------------------------------------------------------------------------------------------------------------
 		// target landscape name.
 		//-----------------------------------------------------------------------------------------------------------------------------
 
 		PartData.TargetLandscapeName.Empty();
-
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.TargetLandscapeName);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_CUSTOM_OUTPUT_NAME_V2,
+			HAPI_ATTROWNER_INVALID,
+			PartData.TargetLandscapeName);
 
 		if (PartData.TargetLandscapeName.IsEmpty())
 		{
 			// The previous implementation of the "Edit Layer" mode used the Shared Landscape Actor name. If the (new)
 			// Edit Layer Target attribute wasn't specified, check whether the old attribute is present.
-
-			Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_SHARED_ACTOR_NAME);
-			bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.TargetLandscapeName);
+			FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_LANDSCAPE_SHARED_ACTOR_NAME,
+				HAPI_ATTROWNER_INVALID,
+				PartData.TargetLandscapeName);
 		}
 
 		if (PartData.TargetLandscapeName.IsEmpty())
 		{
 			// The previous implementation of the "Edit Layer" mode used the Shared Landscape Actor name. If the (new)
 			// Edit Layer Target attribute wasn't specified, check whether the old attribute is present.
-
-			Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_TARGET);
-			bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.TargetLandscapeName);
+			FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_LANDSCAPE_EDITLAYER_TARGET,
+				HAPI_ATTROWNER_INVALID,
+				PartData.TargetLandscapeName);
 		}
 
 		if (PartData.TargetLandscapeName.IsEmpty())
@@ -454,11 +497,15 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 		}
 		else
 		{
-			Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MIN);
-			bool bHasMin = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, MinMax.MinValue);
+			bool bHasMin = FHoudiniEngineUtils::HapiGetFirstAttributeValueAsFloat(
+					PartObj.GeoId, PartObj.PartId, 
+					HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MIN, 
+					HAPI_ATTROWNER_INVALID, MinMax.MinValue);
 
-			Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MAX);
-			bool bHasMax = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, MinMax.MaxValue);
+			bool bHasMax = FHoudiniEngineUtils::HapiGetFirstAttributeValueAsFloat(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MAX,
+				HAPI_ATTROWNER_INVALID, MinMax.MaxValue);
 
 			if (bHasMin != bHasMax)
 				HOUDINI_LOG_ERROR(TEXT("Must specify both " HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MIN " and " HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MAX));
@@ -474,41 +521,63 @@ TArray<FHoudiniHeightFieldPartData> FHoudiniLandscapeTranslator::GetPartsToTrans
 
 		// Regular material
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_MATERIAL);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.Materials.Material);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_MATERIAL,
+			HAPI_ATTROWNER_INVALID,
+			PartData.Materials.Material);
 
 		if (PartData.Materials.Material.IsEmpty())
 		{
-			Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_MATERIAL_INSTANCE);
-			bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.Materials.Material);
+			FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_MATERIAL_INSTANCE,
+				HAPI_ATTROWNER_INVALID,
+				PartData.Materials.Material);
+
 			PartData.Materials.bCreateMaterialInstance = !PartData.Materials.Material.IsEmpty();
 		}
 
 		// Hole material
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.Materials.HoleMaterial);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_MATERIAL_HOLE,
+			HAPI_ATTROWNER_INVALID,
+			PartData.Materials.HoleMaterial);
 
 		if (PartData.Materials.HoleMaterial.IsEmpty())
 		{
-			Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE_INSTANCE);
-			bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.Materials.HoleMaterial);
+			FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+				PartObj.GeoId, PartObj.PartId,
+				HAPI_UNREAL_ATTRIB_MATERIAL_HOLE_INSTANCE,
+				HAPI_ATTROWNER_INVALID,
+				PartData.Materials.HoleMaterial);
 		}
 
 		// Physical Material
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_PHYSICAL_MATERIAL);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.Materials.PhysicalMaterial);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_PHYSICAL_MATERIAL,
+			HAPI_ATTROWNER_INVALID,
+			PartData.Materials.PhysicalMaterial);
 
 		//-----------------------------------------------------------------------------------------------------------------------------
 		// Bake folders
 		//-----------------------------------------------------------------------------------------------------------------------------
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_BAKE_OUTLINER_FOLDER);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.BakeOutlinerFolder);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_BAKE_OUTLINER_FOLDER,
+			HAPI_ATTROWNER_INVALID,
+			PartData.BakeOutlinerFolder);
 
-		Accessor.Init(PartObj.GeoId, PartObj.PartId, HAPI_UNREAL_ATTRIB_BAKE_FOLDER);
-		bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, PartData.BakeFolder);
+		FHoudiniEngineUtils::HapiGetFirstAttributeValueAsString(
+			PartObj.GeoId, PartObj.PartId,
+			HAPI_UNREAL_ATTRIB_BAKE_FOLDER,
+			HAPI_ATTROWNER_INVALID,
+			PartData.BakeFolder);
 
 		//-----------------------------------------------------------------------------------------------------------------------------
 		// Add new layer.
@@ -1034,12 +1103,9 @@ FHoudiniLandscapeTranslator::CalcHeightFieldsArrayGlobalZMinZMax(
 
 		// If this volume has an attribute defining a minimum value use it as is.
 		FloatData.Empty();
-
-		FHoudiniHapiAccessor LayerMinAccessor(CurrentHeightfield.GeoId, CurrentHeightfield.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MIN);
-		LayerMinAccessor.GetInfo(AttributeInfo);
-		AttributeInfo.tupleSize = 1;
-
-		if (LayerMinAccessor.GetAttributeData(HAPI_ATTROWNER_INVALID, FloatData, 0, 1))
+		if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
+			CurrentHeightfield.GeoId, CurrentHeightfield.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MIN,
+			AttributeInfo, FloatData, 1, HAPI_ATTROWNER_INVALID, 0, 1))
 		{
 			if (FloatData.Num() > 0)
 			{
@@ -1050,11 +1116,9 @@ FHoudiniLandscapeTranslator::CalcHeightFieldsArrayGlobalZMinZMax(
 
 		// If this volume has an attribute defining maximum value use it as is.
 		FloatData.Empty();
-		FHoudiniHapiAccessor LayerMaxAccessor(CurrentHeightfield.GeoId, CurrentHeightfield.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MAX);
-		LayerMaxAccessor.GetInfo(AttributeInfo);
-		AttributeInfo.tupleSize = 1;
-
-		if (LayerMaxAccessor.GetAttributeData(HAPI_ATTROWNER_INVALID, FloatData, 0, 1))
+		if (FHoudiniEngineUtils::HapiGetAttributeDataAsFloat(
+			CurrentHeightfield.GeoId, CurrentHeightfield.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_MAX,
+			AttributeInfo, FloatData, 1, HAPI_ATTROWNER_INVALID, 0, 1))
 		{
 			if (FloatData.Num() > 0)
 			{

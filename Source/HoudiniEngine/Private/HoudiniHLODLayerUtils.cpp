@@ -27,7 +27,6 @@
 #include "HoudiniHLODLayerUtils.h"
 
 #include "HoudiniEngine.h"
-#include "HoudiniEngineAttributes.h"
 #include "WorldPartition/HLOD/HLODLayer.h"
 
 void FHoudiniHLODLayerUtils::AddActorToHLOD(AActor* Actor, const FString& AssetRef)
@@ -57,9 +56,10 @@ FHoudiniHLODLayerUtils::GetHLODLayers(HAPI_NodeId NodeId, HAPI_PartId PartId)
 	HAPI_AttributeInfo AttributeInfo;
 	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
-
-	FHoudiniHapiAccessor Accessor(NodeId, PartId, HAPI_UNREAL_ATTRIB_HLOD_LAYER);
-	bool bResult = Accessor.GetAttributeData(HAPI_ATTROWNER_INVALID, HLODNames);
+	bool bResult = FHoudiniEngineUtils::HapiGetAttributeDataAsString(
+		NodeId, PartId, 
+		HAPI_UNREAL_ATTRIB_HLOD_LAYER, 
+		AttributeInfo, HLODNames);
 
 	for (FString HLODLayerName : HLODNames)
 	{

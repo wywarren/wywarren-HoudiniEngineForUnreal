@@ -190,7 +190,7 @@ FHoudiniEngineString::ToFString(
 
 bool
 FHoudiniEngineString::ToFText(
-	const int32& InStringId, 
+	const int32& InStringId,
 	FText& OutText,
 	const HAPI_Session* InSession)
 {
@@ -200,18 +200,8 @@ FHoudiniEngineString::ToFText(
 
 bool
 FHoudiniEngineString::SHArrayToFStringArray(
-	const TArray<int32>& InStringIdArray, 
-	TArray<FString>& OutStringArray, 
-	const HAPI_Session* InSession)
-{
-	OutStringArray.SetNumZeroed(InStringIdArray.Num());
-	return SHArrayToFStringArray(InStringIdArray, OutStringArray.GetData(), InSession);
-}
-
-bool
-FHoudiniEngineString::SHArrayToFStringArray(
 	const TArray<int32>& InStringIdArray,
-	FString* OutStringArray,
+	TArray<FString>& OutStringArray,
 	const HAPI_Session* InSession)
 {
 	if (SHArrayToFStringArray_Batch(InStringIdArray, OutStringArray, InSession))
@@ -223,10 +213,11 @@ FHoudiniEngineString::SHArrayToFStringArray(
 bool
 FHoudiniEngineString::SHArrayToFStringArray_Batch(
 	const TArray<int32>& InStringIdArray,
-	FString* OutStringArray,
+	TArray<FString>& OutStringArray,
 	const HAPI_Session* InSession)
 {
     bool bReturn = true;
+    OutStringArray.SetNumZeroed(InStringIdArray.Num());
 
     TSet<int32> UniqueSH;
     for (const auto& CurrentSH : InStringIdArray)
@@ -289,10 +280,11 @@ FHoudiniEngineString::SHArrayToFStringArray_Batch(
 bool
 FHoudiniEngineString::SHArrayToFStringArray_Singles(
 	const TArray<int32>& InStringIdArray,
-	FString* OutStringArray,
+	TArray<FString>& OutStringArray,
 	const HAPI_Session* InSession)
 {
 	bool bReturn = true;
+	OutStringArray.SetNumZeroed(InStringIdArray.Num());
 
 	// Avoid calling HAPI to resolve the same strings again and again
 	TMap<HAPI_StringHandle, int32> ResolvedStrings;

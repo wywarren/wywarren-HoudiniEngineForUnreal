@@ -32,7 +32,6 @@
 #include "UObject/UObjectGlobals.h"
 #include "LandscapeDataAccess.h"
 #include "HoudiniAsset.h"
-#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "HoudiniPackageParams.h"
@@ -1133,9 +1132,11 @@ FHoudiniLandscapeUtils::GetNonWeightBlendedLayerNames(const FHoudiniGeoPartObjec
 		return Results;
 
 	// Get the values
+	HAPI_AttributeInfo AttribInfoNonWBLayer;
+	FHoudiniApi::AttributeInfo_Init(&AttribInfoNonWBLayer);
 	TArray<FString> AttribValues;
-	FHoudiniHapiAccessor Accessor(InHGPO.GeoId, InHGPO.PartId, HAPI_UNREAL_ATTRIB_NONWEIGHTBLENDED_LAYERS);
-	Accessor.GetAttributeData(Owner, 1,  AttribValues);
+	FHoudiniEngineUtils::HapiGetAttributeDataAsString(
+		InHGPO.GeoId, InHGPO.PartId, HAPI_UNREAL_ATTRIB_NONWEIGHTBLENDED_LAYERS, AttribInfoNonWBLayer, AttribValues, 1, Owner);
 
 	if (AttribValues.Num() <= 0)
 		return Results;
@@ -1172,11 +1173,10 @@ FHoudiniLandscapeUtils::GetLandscapeLayerInfoForLayer(const FHoudiniGeoPartObjec
 	FHoudiniApi::AttributeInfo_Init(&AttributeInfo);
 
 	TArray<FString> AttributeValues;
-	FHoudiniHapiAccessor Accessor(Part.GeoId, Part.PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_INFO);
-	bool bSuccess = Accessor.GetAttributeData(HAPI_ATTROWNER_PRIM, 1, AttributeValues);
-
-
-	if (!bSuccess)
+	if (!FHoudiniEngineUtils::HapiGetAttributeDataAsString(
+		Part.GeoId, Part.PartId, 
+		HAPI_UNREAL_ATTRIB_LANDSCAPE_LAYER_INFO,
+		AttributeInfo, AttributeValues, 1, HAPI_ATTROWNER_PRIM, 0, 1))
 		return nullptr;
 
 	if (AttributeValues.Num() > 0)
@@ -1200,10 +1200,11 @@ FHoudiniLandscapeUtils::GetLandscapeLayerInfoForLayer(const FHoudiniGeoPartObjec
 
 bool FHoudiniLandscapeUtils::GetOutputMode(int GeoId, int PartId, HAPI_AttributeOwner Owner, int& LandscapeOutputMode)
 {
-	FHoudiniHapiAccessor Accessor;
-	Accessor.Init(GeoId, PartId, HAPI_UNREAL_ATTRIB_LANDSCAPE_OUTPUT_MODE);
-	bool bSuccess = Accessor.GetAttributeFirstValue(HAPI_ATTROWNER_INVALID, LandscapeOutputMode);
-	return bSuccess;
+	return FHoudiniEngineUtils::HapiGetFirstAttributeValueAsInteger(
+		GeoId, PartId,
+		HAPI_UNREAL_ATTRIB_LANDSCAPE_OUTPUT_MODE,
+		Owner,
+		LandscapeOutputMode);
 }
 
 UMaterialInterface*

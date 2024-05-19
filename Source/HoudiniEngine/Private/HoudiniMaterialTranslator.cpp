@@ -282,7 +282,7 @@ FHoudiniMaterialTranslator::CreateHoudiniMaterials(
 	bool bInTreatExistingMaterialsAsUpToDate,
 	bool bAddDefaultMaterial)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniMaterialTranslator::CreateHoudiniMaterials);
+	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniMaterialTranslator::CreateHoudiniMaterials"));
 
 	if (InUniqueMaterialIds.Num() <= 0)
 		return false;

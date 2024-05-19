@@ -214,7 +214,7 @@ void FHoudiniStaticMeshSceneProxy::UpdatedReferencedMaterials()
 
 void FHoudiniStaticMeshSceneProxy::Build()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniStaticMeshSceneProxy::Build);
+	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniStaticMeshSceneProxy::Build"));
 
 	// Allocate a buffer set per material
 	const uint32 NumMaterials = GetNumMaterials();
@@ -392,7 +392,7 @@ bool FHoudiniStaticMeshSceneProxy::CanBeOccluded() const
 
 void FHoudiniStaticMeshSceneProxy::PopulateBuffers(const UHoudiniStaticMesh *InMesh, FHoudiniStaticMeshRenderBufferSet *InBuffers, const TArray<uint32>* InTriangleIDs, uint32 InTriangleGroupStartIdx, uint32 InNumTrianglesInGroup)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniStaticMeshSceneProxy::PopulateBuffers);
+	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniStaticMeshSceneProxy::PopulateBuffers"));
 
 	check(InMesh);
 	check(InBuffers);
@@ -476,7 +476,7 @@ void FHoudiniStaticMeshSceneProxy::PopulateBuffers(const UHoudiniStaticMesh *InM
 
 void FHoudiniStaticMeshSceneProxy::BuildSingleBufferSet()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniStaticMeshSceneProxy::BuildSingleBufferSet);
+	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniStaticMeshSceneProxy::BuildSingleBufferSet"));
 
 	if (!Component)
 		return;
@@ -501,7 +501,7 @@ void FHoudiniStaticMeshSceneProxy::BuildSingleBufferSet()
 
 void FHoudiniStaticMeshSceneProxy::BuildBufferSetsByMaterial()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniStaticMeshSceneProxy::BuildBufferSetsByMaterial);
+	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniStaticMeshSceneProxy::BuildBufferSetsByMaterial"));
 
 	// We need to group tris by which material they use, and populate a buffer set for each group
 	if (!Component)
