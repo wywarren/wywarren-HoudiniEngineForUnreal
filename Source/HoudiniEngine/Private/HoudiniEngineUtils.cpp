@@ -93,7 +93,6 @@
 #include <vector>
 
 #include "HoudiniEngineAttributes.h"
-#include "HoudiniEngineAttributesTemp.h"
 #include "Serialization/JsonSerializer.h"
 
 #if WITH_EDITOR
