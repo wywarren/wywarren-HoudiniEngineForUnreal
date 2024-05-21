@@ -36,6 +36,8 @@
 
 #include "SNewFilePathPicker.h"
 #include "SSelectFolderPathDialog.h"
+#include "SSelectHoudiniPathDialog.h"
+#include "SHoudiniNodeTreeView.h"
 
 #include "ActorTreeItem.h"
 #include "DetailsViewArgs.h"
@@ -111,6 +113,25 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		if (Dialog->ShowModal() != EAppReturnType::Cancel)
 		{
 			HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.UnrealAssetFolder = Dialog->GetFolderPath().ToString();
+		}
+
+		return FReply::Handled();
+	};
+
+	auto OnFetchFolderBrowseButtonClickedLambda = []()
+	{
+		UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+		if (!HoudiniEditorNodeSyncSubsystem)
+			FReply::Handled();
+
+		TSharedRef<SSelectHoudiniPathDialog> Dialog =
+			SNew(SSelectHoudiniPathDialog)
+			.InitialPath(FText::FromString(HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath))
+			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Fetch Node Path"));
+
+		if (Dialog->ShowModal() != EAppReturnType::Cancel)
+		{
+			HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath = Dialog->GetFolderPath().ToString();
 		}
 
 		return FReply::Handled();
@@ -254,6 +275,21 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 						HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath = NewPathStr;
 					})
+				]
+
+				+ SHorizontalBox::Slot()
+				.Padding(5.0, 0.0, 0.0, 0.0)
+				.VAlign(VAlign_Center)
+				.AutoWidth()
+				[
+					SNew(SButton)
+					//.ContentPadding(FMargin(6.0, 2.0))
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.IsEnabled(true)
+					.Text(LOCTEXT("BrowseButtonText", "..."))
+					.ToolTipText(LOCTEXT("FetchBrowseButtonToolTip", "Browse to select the node pat to fetch..."))
+					.OnClicked_Lambda(OnFetchFolderBrowseButtonClickedLambda)
 				]
 			]
 

@@ -551,9 +551,17 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini()
 		FetchStatusDetails = FetchStatusMessage + "\nYou can start a Session-sync session by using the Open Session Sync entry in the Houdini Engine menu.";
 	}
 
+	// Parse the fetch node path into a string array
+	// Multiple paths are separated by ;
+	TArray<FString> FetchNodePaths;
+	NodeSyncOptions.FetchNodePath.ParseIntoArray(FetchNodePaths, TEXT(";"), true);
+
+	// Only use the first one for now
+	FString CurrentFetchNodePath = FetchNodePaths.IsEmpty() ? FString() : FetchNodePaths[0];
+
 	// Make sure that the FetchNodePath is a valid Houdini node path pointing to a valid Node
 	HAPI_NodeId  FetchNodeId = -1;
-	if (!ValidateFetchedNodePath(NodeSyncOptions.FetchNodePath, FetchNodeId))
+	if (!ValidateFetchedNodePath(CurrentFetchNodePath, FetchNodeId))
 		return;
 
 	// We use the BGEO importer when Fetching to the contentbrowser
@@ -761,7 +769,7 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini()
 
 		// Set the Node Sync options
 		// Fetch node path
-		HNSC->SetFetchNodePath(NodeSyncOptions.FetchNodePath);
+		HNSC->SetFetchNodePath(CurrentFetchNodePath);
 		HNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
 
 		// Disable proxies
@@ -797,7 +805,7 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini()
 		// Update the status message to fetching
 		this->LastFetchStatus = EHoudiniNodeSyncStatus::Running;
 		this->FetchStatusMessage = "Fetching";
-		this->FetchStatusDetails = "Houdini Node Sync - Fetching data from Houdini Node \"" + NodeSyncOptions.FetchNodePath + "\".";
+		this->FetchStatusDetails = "Houdini Node Sync - Fetching data from Houdini Node \"" + CurrentFetchNodePath + "\".";
 
 		bSuccess = true;
 	}
