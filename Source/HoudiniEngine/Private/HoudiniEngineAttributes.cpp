@@ -265,6 +265,9 @@ template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HA
 
 template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& Results, int First, int Count)
 {
+	if (!AttributeInfo.exists)
+		return false;
+
 	if (Count == -1)
 		Count = AttributeInfo.count;
 
@@ -304,6 +307,9 @@ bool FHoudiniHapiAccessor::GetAttributeDataMain(const HAPI_AttributeInfo& Attrib
 	// This is the actual main function for getting data.
 
 	H_SCOPED_FUNCTION_DYNAMIC_LABEL(FString::Printf(TEXT("FHoudiniAttributeAccessor::Get (%s)"), ANSI_TO_TCHAR(AttributeName)));
+
+	if (!AttributeInfo.exists)
+		return false;
 
 	int NumSessions = CalculateNumberOfSessions();
 	if (IsHapiArrayType(AttributeInfo.storage))
