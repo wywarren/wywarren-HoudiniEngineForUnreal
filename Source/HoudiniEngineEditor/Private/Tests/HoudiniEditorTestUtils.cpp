@@ -213,6 +213,8 @@ void FHoudiniEditorTestUtils::InstantiateAsset(
 
 		const double CurrentTime = FPlatformTime::Seconds();
 
+		double DeltaTime = CurrentTime - StartTime;
+
 		if (IsInstantiating == false && Wrapper->GetHoudiniAssetComponent()->GetAssetState() == EHoudiniAssetState::None)
 		{
 			if (ErrorOnFail && CookSuccessfulResult == false)
@@ -240,9 +242,20 @@ void FHoudiniEditorTestUtils::InstantiateAsset(
 			}
 		}
 
-		if (CurrentTime - StartTime > TimeoutTime)
+		if (DeltaTime > TimeoutTime)
 		{
-			Test->AddError("Instantiation timeout!");
+			FString ErrorString = FString::Printf(TEXT("Instantiation timeout after %.1f seconds. \n"), DeltaTime);
+			Test->AddError(ErrorString);
+			ErrorString = FString::Printf(TEXT("IsInstantiating: %d"), IsInstantiating ? 1 : 0);
+			Test->AddError(ErrorString);
+			ErrorString = FString::Printf(TEXT("CookSuccessfulResult: %d"), CookSuccessfulResult ? 1 : 0);
+			Test->AddError(ErrorString);
+			ErrorString = FString::Printf(TEXT("TestObject->HasReachedExpectedCookCount() : %d"), TestObject->HasReachedExpectedCookCount() ? 1 : 0);
+			Test->AddError(ErrorString);
+
+			ErrorString = FString::Printf(TEXT("AssetState: %d("), static_cast<int>(Wrapper->GetHoudiniAssetComponent()->GetAssetState()));
+			Test->AddError(ErrorString);
+
 			OnFinishInstantiate(Wrapper, CookSuccessfulResult);
 			return true;
 		}
