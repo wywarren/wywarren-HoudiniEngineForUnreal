@@ -65,22 +65,12 @@ public:
 		, NodeHierarchyPath(TEXT(""))
 		, bIsRootNode(false)
 		, bImportNode(true)
+		, Parent(NULL)
 	{}
 
-	/*FHoudiniNodeInfo(FHoudiniNodeInfo& Other)
-	{
-		NodeName = Other.NodeName;
-		NodeId = Other.NodeId;
-		NodeHierarchyPath = Other.NodeHierarchyPath;
+	static void RecursiveSetImport(FHoudiniNodeInfoPtr NodeInfoPtr, bool ImportStatus);
 
-		//TSharedPtr<FHoudiniNodeInfo> ParentNodeInfo;
-		bIsRootNode = Other.bIsRootNode;
-		NodeType = Other.NodeType;
-
-		bImportNode = Other.bImportNode;
-
-		Childrens = Other.Childrens;
-	}*/
+	static bool RecursiveGetImport(FHoudiniNodeInfoPtr NodeInfoPtr);
 
 	FString NodeName;
 	int32 NodeId;
@@ -91,7 +81,9 @@ public:
 	bool bImportNode;
 
 	TArray<FHoudiniNodeInfoPtr> Childrens;
+	FHoudiniNodeInfoPtr Parent;
 };
+
 
 
 class FHoudiniNetworkInfo : public TSharedFromThis<FHoudiniNetworkInfo>
@@ -103,6 +95,40 @@ public:
 
 	TArray<FHoudiniNodeInfoPtr> RootNodesInfos;
 };
+
+
+
+// The item used for visualizing the class in the tree.
+class SHoudiniNodeTreeViewItem : public STableRow<FHoudiniNodeInfoPtr>
+{
+public:
+
+	SLATE_BEGIN_ARGS(SHoudiniNodeTreeViewItem)
+		: _HoudiniNodeInfo(nullptr)
+		//, _HoudiniNetworkInfo(nullptr)
+		, _Expanded(false)
+	{}
+
+	// Content of this item
+	SLATE_ARGUMENT(FHoudiniNodeInfoPtr, HoudiniNodeInfo)
+	//SLATE_ARGUMENT(TSharedPtr<FHoudiniNetworkInfo>, HoudiniNetworkInfo)
+	SLATE_ARGUMENT(bool, Expanded)
+	SLATE_END_ARGS()
+
+	// Construct the widget
+	void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView);
+
+private:
+
+	void OnItemCheckChanged(ECheckBoxState CheckType);
+
+	ECheckBoxState IsItemChecked() const;
+
+	// The node info to build the tree view row from.
+	FHoudiniNodeInfoPtr HoudiniNodeInfo;
+};
+
+
 
 class SHoudiniNodeTreeView : public STreeView<FHoudiniNodeInfoPtr>
 {
@@ -139,8 +165,8 @@ protected:
 	void RemoveSelectionFromImport();
 	void SetSelectionImportState(bool MarkForImport);
 	void OnSelectionChanged(FHoudiniNodeInfoPtr Item, ESelectInfo::Type SelectionType);
-
-	void RecursiveSetImport(FHoudiniNodeInfoPtr NodeInfoPtr, bool ImportStatus);
-
 	void OnSetExpandRecursive(FHoudiniNodeInfoPtr NodeInfoPtr, bool ExpandState);
+
+	// Used to automatically expand previously selected items' parents upon construction
+	void RecursiveSetDefaultExpand(FHoudiniNodeInfoPtr NodeInfo);
 };

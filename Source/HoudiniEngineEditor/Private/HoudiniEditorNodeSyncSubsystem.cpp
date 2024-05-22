@@ -843,6 +843,7 @@ UHoudiniEditorNodeSyncSubsystem::GatherAllFetchedNodeIds(
 	// With a few NodeSync specific twists:
 	// - does not require an asset/asset info
 	// - does not care about editable/templated nodes
+	// - ignore object visibility
 	
 	// Get the NodeInfo for the fetch node
 	HAPI_NodeInfo FetchNodeInfo;
@@ -932,25 +933,21 @@ UHoudiniEditorNodeSyncSubsystem::GatherAllFetchedNodeIds(
 		const HAPI_ObjectInfo& CurrentHapiObjectInfo = ObjectInfos[ObjectIdx];
 
 		// Determine whether this object node is fully visible.
-		bool bObjectIsVisible = false;
 		HAPI_NodeId GatherOutputsNodeId = -1; // Outputs will be gathered from this node.
 		if (!bAssetHasChildren)
 		{
 			// If the asset doesn't have children, we have to gather outputs from the asset's parent in order to output
 			// this asset node
-			bObjectIsVisible = true;
 			GatherOutputsNodeId = FetchNodeInfo.parentId;
-		}		
+		}
 		else if (bIsSopAsset)
 		{
 			// When dealing with a SOP asset, be sure to gather outputs from the SOP node, not the
 			// outer object node.
-			bObjectIsVisible = true;
 			GatherOutputsNodeId = InFetchNodeId;
-		}		
+		}
 		else
 		{
-			bObjectIsVisible = FHoudiniEngineUtils::IsObjNodeFullyVisible(AllObjectIds, InFetchNodeId, CurrentHapiObjectInfo.nodeId);
 			GatherOutputsNodeId = CurrentHapiObjectInfo.nodeId;
 		}
 
@@ -960,21 +957,17 @@ UHoudiniEditorNodeSyncSubsystem::GatherAllFetchedNodeIds(
 
 		// These node ids may need to be cooked in order to extract part counts.
 		TSet<HAPI_NodeId> CurrentOutGeoNodeIds;
-		if (bObjectIsVisible)
-		{
-			// NOTE: The HAPI_GetDisplayGeoInfo will not always return the expected Geometry subnet's
-			//     Display flag geometry. If the Geometry subnet contains an Object subnet somewhere, the
-			//     GetDisplayGeoInfo will sometimes fetch the display SOP from within the subnet which is
-			//     not what we want.
+		// NOTE: The HAPI_GetDisplayGeoInfo will not always return the expected Geometry subnet's
+		//     Display flag geometry. If the Geometry subnet contains an Object subnet somewhere, the
+		//     GetDisplayGeoInfo will sometimes fetch the display SOP from within the subnet which is
+		//     not what we want.
 
-			// Resolve and gather outputs (display / output / template nodes) from the GatherOutputsNodeId.
-			FHoudiniEngineUtils::GatherImmediateOutputGeoInfos(GatherOutputsNodeId,
-				bUseOutputNodes,
-				false,
-				GeoInfos,
-				CurrentOutGeoNodeIds);
-
-		}
+		// Resolve and gather outputs (display / output / template nodes) from the GatherOutputsNodeId.
+		FHoudiniEngineUtils::GatherImmediateOutputGeoInfos(GatherOutputsNodeId,
+			bUseOutputNodes,
+			false,
+			GeoInfos,
+			CurrentOutGeoNodeIds);
 
 		// Add them to our global output node list
 		for (const HAPI_NodeId& NodeId : CurrentOutGeoNodeIds)

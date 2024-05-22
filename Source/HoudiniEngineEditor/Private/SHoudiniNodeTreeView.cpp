@@ -77,13 +77,153 @@ struct FSlateBrush;
 
 #define LOCTEXT_NAMESPACE "HoudiniNodeTreeview"
 
+
+
+void
+FHoudiniNodeInfo::RecursiveSetImport(FHoudiniNodeInfoPtr NodeInfoPtr, bool bImport)
+{
+	NodeInfoPtr->bImportNode = bImport;
+	for (auto Child : NodeInfoPtr->Childrens)
+	{
+		RecursiveSetImport(Child, bImport);
+	}
+
+	if (!bImport)
+	{
+		// If we're not imported anymore we need to disable our parents' import  
+		// as they are no longer fully selected...
+		FHoudiniNodeInfoPtr ParentPtr = NodeInfoPtr->Parent;
+		while (ParentPtr != NULL)
+		{
+			ParentPtr->bImportNode = false;
+			ParentPtr = ParentPtr->Parent;
+		}
+	}
+}
+
+bool
+FHoudiniNodeInfo::RecursiveGetImport(FHoudiniNodeInfoPtr NodeInfoPtr)
+{
+	if(NodeInfoPtr->bImportNode)
+		return true;
+
+	for (auto Child : NodeInfoPtr->Childrens)
+	{
+		if (RecursiveGetImport(Child))
+			return true;
+	}
+
+	return false;
+}
+
+//
+// SHoudiniNodeTreeViewItem
+//
+
+// Constructs the widget for one row of the TreeView
+void 
+SHoudiniNodeTreeViewItem::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView)
+{
+	HoudiniNodeInfo = InArgs._HoudiniNodeInfo;
+	bool bExpanded = InArgs._Expanded;
+
+	//This is suppose to always be valid
+	check(HoudiniNodeInfo.IsValid());
+	
+	const FSlateBrush* ClassIcon = nullptr;
+	if (HoudiniNodeInfo->NodeType.Equals("OBJ"))
+		ClassIcon = bExpanded ? FAppStyle::GetBrush("Icons.FolderOpen") : FAppStyle::GetBrush("Icons.FolderClosed");
+	else
+		ClassIcon = FSlateIconFinder::FindIconBrushForClass(AActor::StaticClass());
+
+	//Prepare the tooltip
+	FString Tooltip = HoudiniNodeInfo->NodeName;
+	if (!HoudiniNodeInfo->NodeType.IsEmpty())
+	{
+		Tooltip += TEXT(" [") + HoudiniNodeInfo->NodeType + TEXT("]");
+	}
+
+	if (!HoudiniNodeInfo->NodeHierarchyPath.IsEmpty())
+	{
+		Tooltip += TEXT("\n") + HoudiniNodeInfo->NodeHierarchyPath;
+	}
+
+	this->ChildSlot
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.Padding(2.0f, 0.0f, 2.0f, 0.0f)
+		[
+			SNew(SCheckBox)
+			.OnCheckStateChanged(this, &SHoudiniNodeTreeViewItem::OnItemCheckChanged)
+			.IsChecked(this, &SHoudiniNodeTreeViewItem::IsItemChecked)
+		]
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SExpanderArrow, SharedThis(this))
+		]
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.Padding(0.0f, 2.0f, 6.0f, 2.0f)
+		[
+			SNew(SImage)
+			.Image(ClassIcon)
+			.Visibility(ClassIcon != FAppStyle::GetDefaultBrush() ? EVisibility::Visible : EVisibility::Collapsed)
+		]
+
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		.Padding(0.0f, 3.0f, 6.0f, 3.0f)
+		.VAlign(VAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(FText::FromString(HoudiniNodeInfo->NodeName))
+			.ToolTipText(FText::FromString(Tooltip))
+		]
+	];
+
+	STableRow<FHoudiniNodeInfoPtr>::ConstructInternal(
+		STableRow::FArguments()
+		.ShowSelection(true),
+		InOwnerTableView
+	);
+}
+
+void 
+SHoudiniNodeTreeViewItem::OnItemCheckChanged(ECheckBoxState CheckType)
+{
+	if (!HoudiniNodeInfo.IsValid())
+		return;
+
+	bool bImport = CheckType == ECheckBoxState::Checked;
+	HoudiniNodeInfo->bImportNode = bImport;
+
+	// Recursively set our children's import state
+	FHoudiniNodeInfo::RecursiveSetImport(HoudiniNodeInfo, bImport);
+}
+
+ECheckBoxState
+SHoudiniNodeTreeViewItem::IsItemChecked() const
+{
+	return HoudiniNodeInfo->bImportNode ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+
+//
+// SHoudiniNodeTreeView
+//
+
 SHoudiniNodeTreeView::~SHoudiniNodeTreeView()
 {
 	HoudiniRootNodeArray.Empty();
 	HoudiniNetworkInfo = NULL;
 }
 
-void SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InArgs)
+void
+SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InArgs)
 {
 	HoudiniNetworkInfo = InArgs._HoudiniNetworkInfo;
 	//Build the FHoudiniNodeInfoPtr tree data
@@ -91,10 +231,8 @@ void SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InA
 	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
 	{
 		FHoudiniNodeInfoPtr NodeInfo = (*NodeInfoIt);
-		//if (!NodeInfo.ParentNodeInfo.IsValid())
 		if (NodeInfo->bIsRootNode)
 		{
-			//HoudiniRootNodeArray.Add(MakeShared<FHoudiniNodeInfo>(NodeInfo));
 			HoudiniRootNodeArray.Add(NodeInfo);
 		}
 	}
@@ -110,203 +248,26 @@ void SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InA
 		.OnSelectionChanged(this, &SHoudiniNodeTreeView::OnSelectionChanged)
 		.OnSetExpansionRecursive(this, &SHoudiniNodeTreeView::OnSetExpandRecursive)
 	);
+
+	// Expand the previous selection
+	for (auto NodeInfo : HoudiniRootNodeArray)
+	{
+		RecursiveSetDefaultExpand(NodeInfo);
+	}
 }
 
-/** The item used for visualizing the class in the tree. */
-class SHoudiniNodeTreeViewItem : public STableRow<FHoudiniNodeInfoPtr>
+TSharedRef<ITableRow>
+SHoudiniNodeTreeView::OnGenerateRowHoudiniNodeTreeView(FHoudiniNodeInfoPtr Item, const TSharedRef<STableViewBase>& OwnerTable)
 {
-public:
-
-	SLATE_BEGIN_ARGS(SHoudiniNodeTreeViewItem)
-		: _HoudiniNodeInfo(nullptr)
-		, _HoudiniNetworkInfo(nullptr)
-		, _Expanded(false)
-	{}
-
-	/** The item content. */
-	SLATE_ARGUMENT(FHoudiniNodeInfoPtr, HoudiniNodeInfo)
-	SLATE_ARGUMENT(TSharedPtr<FHoudiniNetworkInfo>, HoudiniNetworkInfo)
-	SLATE_ARGUMENT(bool, Expanded)
-	SLATE_END_ARGS()
-
-	/**
-	* Construct the widget
-	*
-	* @param InArgs   A declaration from which to construct the widget
-	*/
-	void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView)
-	{
-		HoudiniNodeInfo = InArgs._HoudiniNodeInfo;
-		HoudiniNetworkInfo = InArgs._HoudiniNetworkInfo;
-		
-		bool bExpanded = InArgs._Expanded;
-
-		//This is suppose to always be valid
-		check(HoudiniNodeInfo.IsValid());
-		check(HoudiniNetworkInfo.IsValid());
-
-		/*
-		UClass* IconClass = AActor::StaticClass();
-		if (HoudiniNodeInfo->AttributeInfo.IsValid())
-		{
-			IconClass = HoudiniNodeInfo->AttributeInfo->GetType();
-		}
-		else if (FHoudiniNodeInfo->NodeType.Compare(TEXT("eLight")) == 0)
-		{
-			IconClass = ULightComponent::StaticClass();
-			if (HoudiniNetworkInfo->LightInfo.Contains(FHoudiniNodeInfo->AttributeUniqueId))
-			{
-				TSharedPtr<FFbxLightInfo> LightInfo = *HoudiniNetworkInfo->LightInfo.Find(FHoudiniNodeInfo->AttributeUniqueId);
-				if (LightInfo->Type == 0)
-				{
-					IconClass = UPointLightComponent::StaticClass();
-				}
-				}
-				else if (LightInfo->Type == 1)
-				{
-					IconClass = UDirectionalLightComponent::StaticClass();
-				}
-				else if (LightInfo->Type == 2)
-				{
-					IconClass = USpotLightComponent::StaticClass();
-				}
-			}
-		}
-		else if (FHoudiniNodeInfo->NodeType.Compare(TEXT("eCamera")) == 0)
-		{
-			IconClass = UCameraComponent::StaticClass();
-		}
-
-		const FSlateBrush* ClassIcon = FSlateIconFinder::FindIconBrushForClass(IconClass);
-		*/
-		
-		const FSlateBrush* ClassIcon = nullptr;
-		if (HoudiniNodeInfo->NodeType.Equals("OBJ"))
-			ClassIcon = bExpanded ? FAppStyle::GetBrush("Icons.FolderOpen") : FAppStyle::GetBrush("Icons.FolderClosed");
-		else
-			ClassIcon = FSlateIconFinder::FindIconBrushForClass(AActor::StaticClass());		
-
-		//Prepare the tooltip
-		FString Tooltip = HoudiniNodeInfo->NodeName;
-		if (!HoudiniNodeInfo->NodeType.IsEmpty() && HoudiniNodeInfo->NodeType.Compare(TEXT("eNull")) != 0)
-		{
-			Tooltip += TEXT(" [") + HoudiniNodeInfo->NodeType + TEXT("]");
-		}
-
-		this->ChildSlot
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			.Padding(2.0f, 0.0f, 2.0f, 0.0f)
-			[
-				SNew(SCheckBox)
-				.OnCheckStateChanged(this, &SHoudiniNodeTreeViewItem::OnItemCheckChanged)
-				.IsChecked(this, &SHoudiniNodeTreeViewItem::IsItemChecked)
-			]
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			[
-				SNew(SExpanderArrow, SharedThis(this))
-			]
-
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			.Padding(0.0f, 2.0f, 6.0f, 2.0f)
-			[
-				SNew(SImage)
-				.Image(ClassIcon)
-				.Visibility(ClassIcon != FAppStyle::GetDefaultBrush() ? EVisibility::Visible : EVisibility::Collapsed)
-			]
-
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			.Padding(0.0f, 3.0f, 6.0f, 3.0f)
-			.VAlign(VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(FText::FromString(HoudiniNodeInfo->NodeName))
-				.ToolTipText(FText::FromString(Tooltip))
-			]
-
-		];
-
-		STableRow<FHoudiniNodeInfoPtr>::ConstructInternal(
-			STableRow::FArguments()
-			.ShowSelection(true),
-			InOwnerTableView
-		);
-	}
-
-private:
-
-	/*
-	void RecursivelySetLODMeshImportState(TSharedPtr<FHoudiniNodeInfo> NodeInfo, bool bState)
-	{
-		//Set the bImportNode property for all mesh under eLODGroup
-		for (TSharedPtr<FHoudiniNodeInfo> ChildNodeInfo : NodeInfo->Childrens)
-		{
-			if (!ChildNodeInfo.IsValid())
-				continue;
-			if (ChildNodeInfo->NodeType.Compare(TEXT("eMesh")) == 0)
-			{
-				ChildNodeInfo->bImportNode = bState;
-			}
-			else
-			{
-				RecursivelySetLODMeshImportState(ChildNodeInfo, bState);
-			}
-		}
-	}
-	*/
-
-	void OnItemCheckChanged(ECheckBoxState CheckType)
-	{
-		if (!HoudiniNodeInfo.IsValid())
-			return;
-
-		HoudiniNodeInfo->bImportNode = CheckType == ECheckBoxState::Checked;
-
-		/*
-		if (HoudiniNodeInfo->NodeType.Compare(TEXT("eLODGroup")) == 0)
-		{
-			RecursivelySetLODMeshImportState(HoudiniNodeInfo, HoudiniNodeInfo->bImportNode);
-		}
-		*/
-		/*
-		if (FHoudiniNodeInfo->NodeType.Compare(TEXT("eMesh")) == 0)
-		{
-			//Verify if parent is a LOD group
-			TSharedPtr<FHoudiniNodeInfo> ParentLODNodeInfo = FHoudiniNetworkInfo::RecursiveFindLODParentNode(FHoudiniNodeInfo);
-			if (ParentLODNodeInfo.IsValid())
-			{
-				ParentLODNodeInfo->bImportNode = FHoudiniNodeInfo->bImportNode;
-				RecursivelySetLODMeshImportState(ParentLODNodeInfo, FHoudiniNodeInfo->bImportNode);
-			}
-		}
-		*/
-	}
-
-	ECheckBoxState IsItemChecked() const
-	{
-		return HoudiniNodeInfo->bImportNode ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-	}
-
-	/** The node info to build the tree view row from. */
-	FHoudiniNodeInfoPtr HoudiniNodeInfo;
-	TSharedPtr<FHoudiniNetworkInfo> HoudiniNetworkInfo;
-};
-
-TSharedRef<ITableRow> SHoudiniNodeTreeView::OnGenerateRowHoudiniNodeTreeView(FHoudiniNodeInfoPtr Item, const TSharedRef<STableViewBase>& OwnerTable)
-{
+	bool bExpanded = IsItemExpanded(Item) || FHoudiniNodeInfo::RecursiveGetImport(Item);
 	TSharedRef<SHoudiniNodeTreeViewItem> ReturnRow = SNew(SHoudiniNodeTreeViewItem, OwnerTable)
 		.HoudiniNodeInfo(Item)
-		.HoudiniNetworkInfo(HoudiniNetworkInfo)
-		.Expanded(IsItemExpanded(Item));
+		.Expanded(bExpanded);
 	return ReturnRow;
 }
 
-void SHoudiniNodeTreeView::OnGetChildrenHoudiniNodeTreeView(FHoudiniNodeInfoPtr InParent, TArray<FHoudiniNodeInfoPtr>& OutChildren)
+void 
+SHoudiniNodeTreeView::OnGetChildrenHoudiniNodeTreeView(FHoudiniNodeInfoPtr InParent, TArray<FHoudiniNodeInfoPtr>& OutChildren)
 {
 	for (auto Child : InParent->Childrens)
 	{
@@ -314,16 +275,10 @@ void SHoudiniNodeTreeView::OnGetChildrenHoudiniNodeTreeView(FHoudiniNodeInfoPtr 
 	}
 }
 
-void SHoudiniNodeTreeView::RecursiveSetImport(FHoudiniNodeInfoPtr NodeInfoPtr, bool ImportStatus)
-{
-	NodeInfoPtr->bImportNode = ImportStatus;
-	for (auto Child : NodeInfoPtr->Childrens)
-	{
-		RecursiveSetImport(Child, ImportStatus);
-	}
-}
 
-void SHoudiniNodeTreeView::OnToggleSelectAll(ECheckBoxState CheckType)
+
+void 
+SHoudiniNodeTreeView::OnToggleSelectAll(ECheckBoxState CheckType)
 {
 	//check all actor for import
 	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
@@ -332,12 +287,13 @@ void SHoudiniNodeTreeView::OnToggleSelectAll(ECheckBoxState CheckType)
 		//if (!NodeInfo.ParentNodeInfo.IsValid())
 		if(NodeInfo->bIsRootNode)
 		{
-			RecursiveSetImport(NodeInfo, CheckType == ECheckBoxState::Checked);
+			FHoudiniNodeInfo::RecursiveSetImport(NodeInfo, CheckType == ECheckBoxState::Checked);
 		}
 	}
 }
 
-void RecursiveSetExpand(SHoudiniNodeTreeView* TreeView, FHoudiniNodeInfoPtr NodeInfoPtr, bool ExpandState)
+void 
+RecursiveSetExpand(SHoudiniNodeTreeView* TreeView, FHoudiniNodeInfoPtr NodeInfoPtr, bool ExpandState)
 {
 	TreeView->SetItemExpansion(NodeInfoPtr, ExpandState);
 	for (auto Child : NodeInfoPtr->Childrens)
@@ -346,12 +302,26 @@ void RecursiveSetExpand(SHoudiniNodeTreeView* TreeView, FHoudiniNodeInfoPtr Node
 	}
 }
 
-void SHoudiniNodeTreeView::OnSetExpandRecursive(FHoudiniNodeInfoPtr NodeInfoPtr, bool ExpandState)
+void 
+SHoudiniNodeTreeView::OnSetExpandRecursive(FHoudiniNodeInfoPtr NodeInfoPtr, bool ExpandState)
 {
 	RecursiveSetExpand(this, NodeInfoPtr, ExpandState);
 }
 
-FReply SHoudiniNodeTreeView::OnExpandAll()
+void
+SHoudiniNodeTreeView::RecursiveSetDefaultExpand(FHoudiniNodeInfoPtr NodeInfo)
+{
+	bool bExpanded = IsItemExpanded(NodeInfo) || (FHoudiniNodeInfo::RecursiveGetImport(NodeInfo) && !NodeInfo->bImportNode);
+	SetItemExpansion(NodeInfo, bExpanded);
+
+	for (auto Child : NodeInfo->Childrens)
+	{
+		RecursiveSetDefaultExpand(Child);
+	}
+}
+
+FReply 
+SHoudiniNodeTreeView::OnExpandAll()
 {
 	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
 	{
@@ -365,7 +335,8 @@ FReply SHoudiniNodeTreeView::OnExpandAll()
 	return FReply::Handled();
 }
 
-FReply SHoudiniNodeTreeView::OnCollapseAll()
+FReply 
+SHoudiniNodeTreeView::OnCollapseAll()
 {
 	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
 	{
@@ -379,7 +350,8 @@ FReply SHoudiniNodeTreeView::OnCollapseAll()
 	return FReply::Handled();
 }
 
-TSharedPtr<SWidget> SHoudiniNodeTreeView::OnOpenContextMenu()
+TSharedPtr<SWidget> 
+SHoudiniNodeTreeView::OnOpenContextMenu()
 {
 	// Build up the menu for a selection
 	const bool bCloseAfterSelection = true;
@@ -402,28 +374,32 @@ TSharedPtr<SWidget> SHoudiniNodeTreeView::OnOpenContextMenu()
 	return MenuBuilder.MakeWidget();
 }
 
-void SHoudiniNodeTreeView::AddSelectionToImport()
+void 
+SHoudiniNodeTreeView::AddSelectionToImport()
 {
 	SetSelectionImportState(true);
 }
 
-void SHoudiniNodeTreeView::RemoveSelectionFromImport()
+void
+SHoudiniNodeTreeView::RemoveSelectionFromImport()
 {
 	SetSelectionImportState(false);
 }
 
-void SHoudiniNodeTreeView::SetSelectionImportState(bool MarkForImport)
+void 
+SHoudiniNodeTreeView::SetSelectionImportState(bool MarkForImport)
 {
 	TArray<FHoudiniNodeInfoPtr> SelectedHoudiniNodeInfos;
 	GetSelectedItems(SelectedHoudiniNodeInfos);
 	for (auto Item : SelectedHoudiniNodeInfos)
 	{
 		FHoudiniNodeInfoPtr ItemPtr = Item;
-		ItemPtr->bImportNode = MarkForImport;
+		FHoudiniNodeInfo::RecursiveSetImport(ItemPtr, MarkForImport);
 	}
 }
 
-void SHoudiniNodeTreeView::OnSelectionChanged(FHoudiniNodeInfoPtr Item, ESelectInfo::Type SelectionType)
+void
+SHoudiniNodeTreeView::OnSelectionChanged(FHoudiniNodeInfoPtr Item, ESelectInfo::Type SelectionType)
 {
 }
 

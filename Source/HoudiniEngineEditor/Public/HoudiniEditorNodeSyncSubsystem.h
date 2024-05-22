@@ -25,7 +25,7 @@ struct HOUDINIENGINEEDITOR_API FHoudiniNodeSyncOptions
 public:
 
 	UPROPERTY()
-	FString FetchNodePath = "/obj/UnrealContent";
+	FString FetchNodePath = "/obj/...";
 
 	UPROPERTY()
 	FString SendNodePath = "/obj/UnrealContent";

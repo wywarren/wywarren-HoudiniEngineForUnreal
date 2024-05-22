@@ -56,10 +56,6 @@ class SWidget;
 typedef TSharedPtr<FHoudiniNodeInfo> FHoudiniNodeInfoPtr;
 
 
-void FillHoudiniNetworkInfo(FHoudiniNetworkInfo& InNetworkInfo);
-
-void FillHoudiniNodeInfo(FHoudiniNodeInfoPtr InNodeInfo);
-
 class SSelectHoudiniPathDialog : public SWindow
 {
 public:
@@ -79,6 +75,10 @@ public:
 
 	void UpdateNodePathFromTreeView(FHoudiniNodeInfoPtr& InNodeInfo, FString& OutPath);
 
+	void FillHoudiniNetworkInfo();
+
+	void FillHoudiniNodeInfo(FHoudiniNodeInfoPtr InNodeInfo);
+
 private:
 
 	void OnPathChange(const FString& NewPath);
@@ -90,4 +90,5 @@ private:
 
 	EAppReturnType::Type UserResponse;
 	FText FolderPath;
+	TArray<FString> SplitFolderPath;
 };

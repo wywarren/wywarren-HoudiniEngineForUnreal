@@ -127,7 +127,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		TSharedRef<SSelectHoudiniPathDialog> Dialog =
 			SNew(SSelectHoudiniPathDialog)
 			.InitialPath(FText::FromString(HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath))
-			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Fetch Node Path"));
+			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Houdini nodes to fetch"));
 
 		if (Dialog->ShowModal() != EAppReturnType::Cancel)
 		{
@@ -259,8 +259,21 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 				[
 					SNew(SEditableTextBox)
 					.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
-					.ToolTipText(LOCTEXT("HoudiniNodePathTooltip",
-						"The path of the node in Houdini.\ne.g /obj/MyNetwork/Mynode \nThe path can easily be obtain by copy/pasting the node to this text box."))
+					.ToolTipText_Lambda([]()
+					{
+						FString TooltipString =
+							"The path of the nodes in Houdini that you want to fetch.\ne.g /obj/MyNetwork/Mynode \nThe paths can easily be obtained by using the browse button and selecting them in the dialog.\
+							\nAlternatively, you can copy/paste a node to this text box to get its path.\nMultiple paths can be separated by using ; delimiters.";
+
+						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+						if (!HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath.IsEmpty())
+						{
+							TooltipString += "\n\nCurrent value:\n";
+							TooltipString += HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath.Replace(TEXT(";"), TEXT("\n"));
+						}
+
+						return FText::FromString(TooltipString);
+					})
 					.HintText(LOCTEXT("NodePathLabel", "Houdini Node Path To Fetch"))
 					.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
 					.Text_Lambda([]()
@@ -288,7 +301,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 					.HAlign(HAlign_Center)
 					.IsEnabled(true)
 					.Text(LOCTEXT("BrowseButtonText", "..."))
-					.ToolTipText(LOCTEXT("FetchBrowseButtonToolTip", "Browse to select the node pat to fetch..."))
+					.ToolTipText(LOCTEXT("FetchBrowseButtonToolTip", "Browse to select the nodes to fetch..."))
 					.OnClicked_Lambda(OnFetchFolderBrowseButtonClickedLambda)
 				]
 			]

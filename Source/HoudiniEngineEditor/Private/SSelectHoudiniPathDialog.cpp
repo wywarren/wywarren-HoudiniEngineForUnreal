@@ -73,7 +73,153 @@ struct FSlateBrush;
 #define LOCTEXT_NAMESPACE "HoudiniNodeTreeview"
 
 
-void FillHoudiniNodeInfo(FHoudiniNodeInfoPtr InNodeInfo)
+SSelectHoudiniPathDialog::SSelectHoudiniPathDialog()
+	: UserResponse(EAppReturnType::Cancel)
+{
+
+}
+
+void
+SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
+{
+	FolderPath = InArgs._InitialPath;
+	if (FolderPath.IsEmpty())
+	{
+		FolderPath = FText::FromString(TEXT("/Game"));
+	}
+
+	// Split the initial folder path to multiple strings if needed
+	// This will allow us to re-select previously selected nodes.
+	FString FolderPathStr = FolderPath.ToString();
+	FolderPathStr.ParseIntoArray(SplitFolderPath, TEXT(";"), true);
+	
+
+	// Create the Network info and fill all the node hierarchy for it
+	FillHoudiniNetworkInfo();
+
+	//Create the treeview
+	HoudiniNodeTreeView = SNew(SHoudiniNodeTreeView)
+		.HoudiniNetworkInfo(MakeShared<FHoudiniNetworkInfo>(NetworkInfo));
+	
+	SWindow::Construct(SWindow::FArguments()
+	.Title(InArgs._TitleText)
+	.SupportsMinimize(false)
+	.SupportsMaximize(false)
+	.IsTopmostWindow(true)
+	.ClientSize(FVector2D(450, 450))
+	[
+		SNew(SVerticalBox)
+
+		+ SVerticalBox::Slot()
+		.Padding(2)
+		[
+			SNew(SBorder)
+			.BorderImage(_GetBrush("ToolPanel.GroupBorder"))
+			[
+				SNew(SVerticalBox)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("SelectPath", "Select Path"))
+					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
+				]
+				+ SVerticalBox::Slot()
+				.HAlign(HAlign_Left)
+				.AutoHeight()
+				[
+					SNew(SUniformGridPanel)
+					.SlotPadding(2.0f)
+					+ SUniformGridPanel::Slot(0, 0)
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						.AutoWidth()
+						[
+							SNew(SCheckBox)
+							.HAlign(HAlign_Center)
+							.OnCheckStateChanged(HoudiniNodeTreeView.Get(), &SHoudiniNodeTreeView::OnToggleSelectAll)
+						]
+						+ SHorizontalBox::Slot()
+						.FillWidth(1.0f)
+						.Padding(0.0f, 3.0f, 6.0f, 3.0f)
+						.VAlign(VAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(LOCTEXT("SelectHoudiniNodePath_SelectAll", "All"))
+						]
+					]
+					+ SUniformGridPanel::Slot(1, 0)
+					[
+						SNew(SButton)
+						.HAlign(HAlign_Center)
+						.Text(LOCTEXT("SelectHoudiniNodePath_ExpandAll", "Expand All"))
+						.OnClicked(HoudiniNodeTreeView.Get(), &SHoudiniNodeTreeView::OnExpandAll)
+					]
+					+ SUniformGridPanel::Slot(2, 0)
+					[
+						SNew(SButton)
+						.HAlign(HAlign_Center)
+						.Text(LOCTEXT("SelectHoudiniNodePath_CollapseAll", "Collapse All"))
+						.OnClicked(HoudiniNodeTreeView.Get(), &SHoudiniNodeTreeView::OnCollapseAll)
+					]
+				]
+				+ SVerticalBox::Slot()
+				.FillHeight(1.0f)
+				[
+					SNew(SBox)
+					[
+						HoudiniNodeTreeView.ToSharedRef()
+					]
+				]
+			]
+		]
+
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.HAlign(HAlign_Right)
+		.Padding(5)
+		[
+			SNew(SUniformGridPanel)
+			.SlotPadding(_GetMargin("StandardDialog.SlotPadding"))
+			.MinDesiredSlotWidth(_GetFloat("StandardDialog.MinDesiredSlotWidth"))
+			.MinDesiredSlotHeight(_GetFloat("StandardDialog.MinDesiredSlotHeight"))
+			+ SUniformGridPanel::Slot(0, 0)
+			[
+				SNew(SButton)
+				.HAlign(HAlign_Center)
+				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
+				.Text(LOCTEXT("OK", "OK"))
+				.OnClicked(this, &SSelectHoudiniPathDialog::OnButtonClick, EAppReturnType::Ok)
+			]
+			+ SUniformGridPanel::Slot(1, 0)
+			[
+				SNew(SButton)
+				.HAlign(HAlign_Center)
+				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
+				.Text(LOCTEXT("Cancel", "Cancel"))
+				.OnClicked(this, &SSelectHoudiniPathDialog::OnButtonClick, EAppReturnType::Cancel)
+			]
+		]
+	]);
+}
+
+EAppReturnType::Type
+SSelectHoudiniPathDialog::ShowModal()
+{
+	GEditor->EditorAddModalWindow(SharedThis(this));
+	return UserResponse;
+}
+
+const FText&
+SSelectHoudiniPathDialog::GetFolderPath() const
+{
+	return FolderPath;
+}
+
+
+void
+SSelectHoudiniPathDialog::FillHoudiniNodeInfo(FHoudiniNodeInfoPtr InNodeInfo)
 {
 	if (!InNodeInfo.IsValid())
 		return;
@@ -96,8 +242,14 @@ void FillHoudiniNodeInfo(FHoudiniNodeInfoPtr InNodeInfo)
 	// Node Path
 	FHoudiniEngineUtils::HapiGetAbsNodePath(InNodeInfo->NodeId, InNodeInfo->NodeHierarchyPath);
 
-	// Init import
-	InNodeInfo->bImportNode = false;
+	// Do we need to initialise import?
+	// This is not necessary if import was set to true by our parent
+	if (!InNodeInfo->bImportNode)
+	{
+		// See if our path is in the current split folder path
+		if (!InNodeInfo->NodeHierarchyPath.IsEmpty() && SplitFolderPath.Contains(InNodeInfo->NodeHierarchyPath))
+			InNodeInfo->bImportNode = true;
+	}
 
 	bool bLookForChildrens = false;
 	switch (NodeInfo.type)
@@ -179,15 +331,20 @@ void FillHoudiniNodeInfo(FHoudiniNodeInfoPtr InNodeInfo)
 	for (int32 Idx = 0; Idx < ChildrenCount; Idx++)
 	{
 		InNodeInfo->Childrens[Idx] = MakeShared<FHoudiniNodeInfo>();
-
 		InNodeInfo->Childrens[Idx]->NodeId = ChildrenNodeIds[Idx];
-		//InNodeInfo->Childrens[Idx].ParentNodeInfo = InNodeInfo->AsShared();
 		InNodeInfo->Childrens[Idx]->bIsRootNode = false;
+		InNodeInfo->Childrens[Idx]->Parent = InNodeInfo;
+
+		// Initialize our children's import value to us
+		// They should be marked as imported if we are
+		InNodeInfo->Childrens[Idx]->bImportNode = InNodeInfo->bImportNode;
+
 		FillHoudiniNodeInfo(InNodeInfo->Childrens[Idx]);
 	}
 }
 
-void FillHoudiniNetworkInfo(FHoudiniNetworkInfo& InNetworkInfo)
+void 
+SSelectHoudiniPathDialog::FillHoudiniNetworkInfo()
 {
 	// Start everything from /obj
 	FString RootNodePath = "/obj";
@@ -225,113 +382,17 @@ void FillHoudiniNetworkInfo(FHoudiniNetworkInfo& InNetworkInfo)
 	}
 
 	// Initialize the node hierarchy
-	InNetworkInfo.RootNodesInfos.SetNum(Count);
+	NetworkInfo.RootNodesInfos.SetNum(Count);
 
 	for (int32 Idx = 0; Idx < Count; Idx++)
 	{
-		InNetworkInfo.RootNodesInfos[Idx] = MakeShared<FHoudiniNodeInfo>();
-		InNetworkInfo.RootNodesInfos[Idx]->NodeId = ChildrenNodeIds[Idx];
-		//InNetworkInfo->NetworkInfo[Idx].ParentNodeInfo = NULL;
-		InNetworkInfo.RootNodesInfos[Idx]->bIsRootNode = true;
-		FillHoudiniNodeInfo(InNetworkInfo.RootNodesInfos[Idx]);
+		NetworkInfo.RootNodesInfos[Idx] = MakeShared<FHoudiniNodeInfo>();
+		NetworkInfo.RootNodesInfos[Idx]->NodeId = ChildrenNodeIds[Idx];
+		NetworkInfo.RootNodesInfos[Idx]->bIsRootNode = true;
+		NetworkInfo.RootNodesInfos[Idx]->bImportNode = false;
+		NetworkInfo.RootNodesInfos[Idx]->Parent = NULL;
+		FillHoudiniNodeInfo(NetworkInfo.RootNodesInfos[Idx]);
 	}
-}
-
-
-SSelectHoudiniPathDialog::SSelectHoudiniPathDialog()
-	: UserResponse(EAppReturnType::Cancel)
-{	
-}
-
-void
-SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
-{
-	FolderPath = InArgs._InitialPath;
-	if (FolderPath.IsEmpty())
-	{
-		FolderPath = FText::FromString(TEXT("/Game"));
-	}
-
-	// Create the Network info and fill all the node hierarchy for it	
-	FillHoudiniNetworkInfo(NetworkInfo);
-
-	//Create the treeview
-	HoudiniNodeTreeView = SNew(SHoudiniNodeTreeView)
-		.HoudiniNetworkInfo(MakeShared<FHoudiniNetworkInfo>(NetworkInfo));
-	
-	SWindow::Construct(SWindow::FArguments()
-	.Title(InArgs._TitleText)
-	.SupportsMinimize(false)
-	.SupportsMaximize(false)
-	.IsTopmostWindow(true)
-	.ClientSize(FVector2D(450, 450))
-	[
-		SNew(SVerticalBox)
-
-		+ SVerticalBox::Slot()
-		.Padding(2)
-		[
-			SNew(SBorder)
-			.BorderImage(_GetBrush("ToolPanel.GroupBorder"))
-			[
-				SNew(SVerticalBox)
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("SelectPath", "Select Path"))
-					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
-				]
-
-				+ SVerticalBox::Slot()
-				.FillHeight(1)
-				.Padding(3)
-				[
-					HoudiniNodeTreeView.ToSharedRef()
-				]
-			]
-		]
-
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		.HAlign(HAlign_Right)
-		.Padding(5)
-		[
-			SNew(SUniformGridPanel)
-			.SlotPadding(_GetMargin("StandardDialog.SlotPadding"))
-			.MinDesiredSlotWidth(_GetFloat("StandardDialog.MinDesiredSlotWidth"))
-			.MinDesiredSlotHeight(_GetFloat("StandardDialog.MinDesiredSlotHeight"))
-			+ SUniformGridPanel::Slot(0, 0)
-			[
-				SNew(SButton)
-				.HAlign(HAlign_Center)
-				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
-				.Text(LOCTEXT("OK", "OK"))
-				.OnClicked(this, &SSelectHoudiniPathDialog::OnButtonClick, EAppReturnType::Ok)
-			]
-			+ SUniformGridPanel::Slot(1, 0)
-			[
-				SNew(SButton)
-				.HAlign(HAlign_Center)
-				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
-				.Text(LOCTEXT("Cancel", "Cancel"))
-				.OnClicked(this, &SSelectHoudiniPathDialog::OnButtonClick, EAppReturnType::Cancel)
-			]
-		]
-	]);
-}
-
-EAppReturnType::Type
-SSelectHoudiniPathDialog::ShowModal()
-{
-	GEditor->EditorAddModalWindow(SharedThis(this));
-	return UserResponse;
-}
-
-const FText&
-SSelectHoudiniPathDialog::GetFolderPath() const
-{
-	return FolderPath;
 }
 
 /*
