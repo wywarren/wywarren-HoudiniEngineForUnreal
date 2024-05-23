@@ -639,7 +639,7 @@ FHoudiniEngine::StartSession(
 	FMemory::Memzero<HAPI_ThriftServerOptions>(ServerOptions);
 	ServerOptions.autoClose = true;
 	ServerOptions.timeoutMs = AutomaticServerTimeout;
-	ServerOptions.sharedMemoryBufferSize = SharedMemoryBufferSize * 1024 * 1024;
+	ServerOptions.sharedMemoryBufferSize = SharedMemoryBufferSize;
 	ServerOptions.sharedMemoryBufferType = bSharedMemoryCyclicBuffer ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;		
 
 	HAPI_Result SessionResult = HAPI_RESULT_FAILURE;
@@ -709,14 +709,17 @@ FHoudiniEngine::StartSession(
 		if (bStartAutomaticServer && SessionResult != HAPI_RESULT_SUCCESS)
 		{
 			UpdatePathForServer();
-			FHoudiniApi::StartThriftSharedMemoryServer(
-				&ServerOptions, TCHAR_TO_UTF8(*ServerPipeName), nullptr, nullptr);
+			HAPI_ProcessId ServerProcID = -1;
+			HAPI_Result ServerResult = FHoudiniApi::StartThriftSharedMemoryServer(
+				&ServerOptions, TCHAR_TO_UTF8(*ServerPipeName), &ServerProcID, nullptr);
+			if (ServerResult == HAPI_RESULT_SUCCESS)
+			{
+				// We've started the server manually, disable session sync
+				bEnableSessionSync = false;
 
-			// We've started the server manually, disable session sync
-			bEnableSessionSync = false;
-
-			SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
-				&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+				SessionResult = FHoudiniApi::CreateThriftSharedMemorySession(
+					&Sessions[Index], TCHAR_TO_UTF8(*ServerPipeName), &SessionInfo);
+			}
 		}
 	}
 	break;
@@ -910,7 +913,7 @@ FHoudiniEngine::SessionSyncConnect(
 		// Try to connect to an existing pipe session first
 		HAPI_SessionInfo SessionInfo;
 		FHoudiniApi::SessionInfo_Init(&SessionInfo);
-		SessionInfo.sharedMemoryBufferSize = HoudiniRuntimeSettings->SharedMemoryBufferSize * 1024 * 1024;
+		SessionInfo.sharedMemoryBufferSize = HoudiniRuntimeSettings->SharedMemoryBufferSize;
 		SessionInfo.sharedMemoryBufferType = HoudiniRuntimeSettings->bSharedMemoryBufferCyclic ? HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER : HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
 
 		Sessions.Empty(NumSessions);
@@ -1233,7 +1236,7 @@ FHoudiniEngine::ConnectSession(const EHoudiniRuntimeSettingsSessionType& Session
 	bool bSuccess = false;
 
 	// Try to reconnect/start new sessions
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
 	if (!StartSessions(
 		false,
 		HoudiniRuntimeSettings->AutomaticServerTimeout,
