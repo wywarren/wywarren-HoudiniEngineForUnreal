@@ -31,6 +31,7 @@
 
 #include "HoudiniApi.h"
 #include "HoudiniEngine.h"
+#include "HoudiniEngineCommands.h"
 #include "HoudiniEngineUtils.h"
 
 // dlg?
@@ -93,6 +94,18 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 	FString FolderPathStr = FolderPath.ToString();
 	FolderPathStr.ParseIntoArray(SplitFolderPath, TEXT(";"), true);
 	
+	auto IsSessionValid = []()
+	{
+		return (HAPI_RESULT_SUCCESS == FHoudiniApi::IsSessionValid(FHoudiniEngine::Get().GetSession()));
+	};
+
+	auto IsTreeViewVisible = [IsSessionValid]()
+	{
+		if (IsSessionValid())
+			return EVisibility::All;
+		else
+			return EVisibility::Hidden;
+	};
 
 	// Create the Network info and fill all the node hierarchy for it
 	FillHoudiniNetworkInfo();
@@ -121,8 +134,14 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("SelectPath", "Select Path"))
-					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
+					.Text_Lambda([IsSessionValid]()
+					{
+							if(IsSessionValid())
+								return LOCTEXT("SelectPath", "Select Houdini Nodes...");
+							else
+								return LOCTEXT("SelectPathInvalid", "\nNo valid Houdini Engine session...\n");
+					})
+					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
 				]
 				+ SVerticalBox::Slot()
 				.HAlign(HAlign_Left)
@@ -130,6 +149,7 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 				[
 					SNew(SUniformGridPanel)
 					.SlotPadding(2.0f)
+					.Visibility_Lambda(IsTreeViewVisible)
 					+ SUniformGridPanel::Slot(0, 0)
 					[
 						SNew(SHorizontalBox)
@@ -190,7 +210,7 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 				.HAlign(HAlign_Center)
 				.ContentPadding(_GetMargin("StandardDialog.ContentPadding"))
 				.Text(LOCTEXT("OK", "OK"))
-				.OnClicked(this, &SSelectHoudiniPathDialog::OnButtonClick, EAppReturnType::Ok)
+				.OnClicked(this, &SSelectHoudiniPathDialog::OnButtonClick, IsSessionValid() ? EAppReturnType::Ok : EAppReturnType::Cancel)
 			]
 			+ SUniformGridPanel::Slot(1, 0)
 			[

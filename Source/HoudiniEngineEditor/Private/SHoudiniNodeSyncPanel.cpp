@@ -105,6 +105,8 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		if (!HoudiniEditorNodeSyncSubsystem)
 			FReply::Handled();
 
+		HoudiniEditorNodeSyncSubsystem->CreateSessionIfNeeded();
+
 		TSharedRef<SSelectFolderPathDialog> Dialog =
 			SNew(SSelectFolderPathDialog)
 			.InitialPath(FText::FromString(HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.UnrealAssetFolder))

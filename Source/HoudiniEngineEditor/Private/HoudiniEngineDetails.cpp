@@ -51,6 +51,7 @@
 #include "HoudiniToolsEditor.h"
 #include "SHoudiniPresets.h"
 #include "SSelectFolderPathDialog.h"
+#include "SSelectHoudiniPathDialog.h"
 
 #include "ActorPickerMode.h"
 #include "ActorTreeItem.h"
@@ -2831,19 +2832,14 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 		}
 	};
 
-	auto OnFetchPathTextCommittedLambda = [InHACs, MainHNSC](const FText& Val, ETextCommit::Type TextCommitType)
+	auto UpdateNodePath = [InHACs](const FString& NewPath)
 	{
-		if (!IsValidWeakPointer(MainHNSC))
-			return;
-
-		FString NewPathStr = Val.ToString();
-
 		UHoudiniEditorNodeSyncSubsystem* HoudiniSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 		if (!IsValid(HoudiniSubsystem))
 			return;
 
 		HAPI_NodeId FetchedNodeId = -1;
-		if (!HoudiniSubsystem->ValidateFetchedNodePath(NewPathStr, FetchedNodeId))
+		if (!HoudiniSubsystem->ValidateFetchedNodePath(NewPath, FetchedNodeId))
 		{
 			// Node path invalid!
 			HOUDINI_LOG_WARNING(TEXT("Houdini Node Sync - Fetch Failed - The Fetch node path is invalid."));
@@ -2861,13 +2857,43 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 			if (!IsValidWeakPointer(NextHNSC))
 				continue;
 
-			if (NextHNSC->GetFetchNodePath().Equals(NewPathStr))
+			if (NextHNSC->GetFetchNodePath().Equals(NewPath))
 				continue;
 
-			NextHNSC->SetFetchNodePath(NewPathStr);
+			NextHNSC->SetFetchNodePath(NewPath);
 			NextHNSC->MarkPackageDirty();
 			NextHNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
 		}
+	};
+
+	auto OnFetchPathTextCommittedLambda = [InHACs, MainHNSC, UpdateNodePath](const FText& Val, ETextCommit::Type TextCommitType)
+	{
+		if (!IsValidWeakPointer(MainHNSC))
+			return;
+
+		FString NewPathStr = Val.ToString();
+		UpdateNodePath(NewPathStr);
+	};
+
+	auto OnFetchFolderBrowseButtonClickedLambda = [InHACs, MainHNSC, UpdateNodePath]()
+	{
+		UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+		if (!HoudiniEditorNodeSyncSubsystem)
+			return FReply::Handled();
+
+		TSharedRef<SSelectHoudiniPathDialog> Dialog =
+			SNew(SSelectHoudiniPathDialog)
+			.InitialPath(FText::FromString(MainHNSC->GetFetchNodePath()))
+			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Houdini nodes to fetch"));
+
+		if (Dialog->ShowModal() != EAppReturnType::Ok)
+			return FReply::Handled();
+
+		// Get the new path and update it
+		FString NewPath = Dialog->GetFolderPath().ToString();
+		UpdateNodePath(NewPath);
+
+		return FReply::Handled();
 	};
 
 
@@ -2878,37 +2904,59 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 	TSharedRef<SHorizontalBox> FetchNodeRowHorizontalBox = SNew(SHorizontalBox);
 
 	FetchNodeRowHorizontalBox->AddSlot()
-	//.Padding(30.0f, 0.0f, 6.0f, 0.0f)
-	.MaxWidth(155.0f)
+	.HAlign(HAlign_Left)
+	.VAlign(VAlign_Center)
 	[
 		SNew(SBox)
-		.WidthOverride(155.0f)
+		.WidthOverride(335.0f)
+		.VAlign(VAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("HoudiniEngineFetchPathLabel", "Fetch Path"))
-			.ToolTipText(LOCTEXT(
-				"HoudiniEngineFetchPathTooltip",
-				"Houdini node path for fetching the data with this Houdini Node Sync Component."))
+			.Text(LOCTEXT("FetchNodePathLabel", "Houdini Node Path To Fetch"))
 		]
 	];
 
 	FetchNodeRowHorizontalBox->AddSlot()
-	.MaxWidth(235.0f)
+	.HAlign(HAlign_Left)
+	.VAlign(VAlign_Center)
 	[
-		SNew(SBox)
-		.WidthOverride(235.0f)
-		[
-			SNew(SEditableTextBox)
-			.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
-			.ToolTipText(LOCTEXT(
-				"HoudiniEngineFetchPathTooltip",
-				"Houdini node path for fetching the data with this Houdini Node Sync Component."))
-			.HintText(LOCTEXT("HoudiniEngineFetchPathHintText", "Input to set the path of the node to fetch data from"))
-			.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
-			.Text(FText::FromString(MainHNSC->GetFetchNodePath()))
-			.OnTextCommitted_Lambda(OnFetchPathTextCommittedLambda)
-		]
-	];	
+		SNew(SEditableTextBox)
+		.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
+		.ToolTipText_Lambda([MainHNSC]()
+		{
+			FString TooltipString =
+				"The path of the nodes in Houdini that you want to fetch.\ne.g /obj/MyNetwork/Mynode \nThe paths can easily be obtained by using the browse button and selecting them in the dialog.\
+				\nAlternatively, you can copy/paste a node to this text box to get its path.\nMultiple paths can be separated by using ; delimiters.";
+
+			UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
+			if (!HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath.IsEmpty())
+			{
+				TooltipString += "\n\nCurrent value:\n";
+				TooltipString += MainHNSC->GetFetchNodePath().Replace(TEXT(";"), TEXT("\n"));
+			}
+
+			return FText::FromString(TooltipString);
+		})
+		.HintText(LOCTEXT("NodePathLabel", "Houdini Node Path To Fetch"))
+		.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
+		.Text(FText::FromString(MainHNSC->GetFetchNodePath()))
+		.OnTextCommitted_Lambda(OnFetchPathTextCommittedLambda)	
+	];
+
+	FetchNodeRowHorizontalBox->AddSlot()
+	.Padding(5.0, 0.0, 0.0, 0.0)
+	.VAlign(VAlign_Center)
+	.AutoWidth()
+	[
+		SNew(SButton)
+		.VAlign(VAlign_Center)
+		.HAlign(HAlign_Center)
+		.IsEnabled(true)
+		.Text(LOCTEXT("BrowseButtonText", "..."))
+		.ToolTipText(LOCTEXT("FetchBrowseButtonToolTip", "Browse to select the nodes to fetch..."))
+		.OnClicked_Lambda(OnFetchFolderBrowseButtonClickedLambda)
+	];
+	
 	FetchNodeRow.WholeRowWidget.Widget = FetchNodeRowHorizontalBox;
 
 	//
@@ -2920,7 +2968,6 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 	TSharedPtr<SCheckBox> CheckBoxLiveSync;
 
 	LiveSyncRowHorizontalBox->AddSlot()
-	//.Padding(30.0f, 5.0f, 0.0f, 0.0f)
 	[
 		SNew(SBox)
 		.WidthOverride(160.f)
@@ -2948,7 +2995,8 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 	NodeSyncFetchRowHorizontalBox->AddSlot()
 	.FillWidth(1.0f)
 	.Padding(2.0f, 0.0f)
-	.VAlign(VAlign_Top)
+	.VAlign(VAlign_Center)
+	.HAlign(HAlign_Center)
 	[
 		SNew(SBox)
 		.WidthOverride(135.0f)

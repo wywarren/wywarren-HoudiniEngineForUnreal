@@ -39,6 +39,7 @@
 #include "HoudiniAsset.h"
 #include "HoudiniAssetActor.h"
 #include "HoudiniAssetComponent.h"
+#include "HoudiniNodeSyncComponent.h"
 #include "HoudiniSplineComponent.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniInput.h"
@@ -1063,6 +1064,9 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 		return false;
 	}
 
+	// See if we are a NodeSync component
+	bool bIsNodeSyncComponent = InOuterObject ? InOuterObject->IsA<UHoudiniNodeSyncComponent>() : false;
+
 	// Get the AssetInfo
 	HAPI_AssetInfo AssetInfo;
 	FHoudiniApi::AssetInfo_Init(&AssetInfo);
@@ -1303,7 +1307,7 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 		GeoInfos.Append(EditableGeoInfos);
 		EditableGeoInfos.Empty();
 
-		if (bObjectIsVisible)
+		if (bObjectIsVisible || bIsNodeSyncComponent)
 		{
 			// NOTE: The HAPI_GetDisplayGeoInfo will not always return the expected Geometry subnet's
 			//     Display flag geometry. If the Geometry subnet contains an Object subnet somewhere, the
@@ -1612,6 +1616,14 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 								bIsSkeletalMesh = true;
 								ValidSkelMeshNames.Add(BaseName);
 							}
+/*
+							else
+							{
+								// Even with only a skeleton - consider this a skel mesh
+								bIsSkeletalMesh = true;
+								ValidSkelMeshNames.Add(BaseName);
+							}
+*/
 						}
 					}
 				}
@@ -1938,6 +1950,9 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 				currentHGPO.NodePath = TEXT("");
 
 				currentHGPO.bIsVisible = CurrentHapiObjectInfo.isVisible && !CurrentHapiPartInfo.isInstanced;
+				if (bIsNodeSyncComponent)
+					currentHGPO.bIsVisible = true;
+
 				currentHGPO.bIsEditable = CurrentHapiGeoInfo.isEditable;
 				currentHGPO.bIsInstanced = CurrentHapiPartInfo.isInstanced;
 				// Never consider a display geo as templated!

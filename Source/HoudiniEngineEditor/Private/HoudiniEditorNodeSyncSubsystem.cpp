@@ -78,8 +78,11 @@ UHoudiniEditorNodeSyncSubsystem::RegisterLayoutExtensions(FLayoutExtender& Exten
 bool 
 UHoudiniEditorNodeSyncSubsystem::CreateSessionIfNeeded()
 {
-	// TODO: Improve me!
-	// Attempt to restart the session
+	// Do nothing if we have a valid session
+	if (HAPI_RESULT_SUCCESS == FHoudiniApi::IsSessionValid(FHoudiniEngine::Get().GetSession()))
+		return FHoudiniEngine::Get().IsSessionSyncEnabled();
+
+	// Attempt to open session sync
 	if (!FHoudiniEngine::Get().IsSessionSyncEnabled())
 	{
 		FHoudiniEngineCommands::OpenSessionSync(true);
