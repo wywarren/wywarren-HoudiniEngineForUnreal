@@ -1130,7 +1130,8 @@ struct HAPI_API HAPI_SessionInfo
     HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;
 
     // Must match the buffer size passed to the HARS executable through the
-    // command line or ::HAPI_StartThriftSharedMemoryServer
+    // command line or ::HAPI_StartThriftSharedMemoryServer. This is the size of
+    // the shared memory buffer in megabytes (MB).
     HAPI_Int64 sharedMemoryBufferSize;
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_SessionInfo )
@@ -1158,7 +1159,8 @@ struct HAPI_API HAPI_ThriftServerOptions
     HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;
 
     // Only used when starting a Thrift shared memory server. This variable
-    // specifies the size of the allocated shared memory buffer.
+    // specifies the size in megabytes (MB) of the allocated shared memory
+    // buffer.
     HAPI_Int64 sharedMemoryBufferSize;
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_ThriftServerOptions )
