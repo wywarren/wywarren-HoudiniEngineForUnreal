@@ -2884,7 +2884,8 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 		TSharedRef<SSelectHoudiniPathDialog> Dialog =
 			SNew(SSelectHoudiniPathDialog)
 			.InitialPath(FText::FromString(MainHNSC->GetFetchNodePath()))
-			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Houdini nodes to fetch"));
+			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select a Houdini node to fetch"))
+			.SingleSelection(true);
 
 		if (Dialog->ShowModal() != EAppReturnType::Ok)
 			return FReply::Handled();
@@ -2901,8 +2902,12 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 	// Fetch node Path Row
 	//
 	FDetailWidgetRow & FetchNodeRow = HoudiniEngineCategoryBuilder.AddCustomRow(FText::FromString("Fetch Node Path"));
-	TSharedRef<SHorizontalBox> FetchNodeRowHorizontalBox = SNew(SHorizontalBox);
+	
+	FString FetchPathTooltipString =
+		"The path of a node in Houdini that you want to fetch.\ne.g /obj/MyNetwork/Mynode \nThe paths can easily be obtained by using the browse button and selecting them in the dialog.\
+				\nAlternatively, you can copy/paste a node to this text box to get its path.\nOnly a single path can be used with per NodeSyncComponent.";
 
+	TSharedRef<SHorizontalBox> FetchNodeRowHorizontalBox = SNew(SHorizontalBox);
 	FetchNodeRowHorizontalBox->AddSlot()
 	.HAlign(HAlign_Left)
 	.VAlign(VAlign_Center)
@@ -2912,7 +2917,8 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 		.VAlign(VAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("FetchNodePathLabel", "Houdini Node Path To Fetch"))
+			.Text(LOCTEXT("FetchNodePathLabel", "Houdini Node Path To Fetch (single)"))	
+			.ToolTipText(FText::FromString(FetchPathTooltipString))
 		]
 	];
 
@@ -2922,11 +2928,9 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 	[
 		SNew(SEditableTextBox)
 		.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
-		.ToolTipText_Lambda([MainHNSC]()
+		.ToolTipText_Lambda([MainHNSC, FetchPathTooltipString]()
 		{
-			FString TooltipString =
-				"The path of the nodes in Houdini that you want to fetch.\ne.g /obj/MyNetwork/Mynode \nThe paths can easily be obtained by using the browse button and selecting them in the dialog.\
-				\nAlternatively, you can copy/paste a node to this text box to get its path.\nMultiple paths can be separated by using ; delimiters.";
+			FString TooltipString = FetchPathTooltipString;
 
 			UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 			if (!HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath.IsEmpty())
@@ -2953,7 +2957,7 @@ FHoudiniEngineDetails::CreateNodeSyncWidgets(
 		.HAlign(HAlign_Center)
 		.IsEnabled(true)
 		.Text(LOCTEXT("BrowseButtonText", "..."))
-		.ToolTipText(LOCTEXT("FetchBrowseButtonToolTip", "Browse to select the nodes to fetch..."))
+		.ToolTipText(LOCTEXT("FetchBrowseButtonToolTip", "Browse to select a node to fetch..."))
 		.OnClicked_Lambda(OnFetchFolderBrowseButtonClickedLambda)
 	];
 	

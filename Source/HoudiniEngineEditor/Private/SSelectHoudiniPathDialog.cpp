@@ -75,7 +75,8 @@ struct FSlateBrush;
 
 
 SSelectHoudiniPathDialog::SSelectHoudiniPathDialog()
-	: UserResponse(EAppReturnType::Cancel)
+	: UserResponse(EAppReturnType::Cancel),
+	bSingleSelectionOnly(false)
 {
 
 }
@@ -89,10 +90,20 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 		FolderPath = FText::FromString(TEXT("/Game"));
 	}
 
+	bSingleSelectionOnly = InArgs._SingleSelection;
+
 	// Split the initial folder path to multiple strings if needed
 	// This will allow us to re-select previously selected nodes.
 	FString FolderPathStr = FolderPath.ToString();
 	FolderPathStr.ParseIntoArray(SplitFolderPath, TEXT(";"), true);
+
+	// If we're in single selection mode - only keep the first node path!
+	if (bSingleSelectionOnly && SplitFolderPath.Num() > 1)
+	{
+		FolderPath = FText::FromString(SplitFolderPath[0]);
+		SplitFolderPath.Empty();
+		SplitFolderPath.Add(FolderPath.ToString());
+	}
 	
 	auto IsSessionValid = []()
 	{
@@ -112,7 +123,8 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 
 	//Create the treeview
 	HoudiniNodeTreeView = SNew(SHoudiniNodeTreeView)
-		.HoudiniNetworkInfo(MakeShared<FHoudiniNetworkInfo>(NetworkInfo));
+		.HoudiniNetworkInfo(MakeShared<FHoudiniNetworkInfo>(NetworkInfo))
+		.SingleSelection(bSingleSelectionOnly);
 	
 	SWindow::Construct(SWindow::FArguments()
 	.Title(InArgs._TitleText)
@@ -134,10 +146,15 @@ SSelectHoudiniPathDialog::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(STextBlock)
-					.Text_Lambda([IsSessionValid]()
+					.Text_Lambda([IsSessionValid, this]()
 					{
-							if(IsSessionValid())
-								return LOCTEXT("SelectPath", "Select Houdini Nodes...");
+							if (IsSessionValid())
+							{
+								if(bSingleSelectionOnly)
+									return LOCTEXT("SelectPath", "Select a Houdini Node...");
+								else
+									return LOCTEXT("SelectPath", "Select Houdini Nodes...");
+							}
 							else
 								return LOCTEXT("SelectPathInvalid", "\nNo valid Houdini Engine session...\n");
 					})

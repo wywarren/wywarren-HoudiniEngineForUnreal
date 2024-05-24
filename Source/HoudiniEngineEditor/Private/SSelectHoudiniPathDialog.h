@@ -63,6 +63,7 @@ public:
 	SLATE_BEGIN_ARGS(SSelectHoudiniPathDialog) {}
 		SLATE_ARGUMENT(FText, InitialPath)
 		SLATE_ARGUMENT(FText, TitleText)
+		SLATE_ARGUMENT(bool, SingleSelection)
 	SLATE_END_ARGS()
 
 	SSelectHoudiniPathDialog();
@@ -91,4 +92,5 @@ private:
 	EAppReturnType::Type UserResponse;
 	FText FolderPath;
 	TArray<FString> SplitFolderPath;
+	bool bSingleSelectionOnly;
 };

@@ -116,8 +116,8 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		{
 			HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.UnrealAssetFolder = Dialog->GetFolderPath().ToString();
 		}
-
 		return FReply::Handled();
+
 	};
 
 	auto OnFetchFolderBrowseButtonClickedLambda = []()
@@ -129,7 +129,8 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 		TSharedRef<SSelectHoudiniPathDialog> Dialog =
 			SNew(SSelectHoudiniPathDialog)
 			.InitialPath(FText::FromString(HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath))
-			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Houdini nodes to fetch"));
+			.TitleText(LOCTEXT("FetchPathDialogTitle", "Select Houdini nodes to fetch"))
+			.SingleSelection(false);
 
 		if (Dialog->ShowModal() != EAppReturnType::Cancel)
 		{
@@ -163,7 +164,12 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 				OutStatus += TEXT(" - Session Sync READY");
 			}
 		}
-	};	
+	};
+
+	// Tool for the fetch path
+	FString FetchPathTooltipString =
+		"The path of the nodes in Houdini that you want to fetch.\ne.g /obj/MyNetwork/Mynode \nThe paths can easily be obtained by using the browse button and selecting them in the dialog.\
+		\nAlternatively, you can copy/paste a node to this text box to get its path.\nMultiple paths can be separated by using ; delimiters.";
 	
 	ChildSlot
 	[
@@ -250,9 +256,10 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 					SNew(SBox)
 					.WidthOverride(335.0f)
 					//.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
+					.ToolTipText(FText::FromString(FetchPathTooltipString))
 					[
 						SNew(STextBlock)
-						.Text(LOCTEXT("FetchNodePathLabel", "Houdini Node Path To Fetch"))
+						.Text(LOCTEXT("FetchNodePathLabel", "Houdini Node Paths To Fetch"))
 					]
 				]
 				+ SHorizontalBox::Slot()
@@ -261,12 +268,9 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 				[
 					SNew(SEditableTextBox)
 					.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
-					.ToolTipText_Lambda([]()
+					.ToolTipText_Lambda([FetchPathTooltipString]()
 					{
-						FString TooltipString =
-							"The path of the nodes in Houdini that you want to fetch.\ne.g /obj/MyNetwork/Mynode \nThe paths can easily be obtained by using the browse button and selecting them in the dialog.\
-							\nAlternatively, you can copy/paste a node to this text box to get its path.\nMultiple paths can be separated by using ; delimiters.";
-
+						FString TooltipString = FetchPathTooltipString;
 						UHoudiniEditorNodeSyncSubsystem* HoudiniEditorNodeSyncSubsystem = GEditor->GetEditorSubsystem<UHoudiniEditorNodeSyncSubsystem>();
 						if (!HoudiniEditorNodeSyncSubsystem->NodeSyncOptions.FetchNodePath.IsEmpty())
 						{
@@ -276,7 +280,7 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 
 						return FText::FromString(TooltipString);
 					})
-					.HintText(LOCTEXT("NodePathLabel", "Houdini Node Path To Fetch"))
+					.HintText(LOCTEXT("NodePathLabel", "Houdini Node Paths To Fetch"))
 					.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
 					.Text_Lambda([]()
 					{
@@ -387,11 +391,12 @@ SHoudiniNodeSyncPanel::Construct( const FArguments& InArgs )
 				]
 				+ SHorizontalBox::Slot()
 				.HAlign(HAlign_Right)
+				//.AutoWidth()
 				[
 					SNew(SEditableTextBox)
-					.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH)
+					.MinDesiredWidth(HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH + 45)
 					.ToolTipText(LOCTEXT("UnrealAssetNameTooltip",
-						"What to name the asset in unreal"))
+						"Name to be given to the fetched data in Unreal.\nLeaving this field empty will use the node name for the unreal names."))
 					.HintText(LOCTEXT("UnrealAssetNameLabel", "Name the of Asset in Unreal"))
 					.Font(_GetEditorStyle().GetFontStyle(TEXT("PropertyWindow.NormalFont")))
 					.Text_Lambda([]()

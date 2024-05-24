@@ -554,263 +554,271 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini()
 		FetchStatusDetails = FetchStatusMessage + "\nYou can start a Session-sync session by using the Open Session Sync entry in the Houdini Engine menu.";
 	}
 
+	// We use the BGEO importer when Fetching to the content browser
+	bool bUseBGEOImport = !NodeSyncOptions.bFetchToWorld;
+	bool bSuccess = false;
+
 	// Parse the fetch node path into a string array
 	// Multiple paths are separated by ;
 	TArray<FString> FetchNodePaths;
 	NodeSyncOptions.FetchNodePath.ParseIntoArray(FetchNodePaths, TEXT(";"), true);
 
-	// Only use the first one for now
-	FString CurrentFetchNodePath = FetchNodePaths.IsEmpty() ? FString() : FetchNodePaths[0];
-
-	// Make sure that the FetchNodePath is a valid Houdini node path pointing to a valid Node
-	HAPI_NodeId  FetchNodeId = -1;
-	if (!ValidateFetchedNodePath(CurrentFetchNodePath, FetchNodeId))
-		return;
-
-	// We use the BGEO importer when Fetching to the contentbrowser
-	bool bUseBGEOImport = !NodeSyncOptions.bFetchToWorld;
-	bool bSuccess = false;
-	if (bUseBGEOImport)
+	for (int32 PathIdx = 0; PathIdx < FetchNodePaths.Num(); PathIdx++)
 	{
-		// We need to gather all the required nodes
-		TArray<HAPI_NodeId> FetchNodeIds;
-		if (!GatherAllFetchedNodeIds(FetchNodeId, NodeSyncOptions.bUseOutputNodes, FetchNodeIds))
-		{
-			HOUDINI_LOG_ERROR(TEXT("Houdini Node Sync: Failed to gather fetch nodes."));
-			LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
-			FetchStatusMessage = "Failed: Unable to gather fetch node outputs!";
-			FetchStatusDetails = "Houdini Node Sync - Fetch Failed - Unable to gather fetch node outputs.";
+		// Only use the first one for now
+		FString CurrentFetchNodePath = FetchNodePaths[PathIdx];
 
+		// Make sure that the FetchNodePath is a valid Houdini node path pointing to a valid Node
+		HAPI_NodeId  FetchNodeId = -1;
+		if (!ValidateFetchedNodePath(CurrentFetchNodePath, FetchNodeId))
 			return;
-		}
 
-		// Make sure that all the required output nodes have been cooked
-		// This ensure that we'll be able to get the proper number of parts for them
-		HAPI_CookOptions CookOptions = FHoudiniEngine::GetDefaultCookOptions();
-		for (auto CurrentNodeId : FetchNodeIds)
+		if (bUseBGEOImport)
 		{
-			if (!FHoudiniEngineUtils::HapiCookNode(CurrentNodeId, &CookOptions, true))
+			// We need to gather all the required nodes
+			TArray<HAPI_NodeId> FetchNodeIds;
+			if (!GatherAllFetchedNodeIds(FetchNodeId, NodeSyncOptions.bUseOutputNodes, FetchNodeIds))
 			{
-				HOUDINI_LOG_ERROR(TEXT("Failed to cook NodeSyncFetch node!"));
-				// Only log? still try to continue with the output processing?
-				// return;
+				HOUDINI_LOG_ERROR(TEXT("Houdini Node Sync: Failed to gather fetch nodes."));
+				LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
+				FetchStatusMessage = "Failed: Unable to gather fetch node outputs!";
+				FetchStatusDetails = "Houdini Node Sync - Fetch Failed - Unable to gather fetch node outputs.";
+
+				return;
 			}
-		}
 
-		// Parent obj node that will contain all the merge nodes used for the import
-		// This will make cleaning up the fetch node easier
-		TArray<HAPI_NodeId> CreatedNodeIds;
-
-		// Create a new Geo importer
-		TArray<UHoudiniOutput*> DummyOldOutputs;
-		TArray<UHoudiniOutput*> NewOutputs;
-		UHoudiniGeoImporter* HoudiniGeoImporter = NewObject<UHoudiniGeoImporter>(this);
-		HoudiniGeoImporter->AddToRoot();
-
-		// Clean up lambda
-		auto CleanUp = [&NewOutputs, &HoudiniGeoImporter, &CreatedNodeIds]()
-		{
-			// Remove the importer and output objects from the root set
-			HoudiniGeoImporter->RemoveFromRoot();
-			for (auto Out : NewOutputs)
-				Out->RemoveFromRoot();
-
-			// Delete the nodes created for the import
-			for(auto CurrentNodeId : CreatedNodeIds)
+			// Make sure that all the required output nodes have been cooked
+			// This ensure that we'll be able to get the proper number of parts for them
+			HAPI_CookOptions CookOptions = FHoudiniEngine::GetDefaultCookOptions();
+			for (auto CurrentNodeId : FetchNodeIds)
 			{
-				// Delete the parent node of the created nodes
-				FHoudiniEngineUtils::DeleteHoudiniNode(
-					FHoudiniEngineUtils::HapiGetParentNodeId(CurrentNodeId)
-				);
+				if (!FHoudiniEngineUtils::HapiCookNode(CurrentNodeId, &CookOptions, true))
+				{
+					HOUDINI_LOG_ERROR(TEXT("Failed to cook NodeSyncFetch node!"));
+					// Only log? still try to continue with the output processing?
+					// return;
+				}
 			}
-		};
+
+			// Parent obj node that will contain all the merge nodes used for the import
+			// This will make cleaning up the fetch node easier
+			TArray<HAPI_NodeId> CreatedNodeIds;
+
+			// Create a new Geo importer
+			TArray<UHoudiniOutput*> DummyOldOutputs;
+			TArray<UHoudiniOutput*> NewOutputs;
+			UHoudiniGeoImporter* HoudiniGeoImporter = NewObject<UHoudiniGeoImporter>(this);
+			HoudiniGeoImporter->AddToRoot();
+
+			// Clean up lambda
+			auto CleanUp = [&NewOutputs, &HoudiniGeoImporter, &CreatedNodeIds]()
+			{
+				// Remove the importer and output objects from the root set
+				HoudiniGeoImporter->RemoveFromRoot();
+				for (auto Out : NewOutputs)
+					Out->RemoveFromRoot();
+
+				// Delete the nodes created for the import
+				for(auto CurrentNodeId : CreatedNodeIds)
+				{
+					// Delete the parent node of the created nodes
+					FHoudiniEngineUtils::DeleteHoudiniNode(
+						FHoudiniEngineUtils::HapiGetParentNodeId(CurrentNodeId)
+					);
+				}
+			};
 		
-		// Failure lambda
-		auto FailImportAndReturn = [this, &CleanUp, &NewOutputs, &HoudiniGeoImporter]()
-		{
+			// Failure lambda
+			auto FailImportAndReturn = [this, &CleanUp, &NewOutputs, &HoudiniGeoImporter]()
+			{
+				CleanUp();
+
+				this->LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
+				this->FetchStatusMessage = "Failed";
+				this->FetchStatusDetails = "Houdini Node Sync - Fetch Failed.";
+
+				// TODO: Improve me!
+				FString Notification = TEXT("Houdini Node Sync - Fetch failed!");
+				FHoudiniEngineUtils::CreateSlateNotification(Notification);
+
+				return;
+			};
+
+			// Process each fetch node with the GeoImporter
+			for (auto CurrentFetchId : FetchNodeIds)
+			{
+				FString CurrentFetchPath;
+				if (!FHoudiniEngineUtils::HapiGetAbsNodePath(CurrentFetchId, CurrentFetchPath))
+					continue;
+
+				// Create the fetch(object merge) node for the geo importer
+				HAPI_NodeId CurrentFetchNodeId = -1;
+				if (!HoudiniGeoImporter->MergeGeoFromNode(CurrentFetchPath, CurrentFetchNodeId))
+					return FailImportAndReturn();
+
+				// 4. Get the output from the Fetch node
+				//TArray<UHoudiniOutput*> CurrentOutputs;
+				if (!HoudiniGeoImporter->BuildOutputsForNode(CurrentFetchNodeId, DummyOldOutputs, NewOutputs, NodeSyncOptions.bUseOutputNodes))
+					return FailImportAndReturn();
+
+				// Keep track of the created merge node so we can delete it later on
+				CreatedNodeIds.Add(CurrentFetchNodeId);
+			}
+
+			// Prepare the package used for creating the mesh, landscape and instancer pacakges
+			FHoudiniPackageParams PackageParams;
+			PackageParams.PackageMode = EPackageMode::Bake;
+			PackageParams.TempCookFolder = FHoudiniEngineRuntime::Get().GetDefaultTemporaryCookFolder();
+			PackageParams.HoudiniAssetName = NodeSyncOptions.GetFetchNodeNameAt(PathIdx);
+			PackageParams.BakeFolder = NodeSyncOptions.UnrealAssetFolder;
+
+			PackageParams.ObjectName = NodeSyncOptions.GetUnrealAssetName(PathIdx);
+			PackageParams.HoudiniAssetActorName = NodeSyncOptions.GetUnrealActorLabel(PathIdx);
+			PackageParams.NameOverride = NodeSyncOptions.GetUnrealAssetName(PathIdx);
+
+			if (NodeSyncOptions.bReplaceExisting)
+			{
+				PackageParams.ReplaceMode = EPackageReplaceMode::ReplaceExistingAssets;
+			}
+			else
+			{
+				PackageParams.ReplaceMode = EPackageReplaceMode::CreateNewAssets;
+			}
+
+			// 5. Create all the objects using the outputs
+			const FHoudiniStaticMeshGenerationProperties& StaticMeshGenerationProperties = FHoudiniEngineRuntimeUtils::GetDefaultStaticMeshGenerationProperties();
+			const FMeshBuildSettings& MeshBuildSettings = FHoudiniEngineRuntimeUtils::GetDefaultMeshBuildSettings();
+			if (!HoudiniGeoImporter->CreateObjectsFromOutputs(NewOutputs, PackageParams, StaticMeshGenerationProperties, MeshBuildSettings))
+				return FailImportAndReturn();
+
+			// Get our result object and "finalize" them
+			TArray<UObject*> Results = HoudiniGeoImporter->GetOutputObjects();
+			for (UObject* Object : Results)
+			{
+				if (!IsValid(Object))
+					continue;
+
+				//GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPostImport(this, Object);
+				Object->MarkPackageDirty();
+				Object->PostEditChange();
+			}
+
 			CleanUp();
 
-			this->LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
-			this->FetchStatusMessage = "Failed";
-			this->FetchStatusDetails = "Houdini Node Sync - Fetch Failed.";
+			// Sync the content browser to the newly created assets
+			if (GEditor)
+				GEditor->SyncBrowserToObjects(Results);
 
-			// TODO: Improve me!
-			FString Notification = TEXT("Houdini Node Sync - Fetch failed!");
-			FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-			return;
-		};
-
-		// Process each fetch node with the GeoImporter
-		for (auto CurrentFetchId : FetchNodeIds)
-		{
-			FString CurrentFetchPath;
-			if (!FHoudiniEngineUtils::HapiGetAbsNodePath(CurrentFetchId, CurrentFetchPath))
-				continue;
-
-			// Create the fetch(object merge) node for the geo importer
-			HAPI_NodeId CurrentFetchNodeId = -1;
-			if (!HoudiniGeoImporter->MergeGeoFromNode(CurrentFetchPath, CurrentFetchNodeId))
-				return FailImportAndReturn();
-
-			// 4. Get the output from the Fetch node
-			//TArray<UHoudiniOutput*> CurrentOutputs;
-			if (!HoudiniGeoImporter->BuildOutputsForNode(CurrentFetchNodeId, DummyOldOutputs, NewOutputs, NodeSyncOptions.bUseOutputNodes))
-				return FailImportAndReturn();
-
-			// Keep track of the created merge node so we can delete it later on
-			CreatedNodeIds.Add(CurrentFetchNodeId);
-		}
-
-		// Prepare the package used for creating the mesh, landscape and instancer pacakges
-		FHoudiniPackageParams PackageParams;
-		PackageParams.PackageMode = EPackageMode::Bake;
-		PackageParams.TempCookFolder = FHoudiniEngineRuntime::Get().GetDefaultTemporaryCookFolder();
-		PackageParams.HoudiniAssetName = FString();
-		PackageParams.BakeFolder = NodeSyncOptions.UnrealAssetFolder;//FPackageName::GetLongPackagePath(InParent->GetOutermost()->GetName());
-		PackageParams.ObjectName = NodeSyncOptions.UnrealAssetName;// FPaths::GetBaseFilename(InParent->GetName());
-
-		if (NodeSyncOptions.bReplaceExisting)
-		{
-			PackageParams.ReplaceMode = EPackageReplaceMode::ReplaceExistingAssets;
+			bSuccess = Results.Num() > 0;
 		}
 		else
 		{
-			PackageParams.ReplaceMode = EPackageReplaceMode::CreateNewAssets;
-		}
+			// Spawn a new HoudiniActor with a HoudiniNodeSyncComponent
+			AActor* CreatedActor = nullptr;
 
-		// 5. Create all the objects using the outputs
-		const FHoudiniStaticMeshGenerationProperties& StaticMeshGenerationProperties = FHoudiniEngineRuntimeUtils::GetDefaultStaticMeshGenerationProperties();
-		const FMeshBuildSettings& MeshBuildSettings = FHoudiniEngineRuntimeUtils::GetDefaultMeshBuildSettings();
-		if (!HoudiniGeoImporter->CreateObjectsFromOutputs(NewOutputs, PackageParams, StaticMeshGenerationProperties, MeshBuildSettings))
-			return FailImportAndReturn();
-
-		// Get our result object and "finalize" them
-		TArray<UObject*> Results = HoudiniGeoImporter->GetOutputObjects();
-		for (UObject* Object : Results)
-		{
-			if (!IsValid(Object))
-				continue;
-
-			//GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPostImport(this, Object);
-			Object->MarkPackageDirty();
-			Object->PostEditChange();
-		}
-
-		CleanUp();
-
-		// Sync the content browser to the newly created assets
-		if (GEditor)
-			GEditor->SyncBrowserToObjects(Results);
-
-		bSuccess = Results.Num() > 0;
-	}
-	else
-	{
-		// Spawn a new HoudiniActor with a HoudiniNodeSyncComponent
-		AActor* CreatedActor = nullptr;
-
-		// Clean up lambda
-		auto CleanUp = [&CreatedActor]()
-		{
-			if (IsValid(CreatedActor))
+			// Clean up lambda
+			auto CleanUp = [&CreatedActor]()
 			{
-				CreatedActor->Destroy();
+				if (IsValid(CreatedActor))
+				{
+					CreatedActor->Destroy();
+				}
+			};
+
+			// Failure lambda
+			auto FailImportAndReturn = [this, &CleanUp, &CreatedActor]()
+			{
+				CleanUp();
+
+				this->LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
+				this->FetchStatusMessage = "Failed";
+				this->FetchStatusDetails = "Houdini Node Sync - Fetch Failed.";
+
+				// TODO: Improve me!
+				FString Notification = TEXT("Houdini Node Sync - Fetch failed!");
+				FHoudiniEngineUtils::CreateSlateNotification(Notification);
+
+				return;
+			};
+
+			// Create a new HoudiniAssetActor
+			// Get the asset Factory
+			UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AHoudiniAssetActor::StaticClass());
+			if (!Factory)
+				return FailImportAndReturn();
+
+			// Spawn in the current world/level
+			ULevel* LevelToSpawnIn = GEditor->GetEditorWorldContext().World()->GetCurrentLevel();
+			CreatedActor = Factory->CreateActor(nullptr, LevelToSpawnIn, FHoudiniEngineEditorUtils::GetDefaulAssetSpawnTransform());
+			if (!CreatedActor)
+				return FailImportAndReturn();
+		
+			// Ensure spawn was successful
+			AHoudiniAssetActor* HACActor = Cast<AHoudiniAssetActor>(CreatedActor);
+			if (!IsValid(HACActor))
+				return FailImportAndReturn();
+
+			UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(HACActor->GetRootComponent());
+			if (!IsValid(HAC))
+				return FailImportAndReturn();
+
+			// Remove the H logo here
+			FHoudiniEngineUtils::RemoveHoudiniLogoFromComponent(HAC);
+
+			// This will convert the HoudiniAssetActor to a NodeSync one
+			HACActor->SetNodeSyncActor(true);
+		
+			// Check that we have a valid NodeSync component
+			UHoudiniNodeSyncComponent* HNSC = Cast<UHoudiniNodeSyncComponent>(HACActor->GetHoudiniAssetComponent());
+			if(!IsValid(HNSC))
+				return FailImportAndReturn();
+
+			// Add the Houdini logo back to the NodeSync component
+			FHoudiniEngineUtils::AddHoudiniLogoToComponent(HNSC);
+
+			// Set the Node Sync options
+			// Fetch node path
+			HNSC->SetFetchNodePath(CurrentFetchNodePath);
+			HNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
+
+			// Disable proxies
+			HNSC->bOverrideGlobalProxyStaticMeshSettings = true;
+			HNSC->bEnableProxyStaticMeshOverride = false;
+			//HNSC->StaticMeshMethod = EHoudiniStaticMeshMethod::FMeshDescription;
+
+			// AutoBake?
+			HNSC->SetBakeAfterNextCook(NodeSyncOptions.bAutoBake ? EHoudiniBakeAfterNextCook::Always : EHoudiniBakeAfterNextCook::Disabled);
+			HNSC->bRemoveOutputAfterBake = true;
+
+			// Other options
+			HNSC->bUseOutputNodes = NodeSyncOptions.bUseOutputNodes;
+			HNSC->bReplacePreviousBake = NodeSyncOptions.bReplaceExisting;
+			HNSC->BakeFolder.Path = NodeSyncOptions.UnrealAssetFolder;
+
+			HACActor->SetActorLabel(NodeSyncOptions.GetUnrealActorLabel(PathIdx));
+
+			// Get its transform
+			FTransform FetchTransform;
+			if (FHoudiniEngineUtils::HapiGetAssetTransform(FetchNodeId, FetchTransform))
+			{
+				// Assign the transform to the actor
+				HACActor->SetActorTransform(FetchTransform);
 			}
-		};
 
-		// Failure lambda
-		auto FailImportAndReturn = [this, &CleanUp, &CreatedActor]()
-		{
-			CleanUp();
+			// Select the Actor we just created
+			if (GEditor->CanSelectActor(CreatedActor, true, true))
+			{
+				GEditor->SelectNone(true, true, false);
+				GEditor->SelectActor(CreatedActor, true, true, true);
+			}
 
-			this->LastFetchStatus = EHoudiniNodeSyncStatus::Failed;
-			this->FetchStatusMessage = "Failed";
-			this->FetchStatusDetails = "Houdini Node Sync - Fetch Failed.";
+			// Update the status message to fetching
+			this->LastFetchStatus = EHoudiniNodeSyncStatus::Running;
+			this->FetchStatusMessage = "Fetching";
+			this->FetchStatusDetails = "Houdini Node Sync - Fetching data from Houdini Node \"" + CurrentFetchNodePath + "\".";
 
-			// TODO: Improve me!
-			FString Notification = TEXT("Houdini Node Sync - Fetch failed!");
-			FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-			return;
-		};
-
-		// Create a new HoudiniAssetActor
-		// Get the asset Factory
-		UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AHoudiniAssetActor::StaticClass());
-		if (!Factory)
-			return FailImportAndReturn();
-
-		// Spawn in the current world/level
-		ULevel* LevelToSpawnIn = GEditor->GetEditorWorldContext().World()->GetCurrentLevel();
-		CreatedActor = Factory->CreateActor(nullptr, LevelToSpawnIn, FHoudiniEngineEditorUtils::GetDefaulAssetSpawnTransform());
-		if (!CreatedActor)
-			return FailImportAndReturn();
-		
-		// Ensure spawn was successful
-		AHoudiniAssetActor* HACActor = Cast<AHoudiniAssetActor>(CreatedActor);
-		if (!IsValid(HACActor))
-			return FailImportAndReturn();
-
-		UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(HACActor->GetRootComponent());
-		if (!IsValid(HAC))
-			return FailImportAndReturn();
-
-		// Remove the H logo here
-		FHoudiniEngineUtils::RemoveHoudiniLogoFromComponent(HAC);
-
-		// This will convert the HoudiniAssetActor to a NodeSync one
-		HACActor->SetNodeSyncActor(true);
-		
-		// Check that we have a valid NodeSync component
-		UHoudiniNodeSyncComponent* HNSC = Cast<UHoudiniNodeSyncComponent>(HACActor->GetHoudiniAssetComponent());
-		if(!IsValid(HNSC))
-			return FailImportAndReturn();
-
-		// Add the Houdini logo back to the NodeSync component
-		FHoudiniEngineUtils::AddHoudiniLogoToComponent(HNSC);
-
-		// Set the Node Sync options
-		// Fetch node path
-		HNSC->SetFetchNodePath(CurrentFetchNodePath);
-		HNSC->SetHoudiniAssetState(EHoudiniAssetState::NewHDA);
-
-		// Disable proxies
-		HNSC->bOverrideGlobalProxyStaticMeshSettings = true;
-		HNSC->bEnableProxyStaticMeshOverride = false;
-		//HNSC->StaticMeshMethod = EHoudiniStaticMeshMethod::FMeshDescription;
-
-		// AutoBake?
-		HNSC->SetBakeAfterNextCook(NodeSyncOptions.bAutoBake ? EHoudiniBakeAfterNextCook::Always : EHoudiniBakeAfterNextCook::Disabled);
-		HNSC->bRemoveOutputAfterBake = true;
-
-		// Other options
-		HNSC->bUseOutputNodes = NodeSyncOptions.bUseOutputNodes;
-		HNSC->bReplacePreviousBake = NodeSyncOptions.bReplaceExisting;
-		HNSC->BakeFolder.Path = NodeSyncOptions.UnrealAssetFolder;
-		HACActor->SetActorLabel(NodeSyncOptions.UnrealActorName);
-
-		// Get its transform
-		FTransform FetchTransform;
-		if (FHoudiniEngineUtils::HapiGetAssetTransform(FetchNodeId, FetchTransform))
-		{
-			// Assign the transform to the actor
-			HACActor->SetActorTransform(FetchTransform);
+			bSuccess = true;
 		}
-
-		// Select the Actor we just created
-		if (GEditor->CanSelectActor(CreatedActor, true, true))
-		{
-			GEditor->SelectNone(true, true, false);
-			GEditor->SelectActor(CreatedActor, true, true, true);
-		}
-
-		// Update the status message to fetching
-		this->LastFetchStatus = EHoudiniNodeSyncStatus::Running;
-		this->FetchStatusMessage = "Fetching";
-		this->FetchStatusDetails = "Houdini Node Sync - Fetching data from Houdini Node \"" + CurrentFetchNodePath + "\".";
-
-		bSuccess = true;
 	}
 
 	if (bSuccess)
@@ -821,7 +829,7 @@ UHoudiniEditorNodeSyncSubsystem::FetchFromHoudini()
 
 		LastFetchStatus = EHoudiniNodeSyncStatus::Success;
 		FetchStatusMessage = "Fetch Success";
-		FetchStatusDetails = "Houdini Node Sync - Succesfully fetched data from Houdini";
+		FetchStatusDetails = "Houdini Node Sync - Successfully fetched data from Houdini";
 	}
 	else
 	{

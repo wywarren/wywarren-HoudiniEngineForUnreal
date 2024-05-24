@@ -105,14 +105,15 @@ public:
 
 	SLATE_BEGIN_ARGS(SHoudiniNodeTreeViewItem)
 		: _HoudiniNodeInfo(nullptr)
-		//, _HoudiniNetworkInfo(nullptr)
 		, _Expanded(false)
+		, _SingleSelection(false)
 	{}
 
 	// Content of this item
 	SLATE_ARGUMENT(FHoudiniNodeInfoPtr, HoudiniNodeInfo)
-	//SLATE_ARGUMENT(TSharedPtr<FHoudiniNetworkInfo>, HoudiniNetworkInfo)
 	SLATE_ARGUMENT(bool, Expanded)
+	SLATE_ARGUMENT(bool, SingleSelection)
+	SLATE_ARGUMENT(TArray<FHoudiniNodeInfoPtr>, HoudiniRootNodeArray)
 	SLATE_END_ARGS()
 
 	// Construct the widget
@@ -126,6 +127,11 @@ private:
 
 	// The node info to build the tree view row from.
 	FHoudiniNodeInfoPtr HoudiniNodeInfo;
+
+	// Are we in single selection mode ?
+	bool bSingleSelectionOnly;
+
+	TArray<FHoudiniNodeInfoPtr> HoudiniRootNodesInfo;
 };
 
 
@@ -137,10 +143,11 @@ public:
 
 	SLATE_BEGIN_ARGS(SHoudiniNodeTreeView)
 		: _HoudiniNetworkInfo(NULL)
+		, _SingleSelection(false)
 	{}
-
 	SLATE_ARGUMENT(TSharedPtr<FHoudiniNetworkInfo>, HoudiniNetworkInfo)
-		SLATE_END_ARGS()
+	SLATE_ARGUMENT(bool, SingleSelection)
+	SLATE_END_ARGS()
 
 	/** Construct this widget */
 	void Construct(const FArguments& InArgs);
@@ -153,11 +160,16 @@ public:
 	FReply OnCollapseAll();
 
 protected:
-	TSharedPtr<FHoudiniNetworkInfo> HoudiniNetworkInfo;
 
+	// Info for all the nodes in the current session
+	//TSharedPtr<FHoudiniNetworkInfo> HoudiniNetworkInfo;
+	//FHoudiniNetworkInfo HoudiniRootNodesInfo;
 
-	/** the elements we show in the tree view */
+	// The elements shown in the tree view 
 	TArray<FHoudiniNodeInfoPtr> HoudiniRootNodeArray;
+
+	// Are we in single selection mode ?
+	bool bSingleSelectionOnly;
 
 	/** Open a context menu for the current selection */
 	TSharedPtr<SWidget> OnOpenContextMenu();

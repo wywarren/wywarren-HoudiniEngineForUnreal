@@ -31,7 +31,7 @@ public:
 	FString SendNodePath = "/obj/UnrealContent";
 
 	UPROPERTY()
-	FString UnrealAssetName = "TestAsset";
+	FString UnrealAssetName = "";
 
 	UPROPERTY()
 	FString UnrealAssetFolder = "/Game/NodeSync";
@@ -43,7 +43,7 @@ public:
 	bool bFetchToWorld = false;
 
 	UPROPERTY()
-	FString UnrealActorName = "HoudiniNodeSyncActor";
+	FString UnrealActorName = "";
 
 	UPROPERTY()
 	FString UnrealActorFolder = "/Houdini/NodeSync";
@@ -70,6 +70,69 @@ public:
 	// Build Settings to be used when generating the Static Meshes for this Houdini Asset
 	UPROPERTY(Category = "HoudiniMeshGeneration", EditAnywhere, meta = (DisplayPriority = 2))
 	FMeshBuildSettings StaticMeshBuildSettings;
+
+	// Returns the number of node paths in FetchNodePath - they're separated by ";"
+	int32 
+	GetNumberOfFetchNodePaths()
+	{
+		// Parse the fetch node path into a string array
+		TArray<FString> FetchNodePathsArray;
+		FetchNodePath.ParseIntoArray(FetchNodePathsArray, TEXT(";"), true);
+		return FetchNodePathsArray.Num();
+	};
+
+	FString
+	GetFetchNodePathAt(int32 PathIdx = 0)
+	{
+		// Parse the fetch node path into a string array
+		TArray<FString> FetchNodePathsArray;
+		FetchNodePath.ParseIntoArray(FetchNodePathsArray, TEXT(";"), true);
+
+		if (!FetchNodePathsArray.IsValidIndex(PathIdx))
+			return FString();
+		else
+			return FetchNodePathsArray[PathIdx];
+	};
+
+	FString
+	GetFetchNodeNameAt(int32 PathIdx = 0)
+	{
+		FString NodePathAt = GetFetchNodePathAt(PathIdx);
+		
+		FString NodeNameAt = FString();
+		int32 FoundPos = -1;
+		if (NodePathAt.FindLastChar(TEXT('/'), FoundPos))
+		{
+			NodeNameAt = NodePathAt.RightChop(FoundPos + 1);
+		}
+
+		return NodeNameAt;
+	};
+
+	FString 
+	GetUnrealAssetName(int32 PathIdx = 0)
+	{
+		if (!UnrealAssetName.IsEmpty())
+			return UnrealAssetName;
+
+		FString NodeName = GetFetchNodeNameAt(PathIdx);
+		if (!NodeName.IsEmpty())
+			return NodeName;
+
+		// If we don't have a valid name/path - return a default one
+		return TEXT("NodeSyncAsset");
+	};
+
+	FString 
+	GetUnrealActorLabel(int32 PathIdx = 0)
+	{
+		FString NodeName = GetFetchNodeNameAt(PathIdx);
+		if (!NodeName.IsEmpty())
+			return NodeName;
+
+		// If we don't have a valid name/path - return a default one
+		return TEXT("HoudiniNodeSyncActor");
+	};
 };
 
 

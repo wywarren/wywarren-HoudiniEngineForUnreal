@@ -126,6 +126,8 @@ SHoudiniNodeTreeViewItem::Construct(const FArguments& InArgs, const TSharedRef<S
 {
 	HoudiniNodeInfo = InArgs._HoudiniNodeInfo;
 	bool bExpanded = InArgs._Expanded;
+	bSingleSelectionOnly = InArgs._SingleSelection;
+	HoudiniRootNodesInfo = InArgs._HoudiniRootNodeArray;
 
 	//This is suppose to always be valid
 	check(HoudiniNodeInfo.IsValid());
@@ -201,6 +203,23 @@ SHoudiniNodeTreeViewItem::OnItemCheckChanged(ECheckBoxState CheckType)
 	bool bImport = CheckType == ECheckBoxState::Checked;
 	HoudiniNodeInfo->bImportNode = bImport;
 
+	// If in single selection mode - disable all other nodes but us
+	if (bSingleSelectionOnly)// && bImport)
+	{
+		for (int32 Idx = 0; Idx < HoudiniRootNodesInfo.Num(); Idx++)
+		{
+			//FHoudiniNodeInfoPtr NodeInfo = (*NodeInfoIt);
+			FHoudiniNodeInfoPtr NodeInfo = HoudiniRootNodesInfo[Idx];
+			if (!NodeInfo.IsValid())
+				continue;
+
+			if (NodeInfo->bIsRootNode)
+			{
+				FHoudiniNodeInfo::RecursiveSetImport(NodeInfo, false);
+			}
+		}
+	}
+
 	// Recursively set our children's import state
 	FHoudiniNodeInfo::RecursiveSetImport(HoudiniNodeInfo, bImport);
 }
@@ -219,13 +238,13 @@ SHoudiniNodeTreeViewItem::IsItemChecked() const
 SHoudiniNodeTreeView::~SHoudiniNodeTreeView()
 {
 	HoudiniRootNodeArray.Empty();
-	HoudiniNetworkInfo = NULL;
+	bSingleSelectionOnly = false;
 }
 
 void
 SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InArgs)
 {
-	HoudiniNetworkInfo = InArgs._HoudiniNetworkInfo;
+	TSharedPtr<FHoudiniNetworkInfo> HoudiniNetworkInfo = InArgs._HoudiniNetworkInfo;
 	//Build the FHoudiniNodeInfoPtr tree data
 	check(HoudiniNetworkInfo.IsValid());
 	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
@@ -237,11 +256,13 @@ SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InArgs)
 		}
 	}
 
+	bSingleSelectionOnly = InArgs._SingleSelection;
+
 	STreeView::Construct
 	(
 		STreeView::FArguments()
 		.TreeItemsSource(&HoudiniRootNodeArray)
-		.SelectionMode(ESelectionMode::Multi)
+		.SelectionMode(bSingleSelectionOnly ? ESelectionMode::SingleToggle : ESelectionMode::Multi)
 		.OnGenerateRow(this, &SHoudiniNodeTreeView::OnGenerateRowHoudiniNodeTreeView)
 		.OnGetChildren(this, &SHoudiniNodeTreeView::OnGetChildrenHoudiniNodeTreeView)
 		.OnContextMenuOpening(this, &SHoudiniNodeTreeView::OnOpenContextMenu)
@@ -256,15 +277,19 @@ SHoudiniNodeTreeView::Construct(const SHoudiniNodeTreeView::FArguments& InArgs)
 	}
 }
 
+
 TSharedRef<ITableRow>
 SHoudiniNodeTreeView::OnGenerateRowHoudiniNodeTreeView(FHoudiniNodeInfoPtr Item, const TSharedRef<STableViewBase>& OwnerTable)
 {
 	bool bExpanded = IsItemExpanded(Item) || FHoudiniNodeInfo::RecursiveGetImport(Item);
 	TSharedRef<SHoudiniNodeTreeViewItem> ReturnRow = SNew(SHoudiniNodeTreeViewItem, OwnerTable)
 		.HoudiniNodeInfo(Item)
-		.Expanded(bExpanded);
+		.Expanded(bExpanded)
+		.SingleSelection(bSingleSelectionOnly)
+		.HoudiniRootNodeArray(HoudiniRootNodeArray);
 	return ReturnRow;
 }
+
 
 void 
 SHoudiniNodeTreeView::OnGetChildrenHoudiniNodeTreeView(FHoudiniNodeInfoPtr InParent, TArray<FHoudiniNodeInfoPtr>& OutChildren)
@@ -276,15 +301,16 @@ SHoudiniNodeTreeView::OnGetChildrenHoudiniNodeTreeView(FHoudiniNodeInfoPtr InPar
 }
 
 
-
 void 
 SHoudiniNodeTreeView::OnToggleSelectAll(ECheckBoxState CheckType)
 {
 	//check all actor for import
-	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
+	for(int32 Idx = 0; Idx < HoudiniRootNodeArray.Num(); Idx++)
 	{
-		FHoudiniNodeInfoPtr NodeInfo = (*NodeInfoIt);
-		//if (!NodeInfo.ParentNodeInfo.IsValid())
+		FHoudiniNodeInfoPtr NodeInfo = HoudiniRootNodeArray[Idx];
+		if (!NodeInfo.IsValid())
+			continue;
+
 		if(NodeInfo->bIsRootNode)
 		{
 			FHoudiniNodeInfo::RecursiveSetImport(NodeInfo, CheckType == ECheckBoxState::Checked);
@@ -323,10 +349,12 @@ SHoudiniNodeTreeView::RecursiveSetDefaultExpand(FHoudiniNodeInfoPtr NodeInfo)
 FReply 
 SHoudiniNodeTreeView::OnExpandAll()
 {
-	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
+	for (int32 Idx = 0; Idx < HoudiniRootNodeArray.Num(); Idx++)
 	{
-		FHoudiniNodeInfoPtr NodeInfo = (*NodeInfoIt);
-		//if (!NodeInfo.ParentNodeInfo.IsValid())
+		FHoudiniNodeInfoPtr NodeInfo = HoudiniRootNodeArray[Idx];
+		if (!NodeInfo.IsValid())
+			continue;
+
 		if (NodeInfo->bIsRootNode)
 		{
 			RecursiveSetExpand(this, NodeInfo, true);
@@ -338,10 +366,12 @@ SHoudiniNodeTreeView::OnExpandAll()
 FReply 
 SHoudiniNodeTreeView::OnCollapseAll()
 {
-	for (auto NodeInfoIt = HoudiniNetworkInfo->RootNodesInfos.CreateIterator(); NodeInfoIt; ++NodeInfoIt)
+	for (int32 Idx = 0; Idx < HoudiniRootNodeArray.Num(); Idx++)
 	{
-		FHoudiniNodeInfoPtr NodeInfo = (*NodeInfoIt);
-		//if (!NodeInfo.ParentNodeInfo.IsValid())
+		FHoudiniNodeInfoPtr NodeInfo = HoudiniRootNodeArray[Idx];
+		if (!NodeInfo.IsValid())
+			continue;
+
 		if (NodeInfo->bIsRootNode)
 		{
 			RecursiveSetExpand(this, NodeInfo, false);
