@@ -49,7 +49,6 @@
 
 // TODO: Fix this
 // This is currently being included to get access to the CreateFaceMaterialArray / DeleteFaceMaterialArray methods.
-#include "HoudiniEngineAttributes.h"
 #include "UnrealMeshTranslator.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBrushTranslator, Log, All);
@@ -285,8 +284,8 @@ bool FUnrealBrushTranslator::CreateInputNodeForBrush(
 		}
 
 		// Upload point positions.
-		FHoudiniHapiAccessor Accessor(InputNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoPointVector, (const float*)OutPosition.GetData()), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			(const float*)OutPosition.GetData(), InputNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeInfoPointVector), false);
 	}
 
 	//--------------------------------------------------------------------------------------------------------------------- 
@@ -362,8 +361,8 @@ bool FUnrealBrushTranslator::CreateInputNodeForBrush(
 			FHoudiniEngine::Get().GetSession(), InputNodeId, 0,
 			HAPI_UNREAL_ATTRIB_NORMAL, &AttributeInfoVertexVector), false);
 
-		FHoudiniHapiAccessor Accessor(InputNodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertexVector, (const float*)OutNormals.GetData()), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			(const float*)OutNormals.GetData(), InputNodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL, AttributeInfoVertexVector), false);
 
 		// -----------------------------
 		// UV attribute
@@ -372,8 +371,8 @@ bool FUnrealBrushTranslator::CreateInputNodeForBrush(
 			FHoudiniEngine::Get().GetSession(), InputNodeId, 0,
 			HAPI_UNREAL_ATTRIB_UV, &AttributeInfoVertexVector), false);
 
-		Accessor.Init(InputNodeId, 0, HAPI_UNREAL_ATTRIB_UV);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertexVector, (const float*)OutUV.GetData()), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			(const float*)OutUV.GetData(), InputNodeId, 0, HAPI_UNREAL_ATTRIB_UV, AttributeInfoVertexVector), false);
 
 		// -----------------------------
 		// Material attribute

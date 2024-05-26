@@ -32,8 +32,6 @@
 #include "HoudiniEngineTimers.h"
 #include "HoudiniEngineUtils.h"
 
-#define THRIFT_MAX_CHUNKSIZE			10 * 1024 * 1024
-
 struct FHoudiniRawAttributeData
 {
 	// This structure is used to store data before it is converted to a different type.
@@ -132,9 +130,9 @@ int FHoudiniHapiAccessor::ToInt(const FString& Str)
 }
 
 template<typename SrcType, typename DestType>
-void FHoudiniHapiAccessor::Convert(const SrcType* SourceData, DestType* DestData, int IndexCount)
+void FHoudiniHapiAccessor::Convert(const SrcType* SourceData, DestType* DestData, int Count)
 {
-	for (int Index = 0; Index < IndexCount; Index++)
+	for (int Index = 0; Index < Count; Index++)
 	{
 		if constexpr (std::is_arithmetic_v<DestType>)
 		{
@@ -165,91 +163,41 @@ void FHoudiniHapiAccessor::Convert(const SrcType* SourceData, DestType* DestData
 }
 
 template<typename DataType>
-void FHoudiniHapiAccessor::ConvertFromRawData(const FHoudiniRawAttributeData & RawData, DataType* Data, size_t IndexCount)
+void FHoudiniHapiAccessor::ConvertFromRawData(const FHoudiniRawAttributeData & RawData, DataType* Data, size_t Count)
 {
 	if (RawData.RawDataUint8.Num() > 0)
 	{
-		Convert(RawData.RawDataUint8.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataUint8.GetData(), Data, Count);
 	}
 	else if (RawData.RawDataInt8.Num() > 0)
 	{
-		Convert(RawData.RawDataInt8.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataInt8.GetData(), Data, Count);
 	}
 	else if(RawData.RawDataInt16.Num() > 0)
 	{
-		Convert(RawData.RawDataInt16.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataInt16.GetData(), Data, Count);
 	}
 	else if (RawData.RawDataInt.Num() > 0)
 	{
-		Convert(RawData.RawDataInt.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataInt.GetData(), Data, Count);
 	}
 	else if (RawData.RawDataFloat.Num() > 0)
 	{
-		Convert(RawData.RawDataFloat.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataFloat.GetData(), Data, Count);
 	}
 	else if (RawData.RawDataDouble.Num() > 0)
 	{
-		Convert(RawData.RawDataDouble.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataDouble.GetData(), Data, Count);
 	}
 	else if (RawData.RawDataStrings.Num() > 0)
 	{
-		Convert(RawData.RawDataStrings.GetData(), Data, IndexCount);
+		Convert(RawData.RawDataStrings.GetData(), Data, Count);
 	}
 	else
 	{
 		// no data.
 	}
 }
-
-template<typename DataType>
-void FHoudiniHapiAccessor::ConvertToRawData(FHoudiniRawAttributeData& RawData, const DataType* Data, size_t IndexCount)
-{
-	if constexpr (std::is_same_v<DataType, uint8>)
-	{
-		RawData.RawDataUint8.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataUint8.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, int8>)
-	{
-		RawData.RawDataInt8.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataInt8.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, int16>)
-	{
-		RawData.RawDataInt16.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataInt16.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, int>)
-	{
-		RawData.RawDataInt.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataInt.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, int64>)
-	{
-		RawData.RawDataInt64.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataInt64.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, float>)
-	{
-		RawData.RawDataFloat.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataFloat.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, double>)
-	{
-		RawData.RawDataDouble.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataDouble.GetData(), IndexCount);
-	}
-	else if constexpr (std::is_same_v<DataType, FString>)
-	{
-		RawData.RawDataStrings.SetNum(IndexCount);
-		Convert(Data, RawData.RawDataStrings.GetData(), IndexCount);
-	}
-	else
-	{
-		// no data.
-	}
-}
-
 
 struct FHoudiniAttributeTask
 {
@@ -273,7 +221,7 @@ struct FHoudiniAttributeGetTask : public  FHoudiniAttributeTask
 
 	void DoWork()
 	{
-		bSuccess = Accessor->GetAttributeDataViaSession(Session, *StorageInfo, Results, RawIndex, Count);
+		bSuccess = Accessor->GetAttributeData(Session, *StorageInfo, Results, RawIndex, Count);
 	}
 };
 
@@ -292,36 +240,36 @@ int FHoudiniHapiAccessor::CalculateNumberOfSessions() const
 
 }
 
-template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeDataViaSession(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int IndexStart, int IndexCount) const
+template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int Start, int Count) const
 {
-	if (IndexCount == 0)
+	if (Count == 0)
 		return true;
 
 	HAPI_StorageType StorageType = GetHapiType<DataType>();
 	if (StorageType == AttributeInfo.storage)
 	{
 		// No conversion is necessary so fetch the data directly.
-		FetchHapiData(Session, AttributeInfo, Results, IndexStart, IndexCount);
+		FetchHapiData(Session, AttributeInfo, Results, Start, Count);
 	}
 	else
 	{
 		// Fetch data in Hapi format then convert it.
 		FHoudiniRawAttributeData RawData;
-		if (!GetRawAttributeData(Session, AttributeInfo, RawData, IndexStart, IndexCount))
+		if (!GetRawAttributeData(Session, AttributeInfo, RawData, Start, Count))
 			return false;
 
-		ConvertFromRawData(RawData, Results, IndexCount * AttributeInfo.tupleSize);
+		ConvertFromRawData(RawData, Results, Count * AttributeInfo.tupleSize);
 	}
 	return true;
 }
 
-template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& Results, int IndexStart, int IndexCount)
+template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& Results, int First, int Count)
 {
 	if (!AttributeInfo.exists)
 		return false;
 
-	if (IndexCount == -1)
-		IndexCount = AttributeInfo.count;
+	if (Count == -1)
+		Count = AttributeInfo.count;
 
 	int TotalCount;
 	if (IsHapiArrayType(AttributeInfo.storage))
@@ -330,7 +278,7 @@ template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HA
 			return false;
 
 		TotalCount = AttributeInfo.totalArrayElements;
-		if (IndexCount != AttributeInfo.count)
+		if (Count != AttributeInfo.count)
 		{
 			HOUDINI_LOG_ERROR(TEXT("Cannot get a partial array from HAPI"));
 			return false;
@@ -338,23 +286,23 @@ template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(const HA
 	}
 	else
 	{
-		TotalCount = IndexCount * AttributeInfo.tupleSize;
+		TotalCount = Count * AttributeInfo.tupleSize;
 	}
 
 	Results.SetNum(TotalCount);
 
-	return GetAttributeData(AttributeInfo, Results.GetData(), IndexStart, IndexCount);
+	return GetAttributeData(AttributeInfo, Results.GetData(), First, Count);
 }
 
 template<typename DataType>
-bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int IndexStart, int IndexCount)
+bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int First, int Count)
 {
-	return GetAttributeDataMultiSession(AttributeInfo, Results, IndexStart, IndexCount);
+	return GetAttributeDataMain(AttributeInfo, Results, First, Count);
 }
 
 
 template<typename DataType>
-bool FHoudiniHapiAccessor::GetAttributeDataMultiSession(const HAPI_AttributeInfo& AttributeInfo, DataType * Results, int IndexStart, int IndexCount)
+bool FHoudiniHapiAccessor::GetAttributeDataMain(const HAPI_AttributeInfo& AttributeInfo, DataType * Results, int First, int Count)
 {
 	// This is the actual main function for getting data.
 
@@ -363,19 +311,12 @@ bool FHoudiniHapiAccessor::GetAttributeDataMultiSession(const HAPI_AttributeInfo
 	if (!AttributeInfo.exists)
 		return false;
 
-	
 	int NumSessions = CalculateNumberOfSessions();
 	if (IsHapiArrayType(AttributeInfo.storage))
 	{
 		if (!bCanBeArray)
 			return false;
 
-		NumSessions = 1;
-	}
-
-	if constexpr (std::is_same_v<DataType, FString>)
-	{
-		// GetStringBatchSize does not seem to function correctly with multisession.
 		NumSessions = 1;
 	}
 
@@ -388,11 +329,11 @@ bool FHoudiniHapiAccessor::GetAttributeDataMultiSession(const HAPI_AttributeInfo
 		// Fill a task, one per session.
 		FHoudiniAttributeGetTask<DataType> & Task = Tasks[Session].GetTask();
 
-		int StartOffset = IndexCount * Session / NumSessions;
-		int EndOffset = IndexCount * (Session + 1) / NumSessions;
+		int StartOffset = Count * Session / NumSessions;
+		int EndOffset = Count * (Session + 1) / NumSessions;
 		Task.Accessor = this;
 		Task.StorageInfo = &AttributeInfo;
-		Task.RawIndex = StartOffset + IndexStart;
+		Task.RawIndex = StartOffset + First;
 		Task.Results = Results + StartOffset * AttributeInfo.tupleSize;
 		Task.Count = EndOffset - StartOffset;
 		Task.Session = FHoudiniEngine::Get().GetSession(Session);
@@ -409,6 +350,7 @@ bool FHoudiniHapiAccessor::GetAttributeDataMultiSession(const HAPI_AttributeInfo
 	return bSuccess;
 }
 
+#if 0
 template<typename DataType>
 struct FHoudiniAttributeSetTask : public  FHoudiniAttributeTask
 {
@@ -416,28 +358,17 @@ struct FHoudiniAttributeSetTask : public  FHoudiniAttributeTask
 
 	void DoWork()
 	{
-		bSuccess = Accessor->SetAttributeDataViaSession(Session, *StorageInfo, Input, RawIndex, Count);
+		bSuccess = FHoudiniEngineAttribute::HapiSetAttributeData(Session, *Accessor, *StorageInfo, Input, RawIndex, Count);
 	}
 
 };
+#endif
 
-template<typename DataType>
-bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const TArray<DataType>& Data)
-{
-	return SetAttributeData(AttributeInfo, Data.GetData());
-}
-
-template<typename DataType>
-bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int IndexStart, int IndexCount) const
-{
-	return SetAttributeDataMultiSession(AttributeInfo, Data, IndexStart, IndexCount);
-}
-
-template<typename DataType>
-bool FHoudiniHapiAccessor::SetAttributeDataMultiSession(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int IndexStart, int IndexCount) const
+#if 0
+template<typename DataType> bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int First, int Count)
 {
 	// Task array.
-	int NumSessions = CalculateNumberOfSessions(); 
+	int NumSessions = Accessor.CalculateNumberOfSessions(); 
 	TArray<FAsyncTask<FHoudiniAttributeSetTask<DataType>>> Tasks;
 	Tasks.SetNum(NumSessions);
 
@@ -446,11 +377,11 @@ bool FHoudiniHapiAccessor::SetAttributeDataMultiSession(const HAPI_AttributeInfo
 		// Fill a task, one per session.
 		FHoudiniAttributeSetTask<DataType>& Task = Tasks[Session].GetTask();
 
-		int StartOffset = IndexCount * Session / NumSessions;
-		int EndOffset = IndexCount * (Session + 1) / NumSessions;
+		int StartOffset = Count * Session / NumSessions;
+		int EndOffset = Count * (Session + 1) / NumSessions;
 		Task.Accessor = this;
 		Task.StorageInfo = &AttributeInfo;
-		Task.RawIndex = StartOffset + IndexStart;
+		Task.RawIndex = StartOffset + First;
 		Task.Input = Data + StartOffset * AttributeInfo.tupleSize;
 		Task.Count = EndOffset - StartOffset;
 		Task.Session = FHoudiniEngine::Get().GetSession(Session);
@@ -465,100 +396,63 @@ bool FHoudiniHapiAccessor::SetAttributeDataMultiSession(const HAPI_AttributeInfo
 	}
 	return bSuccess;
 }
+#endif
 
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const uint8* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeUInt8Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int8* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeInt8Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int16* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeInt16Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeIntData(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int64* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeInt64Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const float* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeFloatData(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const double* Data, int StartIndex, int IndexCount) const
-{
-	return FHoudiniApi::SetAttributeFloat64Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, IndexCount);
-}
-
-HAPI_Result FHoudiniHapiAccessor::SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const FString* Data, int StartIndex, int IndexCount) const
-{
-	TArray<const char*> StringDataArray;
-	for (int Index = 0; Index < IndexCount; Index++)
-	{
-		auto& CurrentString = Data[Index];
-
-		// Append the converted string to the string array
-		StringDataArray.Add(FHoudiniEngineUtils::ExtractRawString(CurrentString));
-	}
-
-	// Set all the attribute values once
-	auto Result = FHoudiniApi::SetAttributeStringData(
-		Session,
-		NodeId, PartId, AttributeName,
-		&AttributeInfo, StringDataArray.GetData(), StartIndex, IndexCount);
-
-	// ExtractRawString allocates memory using malloc, free it!
-	FHoudiniEngineUtils::FreeRawStringMemory(StringDataArray);
-
-	return Result;
-}
-
+#if 0
 template<typename DataType>
-bool FHoudiniHapiAccessor::SetAttributeDataViaSession(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int StartIndex, int IndexCount) const
+bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int StartIndex, int Count)
 {
-	if (IndexCount == 0)
-		return true;
 
-	HAPI_StorageType StorageType = GetHapiType<DataType>();
-	if (StorageType == AttributeInfo.storage)
+	auto NodeId = Accessor.NodeId;
+	auto PartId = Accessor.PartId;
+	auto AttributeName = Accessor.AttributeName;
+
+	HAPI_Result Result = HAPI_RESULT_FAILURE;
+	if constexpr (std::is_same_v<DataType, float>)
 	{
-		// No conversion is necessary so send the data directly.
-		SendHapiData(Session, AttributeInfo, Data, StartIndex, IndexCount);
+		Result = FHoudiniApi::SetAttributeFloatData(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, Count);
+	}
+	else if constexpr (std::is_same_v<DataType, double>)
+	{
+		Result = FHoudiniApi::SetAttributeFloat64Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, Count);
+	}
+	else if constexpr (std::is_same_v<DataType, int>)
+	{
+		Result = FHoudiniApi::SetAttributeIntData(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, Count);
+	}
+	else if constexpr (std::is_same_v<DataType, int8>)
+	{
+		Result = FHoudiniApi::SetAttributeInt8Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, Count);
+	}
+	else if constexpr (std::is_same_v<DataType, int16>)
+	{
+		Result = FHoudiniApi::SetAttributeInt16Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, Count);
+	}
+	else if constexpr (std::is_same_v<DataType, uint8>)
+	{
+		Result = FHoudiniApi::SetAttributeUInt8Data(Session, NodeId, PartId, AttributeName, &AttributeInfo, Data, StartIndex, Count);
 	}
 	else
 	{
-		// Fetch data in Hapi format then convert it.
-		FHoudiniRawAttributeData RawData;
-
-		ConvertToRawData(RawData, Data, IndexCount * AttributeInfo.tupleSize);
-		if (!SetRawAttributeData(Session, AttributeInfo, RawData, StartIndex, IndexCount))
-			return false;
-
-
+		static_assert(false, "Missing type");
 	}
-	return true;
-}
 
+	return Result == HAPI_RESULT_SUCCESS;
+}
+#endif
+
+#if 0
 template<typename DataType>
 bool SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const TArray<DataType>& Data)
 {
 	return SetAttributeData(AttributeInfo, Data.GetData(), 0, Data.Num());
 }
+#endif
 
 bool FHoudiniHapiAccessor::GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data)
 {
 	return GetRawAttributeData(Session, AttributeInfo, Data, 0, AttributeInfo.count);
+
 }
 
 
@@ -633,7 +527,7 @@ HAPI_Result FHoudiniHapiAccessor::FetchHapiData(const HAPI_Session* Session, con
 	HAPI_Result Result = FHoudiniApi::GetAttributeStringData(Session, NodeId, PartId, AttributeName, &TempAttributeInfo, StringHandles.GetData(), IndexStart, IndexCount);
 
 	if (Result == HAPI_RESULT_SUCCESS)
-		FHoudiniEngineString::SHArrayToFStringArray(StringHandles, UnrealStrings, Session);
+		FHoudiniEngineString::SHArrayToFStringArray(StringHandles, UnrealStrings);
 	return Result;
 }
 
@@ -718,7 +612,7 @@ HAPI_Result FHoudiniHapiAccessor::FetchHapiDataArray(const HAPI_Session* Session
 		AttributeInfo.totalArrayElements, Sizes, IndexStart, IndexCount);
 
 	if (Result == HAPI_RESULT_SUCCESS)
-		FHoudiniEngineString::SHArrayToFStringArray(StringHandles, Data, Session);
+		FHoudiniEngineString::SHArrayToFStringArray(StringHandles, Data);
 
 	if (!TempAttributeInfo.exists)
 		Result = HAPI_RESULT_FAILURE;
@@ -826,54 +720,6 @@ bool FHoudiniHapiAccessor::GetRawAttributeData(const HAPI_Session* Session, cons
 	return Result == HAPI_RESULT_SUCCESS;
 }
 
-bool FHoudiniHapiAccessor::SetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data, int IndexStart, int IndexCount) const
-{
-	HAPI_Result Result = HAPI_RESULT_FAILURE;
-
-	int TotalCount = AttributeInfo.count * AttributeInfo.tupleSize;
-
-	// Make a copy of the Attribute Info because it can be modified during fetching of data.
-	HAPI_AttributeInfo TempAttributeInfo = AttributeInfo;
-
-	int NumElement = IndexCount * AttributeInfo.tupleSize;
-
-	switch (AttributeInfo.storage)
-	{
-	case HAPI_STORAGETYPE_UINT8:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataUint8.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_INT8:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataInt8.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_INT16:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataInt16.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_INT64:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataInt64.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_INT:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataInt.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_FLOAT:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataFloat.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_FLOAT64:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataDouble.GetData(), IndexStart, IndexCount);
-		break;
-	case HAPI_STORAGETYPE_STRING:
-		Result = SendHapiData(Session, AttributeInfo, Data.RawDataStrings.GetData(), IndexStart, IndexCount);
-		break;
-	default:
-		return false;
-	}
-
-	if (!TempAttributeInfo.exists)
-		Result = HAPI_RESULT_FAILURE;
-
-	return Result == HAPI_RESULT_SUCCESS;
-}
-
-
 template<typename DataType>
 HAPI_StorageType FHoudiniHapiAccessor::GetHapiType()
 {
@@ -915,21 +761,21 @@ HAPI_StorageType FHoudiniHapiAccessor::GetHapiType()
 	}
 }
 
-template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, TArray<DataType>& Results, int IndexStart, int IndexCount)
+template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, TArray<DataType>& Results, int First, int Count)
 {
 	HAPI_AttributeInfo AttrInfo;
 	if (!GetInfo(AttrInfo, Owner))
 		return false;
 
-	return GetAttributeData(AttrInfo, Results, IndexStart, IndexCount);
+	return GetAttributeData(AttrInfo, Results, First, Count);
 }
 
-template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, DataType* Results, int IndexStart, int IndexCount)
+template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, DataType* Results, int First, int Count)
 {
 	HAPI_AttributeInfo AttrInfo;
 	if (!GetInfo(AttrInfo, Owner))
 		return false;
-	return GetAttributeData(AttrInfo, Results, IndexStart, IndexCount);
+	return GetAttributeData(AttrInfo, Results, First, Count);
 }
 
 template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeFirstValue(HAPI_AttributeOwner Owner, DataType& Result)
@@ -937,7 +783,7 @@ template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeFirstValue(HA
 	return GetAttributeData(Owner, &Result, 0, 1);
 }
 
-template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, TArray<DataType>& Results, int IndexStart, int IndexCount)
+template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, TArray<DataType>& Results, int First, int Count)
 {
 	HAPI_AttributeInfo AttrInfo;
 	if (!GetInfo(AttrInfo, Owner))
@@ -945,10 +791,10 @@ template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_Att
 
 	AttrInfo.tupleSize = MaxTuples;
 
-	return GetAttributeData(AttrInfo, Results, IndexStart, IndexCount);
+	return GetAttributeData(AttrInfo, Results, First, Count);
 
 }
-template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, DataType* Results, int IndexStart, int IndexCount)
+template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, DataType* Results, int First, int Count)
 {
 	HAPI_AttributeInfo AttrInfo;
 	if (!GetInfo(AttrInfo, Owner))
@@ -956,188 +802,8 @@ template<typename DataType> bool FHoudiniHapiAccessor::GetAttributeData(HAPI_Att
 
 	AttrInfo.tupleSize = MaxTuples;
 
-	return GetAttributeData(AttrInfo, Results, IndexStart, IndexCount);
+	return GetAttributeData(AttrInfo, Results, First, Count);
 }
-
-bool FHoudiniHapiAccessor::SetAttributeStringMap(const HAPI_AttributeInfo& AttributeInfo, const FHoudiniEngineIndexedStringMap& InIndexedStringMap)
-{
-	H_SCOPED_FUNCTION_DYNAMIC_LABEL(FString::Printf(TEXT("FHoudiniAttributeAccessor::SetAttributeStringMap (%s)"), ANSI_TO_TCHAR(AttributeName)));
-
-	FHoudiniEngineRawStrings IndexedRawStrings = InIndexedStringMap.GetRawStrings();
-	TArray<int> IndexArray = InIndexedStringMap.GetIds();
-
-	HAPI_Result Result = FHoudiniApi::SetAttributeIndexedStringData(
-		FHoudiniEngine::Get().GetSession(),
-		NodeId, PartId, AttributeName,
-		&AttributeInfo, IndexedRawStrings.RawStrings.GetData(), IndexedRawStrings.RawStrings.Num(), IndexArray.GetData(), 0, IndexArray.Num());
-
-	return Result == HAPI_RESULT_SUCCESS;
-}
-
-template<typename DataType> bool FHoudiniHapiAccessor::SetAttributeUniqueData(const HAPI_AttributeInfo& AttributeInfo, const DataType& Data)
-{
-	HAPI_Result Result = HAPI_RESULT_FAILURE;
-
-	if constexpr (std::is_same_v<DataType, float>)
-	{
-		Result = FHoudiniApi::SetAttributeFloatUniqueData( FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize,0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, double>)
-	{
-		Result = FHoudiniApi::SetAttributeFloat64UniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize, 0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, int>)
-	{
-		Result = FHoudiniApi::SetAttributeIntUniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize, 0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, int8>)
-	{
-		Result = FHoudiniApi::SetAttributeInt8UniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize, 0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, int16>)
-	{
-		Result = FHoudiniApi::SetAttributeInt16UniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize, 0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, uint8>)
-	{
-		Result = FHoudiniApi::SetAttributeUInt8UniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize, 0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, int64>)
-	{
-		Result = FHoudiniApi::SetAttributeInt64UniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			&Data, AttributeInfo.tupleSize, 0, AttributeInfo.count);
-	}
-	else if constexpr (std::is_same_v<DataType, FString>)
-	{
-		Result = FHoudiniApi::SetAttributeStringUniqueData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			TCHAR_TO_ANSI(*Data), 1, 0, AttributeInfo.count);
-	}
-	else
-	{
-		return HAPI_STORAGETYPE_INVALID;
-	}
-	return Result == HAPI_RESULT_SUCCESS;
-
-}
-
-bool FHoudiniHapiAccessor::SetAttributeDictionary(const HAPI_AttributeInfo& InAttributeInfo, const TArray<FString>& JSONData)
-{
-	TArray<const char*> RawStringData;
-	for (const FString& Data : JSONData)
-	{
-		RawStringData.Add(FHoudiniEngineUtils::ExtractRawString(Data));
-	}
-
-	// Send strings in smaller chunks due to their potential size
-	int32 ChunkSize = (THRIFT_MAX_CHUNKSIZE / 100) / InAttributeInfo.tupleSize;
-
-	HAPI_Result Result = HAPI_RESULT_FAILURE;
-	if (InAttributeInfo.count > ChunkSize)
-	{
-		// Set the attributes in chunks
-		for (int32 ChunkStart = 0; ChunkStart < InAttributeInfo.count; ChunkStart += ChunkSize)
-		{
-			const int32 CurCount = InAttributeInfo.count - ChunkStart > ChunkSize ? ChunkSize : InAttributeInfo.count - ChunkStart;
-
-			Result = FHoudiniApi::SetAttributeDictionaryData(
-				FHoudiniEngine::Get().GetSession(),
-				NodeId, PartId, AttributeName,
-				&InAttributeInfo, RawStringData.GetData() + ChunkStart * InAttributeInfo.tupleSize,
-				ChunkStart, CurCount);
-
-			if (Result != HAPI_RESULT_SUCCESS)
-				break;
-		}
-	}
-	else
-	{
-		// Set all the attribute values once
-		Result = FHoudiniApi::SetAttributeDictionaryData(
-			FHoudiniEngine::Get().GetSession(),
-			NodeId, PartId, AttributeName,
-			&InAttributeInfo, RawStringData.GetData(),
-			0, RawStringData.Num());
-	}
-
-	// ExtractRawString allocates memory using malloc, free it!
-	FHoudiniEngineUtils::FreeRawStringMemory(RawStringData);
-
-	return Result == HAPI_RESULT_SUCCESS;
-}
-
-template<typename DataType>
-bool FHoudiniHapiAccessor::SetAttributeArrayData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& DataArray, const TArray<int>& SizesFixedArray)
-{
-	HAPI_Result Result = HAPI_RESULT_FAILURE;
-
-	if constexpr (std::is_same_v<DataType, float>)
-	{
-		Result = FHoudiniApi::SetAttributeFloatArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-	}
-	else if constexpr (std::is_same_v<DataType, double>)
-	{
-		Result = FHoudiniApi::SetAttributeFloat64ArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-
-	}
-	else if constexpr (std::is_same_v<DataType, int>)
-	{
-		Result = FHoudiniApi::SetAttributeIntArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-	}
-	else if constexpr (std::is_same_v<DataType, int8>)
-	{
-		Result = FHoudiniApi::SetAttributeInt8ArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-	}
-	else if constexpr (std::is_same_v<DataType, int16>)
-	{
-		Result = FHoudiniApi::SetAttributeInt16ArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-	}
-	else if constexpr (std::is_same_v<DataType, uint8>)
-	{
-		Result = FHoudiniApi::SetAttributeUInt8ArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-	}
-	else if constexpr (std::is_same_v<DataType, int64>)
-	{
-		Result = FHoudiniApi::SetAttributeInt64ArrayData(FHoudiniEngine::Get().GetSession(), NodeId, PartId, AttributeName, &AttributeInfo,
-			DataArray.GetData(), DataArray.Num(), SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-	}
-	else if constexpr (std::is_same_v<DataType, FString>)
-	{
-		TArray<const char*> StringDataArray;
-		for (const auto& CurrentString : DataArray)
-		{
-			// Append the converted string to the string array
-			StringDataArray.Add(FHoudiniEngineUtils::ExtractRawString(CurrentString));
-		}
-
-		// Set all the attribute values once
-		Result = FHoudiniApi::SetAttributeStringArrayData(
-				FHoudiniEngine::Get().GetSession(),
-				NodeId, PartId, AttributeName,
-				&AttributeInfo, StringDataArray.GetData(), StringDataArray.Num(),
-				SizesFixedArray.GetData(), 0, SizesFixedArray.Num());
-
-		// ExtractRawString allocates memory using malloc, free it!
-		FHoudiniEngineUtils::FreeRawStringMemory(StringDataArray);
-	}
-	else
-	{
-		return HAPI_STORAGETYPE_INVALID;
-	}
-	return Result == HAPI_RESULT_SUCCESS;
-}
-
 
 bool FHoudiniHapiAccessor::IsHapiArrayType(HAPI_StorageType StorageType)
 {
@@ -1160,21 +826,16 @@ bool FHoudiniHapiAccessor::IsHapiArrayType(HAPI_StorageType StorageType)
 
 #define IMPLEMENT_HOUDINI_ACCESSOR(DATA_TYPE)\
 	template bool FHoudiniHapiAccessor::GetAttributeFirstValue(HAPI_AttributeOwner Owner, DATA_TYPE& Result);\
-	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, TArray<DATA_TYPE>& Results, int IndexStart, int IndexCount);\
-	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, DATA_TYPE * Results, int IndexStart, int IndexCount);\
-	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, TArray<DATA_TYPE>& Results, int IndexStart, int IndexCount);\
-	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, DATA_TYPE * Results, int IndexStart, int IndexCount);\
-	template bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DATA_TYPE>& Results, int IndexStart , int IndexCount);\
-	template bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const DATA_TYPE* Data, int IndexStart, int IndexCount) const;\
-	template bool FHoudiniHapiAccessor::SetAttributeDataViaSession(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const DATA_TYPE* Data, int IndexStart, int IndexCount) const;\
-	template bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const TArray<DATA_TYPE>& Data);\
-	template bool FHoudiniHapiAccessor::SetAttributeUniqueData(const HAPI_AttributeInfo& AttributeInfo, const DATA_TYPE& Data);\
-	template bool FHoudiniHapiAccessor::SetAttributeArrayData(const HAPI_AttributeInfo& InAttributeInfo, TArray<DATA_TYPE>& InStringArray, const TArray<int>& SizesFixedArray);
+	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, TArray<DATA_TYPE>& Results, int First, int Count);\
+	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, DATA_TYPE * Results, int First, int Count);\
+	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, TArray<DATA_TYPE>& Results, int First, int Count);\
+	template bool FHoudiniHapiAccessor::GetAttributeData(HAPI_AttributeOwner Owner, int TupleSize, DATA_TYPE * Results, int First, int Count);\
+	template bool FHoudiniHapiAccessor::GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DATA_TYPE>& Results, int First , int Count);
+
 
 IMPLEMENT_HOUDINI_ACCESSOR(uint8);
 IMPLEMENT_HOUDINI_ACCESSOR(int8);
 IMPLEMENT_HOUDINI_ACCESSOR(int16);
-IMPLEMENT_HOUDINI_ACCESSOR(int64);
 IMPLEMENT_HOUDINI_ACCESSOR(int);
 IMPLEMENT_HOUDINI_ACCESSOR(float);
 IMPLEMENT_HOUDINI_ACCESSOR(double);

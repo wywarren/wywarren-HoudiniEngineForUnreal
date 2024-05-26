@@ -27,7 +27,6 @@
 #include "UnrealLevelInstanceTranslator.h"
 #include "LevelInstance/LevelInstanceActor.h"
 #include "HoudiniEngine.h"
-#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineUtils.h"
 #include "UnrealObjectInputRuntimeTypes.h"
 #include "UnrealObjectInputRuntimeUtils.h"
@@ -160,10 +159,7 @@ bool FUnrealLevelInstanceTranslator::AddStringPointAttribute(HAPI_NodeId NodeId,
 	AttributeInfo.typeInfo = HAPI_ATTRIBUTE_TYPE_NONE;
 
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(FHoudiniEngine::Get().GetSession(), NodeId, 0, Name, &AttributeInfo), false);
-
-	FHoudiniHapiAccessor Accessor(NodeId, 0, Name);
-	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfo, Data), false);
-
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(Data, NodeId, 0, FString(Name), AttributeInfo), false);
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), NodeId), false);
 	return true;
 }

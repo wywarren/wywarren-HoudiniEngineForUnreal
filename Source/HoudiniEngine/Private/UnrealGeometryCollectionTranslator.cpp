@@ -51,7 +51,6 @@
 	#include "GeometryCollectionEngine/Public/GeometryCollection/GeometryCollectionObject.h"	
 #endif
 
-#include "HoudiniEngineAttributes.h"
 #include "Materials/Material.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 1
 	#include "MaterialDomain.h"
@@ -248,8 +247,8 @@ FUnrealGeometryCollectionTranslator::SetGeometryCollectionAttributesForPart(
 
 		// Now that we have raw positions, we can upload them for our attribute.
 
-		FHoudiniHapiAccessor Accessor(InNodeId, 0, HAPI_ATTRIB_NAME);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, InName), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+			InName, InNodeId, 0, HAPI_ATTRIB_NAME, AttributeInfo), false);
 	}
 
 	// Commit the geo.
@@ -401,9 +400,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 			}
 
 			// Now that we have raw positions, we can upload them for our attribute.
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoPoint, StaticMeshVertices), false);
-
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				StaticMeshVertices, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeInfoPoint), false);
 		}
 
 		TArray<UMaterialInterface*> MaterialInterfaces;
@@ -589,8 +587,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(),
 				GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_UV, &AttributeInfoVertex), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_UV);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertex, UVs), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				UVs, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_UV, AttributeInfoVertex), false);
 		}
 		
 		//--------------------------------------------------------------------------------------------------------------------- 
@@ -613,8 +611,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(),
 				GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL, &AttributeInfoVertex), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertex, Normals), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				Normals, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL, AttributeInfoVertex), false);
 		}
 
 		//--------------------------------------------------------------------------------------------------------------------- 
@@ -637,8 +635,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(),
 				GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_TANGENTU, &AttributeInfoVertex), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_TANGENTU);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertex, Tangents), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				Tangents, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_TANGENTU, AttributeInfoVertex), false);
 		}
 
 		//--------------------------------------------------------------------------------------------------------------------- 
@@ -661,8 +659,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
                                 FHoudiniEngine::Get().GetSession(),
                                 GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_TANGENTV, &AttributeInfoVertex), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_TANGENTV);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertex, Binormals), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				Binormals, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_TANGENTV, AttributeInfoVertex), false);
 		}
 
 		//--------------------------------------------------------------------------------------------------------------------- 
@@ -685,8 +683,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(),
 				GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_COLOR, &AttributeInfoVertex), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_COLOR);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertex, RGBColors), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				RGBColors, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_COLOR, AttributeInfoVertex, true), false);
 
 			FHoudiniApi::AttributeInfo_Init(&AttributeInfoVertex);
 			AttributeInfoVertex.tupleSize = 1;
@@ -700,8 +698,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(),
 				GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_ALPHA, &AttributeInfoVertex), false);
 
-			Accessor.Init(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_ALPHA);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoVertex, Alphas), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+				Alphas, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_ALPHA, AttributeInfoVertex, true), false);
 		}
 			
 		//--------------------------------------------------------------------------------------------------------------------- 
@@ -793,8 +791,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				HAPI_ATTRIB_NAME, &AttributeInfo), false);
 
 			// Upload them for our attribute.
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, Part.id, HAPI_ATTRIB_NAME);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, OutputName), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+				OutputName, GeometryNodeId, Part.id, HAPI_ATTRIB_NAME, AttributeInfo), false);
 		}
 
 
@@ -830,8 +828,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(), 
 				GeometryNodeId,	0, HAPI_UNREAL_ATTRIB_GC_PIECE, &AttributeInfoPrim), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_GC_PIECE);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoPrim, Level), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeIntUniqueData(
+				Level, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_GC_PIECE, AttributeInfoPrim), false);
 		}
 
 		// Identify the cluster level using the parent indices:
@@ -878,8 +876,8 @@ FUnrealGeometryCollectionTranslator::UploadGeometryCollection(
 				FHoudiniEngine::Get().GetSession(), 
 				GeometryNodeId,	0, HAPI_UNREAL_ATTRIB_GC_CLUSTER_PIECE, &AttributeInfoPrim), false);
 
-			FHoudiniHapiAccessor Accessor(GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_GC_CLUSTER_PIECE);
-			HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoPrim, ClusterIndex), false);
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeIntUniqueData(
+				ClusterIndex, GeometryNodeId, 0, HAPI_UNREAL_ATTRIB_GC_CLUSTER_PIECE, AttributeInfoPrim), false);
 		}
 		
 
@@ -920,8 +918,8 @@ bool FUnrealGeometryCollectionTranslator::AddGeometryCollectionDetailAttributes(
 			FHoudiniEngine::Get().GetSession(),
 			GeoId, 0, HAPI_UNREAL_ATTRIB_GC_NAME, &AttributeInfo), false);
 
-		FHoudiniHapiAccessor Accessor(GeoId, 0, HAPI_UNREAL_ATTRIB_GC_NAME);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, InName), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+			InName, GeoId, 0, HAPI_UNREAL_ATTRIB_GC_NAME, AttributeInfo), false);
 	}
 	
 	// Clustering - Damage thresholds
@@ -992,8 +990,8 @@ bool FUnrealGeometryCollectionTranslator::AddGeometryCollectionDetailAttributes(
 			FHoudiniEngine::Get().GetSession(),
 			GeoId, PartId, AttributeName, &AttributeInfo), false);
 
-		FHoudiniHapiAccessor Accessor(GeoId, PartId, AttributeName);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, ClusterConnectionTypeValue), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeIntUniqueData(
+			ClusterConnectionTypeValue, GeoId, PartId, AttributeName, AttributeInfo), false);
 	}
 
 	// Collisions - Mass as density
@@ -1011,11 +1009,12 @@ bool FUnrealGeometryCollectionTranslator::AddGeometryCollectionDetailAttributes(
 
 		const char * AttributeName = HAPI_UNREAL_ATTRIB_GC_COLLISIONS_MASS_AS_DENSITY;
 
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(FHoudiniEngine::Get().GetSession(),
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			 FHoudiniEngine::Get().GetSession(),
 			 GeoId, PartId, AttributeName, &AttributeInfo), false);
 
-		FHoudiniHapiAccessor Accessor(GeoId, PartId, AttributeName);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, MassAsDensity), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeIntUniqueData(
+			MassAsDensity, GeoId, PartId, AttributeName, AttributeInfo), false);
 	}
 
 	// Collisions - Mass
@@ -1035,8 +1034,8 @@ bool FUnrealGeometryCollectionTranslator::AddGeometryCollectionDetailAttributes(
 			FHoudiniEngine::Get().GetSession(),
 			GeoId, PartId, AttributeName, &AttributeInfo), false);
 
-		FHoudiniHapiAccessor Accessor(GeoId, PartId, AttributeName);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, GeometryCollectionObject->Mass), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatUniqueData(
+			GeometryCollectionObject->Mass, GeoId, PartId, AttributeName, AttributeInfo), false);
 	}
 
 	// Collisions - Minimum Mass Clamp
@@ -1056,9 +1055,8 @@ bool FUnrealGeometryCollectionTranslator::AddGeometryCollectionDetailAttributes(
 			FHoudiniEngine::Get().GetSession(),
 			GeoId, PartId, AttributeName, &AttributeInfo), false);
 
-		FHoudiniHapiAccessor Accessor(GeoId, PartId, AttributeName);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, GeometryCollectionObject->MinimumMassClamp), false);
-
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatUniqueData(
+			GeometryCollectionObject->MinimumMassClamp, GeoId, PartId, AttributeName, AttributeInfo), false);
 	}
 	
 	const TArray<FGeometryCollectionSizeSpecificData> & GCSizeSpecDatas = GeometryCollectionObject->SizeSpecificData;
@@ -1531,9 +1529,8 @@ bool FUnrealGeometryCollectionTranslator::AddGeometryCollectionDetailAttributes(
 			GeoId, 0, HAPI_UNREAL_ATTRIB_INPUT_GC_NAME, &AttributeInfo), false);
 
 		const FString AssetPath = GeometryCollectionObject->GetPathName();
-
-		FHoudiniHapiAccessor Accessor(GeoId, 0, HAPI_UNREAL_ATTRIB_INPUT_GC_NAME);
-		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfo, AssetPath), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+			AssetPath, GeoId, 0, HAPI_UNREAL_ATTRIB_INPUT_GC_NAME, AttributeInfo), false);
 	}
 
 	//--------------------------------------------------------------------------------------------------------------------- 

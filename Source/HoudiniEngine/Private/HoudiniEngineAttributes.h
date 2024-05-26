@@ -29,20 +29,10 @@
 #include "HAPI/HAPI_Common.h"
 #include "HoudiniEnginePrivatePCH.h"
 
-class FHoudiniEngineIndexedStringMap;
 struct FHoudiniRawAttributeData;
 
 struct FHoudiniHapiAccessor
 {
-	// Public data. Can be set directly or use convenience functions below.
-
-	HAPI_NodeId NodeId = -1;
-	HAPI_PartId PartId = -1;
-	const char* AttributeName = nullptr;
-	bool bAllowTypeConversion = true;
-	bool bAllowMultiThreading = true;
-	bool bCanBeArray = false;
-
 	// Initialization functions. use these functions to initialize the accessor.
 	FHoudiniHapiAccessor(HAPI_NodeId NodeId, HAPI_NodeId PartId, const char* Name);
 	FHoudiniHapiAccessor() {}
@@ -53,41 +43,42 @@ struct FHoudiniHapiAccessor
 
 	// Templated functions to return data.
 	//
-	// If the attribute is a different type from the templated data, conversion is optionally performed (bAllowTypeConversion)
+	// If the attribute is a different from the templated data, conversion is optionally performed (bAllowTypeConversion)
 	// If the attribute owner is HAPI_ATTROWNER_INVALID, all attribute owners are searched.
 	// An optional tuple size can be specified.
 	// Note these templates are explicitly defined in the .cpp file.
 
-	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, TArray<DataType>& Results, int IndexStart =0, int IndexCount =-1);
-	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, DataType* Results, int IndexStart = 0, int IndexCount = -1);
-	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, TArray<DataType>& Results, int IndexStart = 0, int IndexCount = -1);
-	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, DataType* Results, int IndexStart = 0, int IndexCount = -1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, TArray<DataType>& Results, int First=0, int Count=-1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, DataType* Results, int First = 0, int Count = -1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, TArray<DataType>& Results, int First = 0, int Count = -1);
+	template<typename DataType> bool GetAttributeData(HAPI_AttributeOwner Owner, int MaxTuples, DataType* Results, int First = 0, int Count = -1);
 	template<typename DataType> bool GetAttributeFirstValue(HAPI_AttributeOwner Owner, DataType & Result);
 
-	template<typename DataType> bool GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& Results, int IndexStart =0, int IndexCount =-1);
-	template<typename DataType> bool GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int IndexStart, int IndexCount);
-	template<typename DataType> bool GetAttributeDataViaSession(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int IndexStart, int IndexCount) const;
+	template<typename DataType> bool GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, TArray<DataType>& Results, int First=0, int Count=-1);
+	template<typename DataType> bool GetAttributeData(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int First, int Count);
+	template<typename DataType> bool GetAttributeDataMain(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int First, int Count);
 
-	//  Functions to set data, mostly templated on type.
+	// Template functions to set data. Not fully imlemented yet. Disabled so that the compiler does not attempt to compile.
 	//
-
+#if 0
 	template<typename DataType> bool SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const TArray<DataType>& Data);
-	template<typename DataType> bool SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int First = 0, int Count = -1) const;
-	template<typename DataType> bool SetAttributeDataViaSession(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int First = 0, int Count = -1) const;
-	template<typename DataType> bool SetAttributeUniqueData(const HAPI_AttributeInfo& AttributeInfo, const DataType & Data);
-	template<typename DataType> bool SetAttributeArrayData(const HAPI_AttributeInfo& InAttributeInfo, TArray<DataType>& InStringArray, const TArray<int>& SizesFixedArray);
-	bool SetAttributeStringMap(const HAPI_AttributeInfo& AttributeInfo, const FHoudiniEngineIndexedStringMap& InIndexedStringMap);
-	bool SetAttributeDictionary(const HAPI_AttributeInfo& InAttributeInfo, const TArray<FString>& JSONData);
-
-protected:
-	//
-	// Internal functions.
-
+	template<typename DataType> bool SetAttributeData(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int First, int Count);
+	template<typename DataType> bool SetAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int StartIndex, int Count);
+#endif
 	int CalculateNumberOfSessions() const;
 
 
-	template<typename DataType> bool GetAttributeDataMultiSession(const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int First, int Count);
-	template<typename DataType> bool SetAttributeDataMultiSession(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int First, int Count) const;
+	bool GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data);
+	bool GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data, int Start, int Count) const;
+
+	HAPI_NodeId NodeId = -1;
+	HAPI_PartId PartId = -1;
+	const char* AttributeName = nullptr;
+	bool bAllowTypeConversion = true;
+	bool bAllowMultiThreading = true;
+	bool bCanBeArray = false;
+
+	template<typename DataType> bool GetAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, DataType* Results, int Start, int Count) const;
 
 	// Internal functions for actually getting data from HAPI.
 	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, uint8* Data, int IndexStart, int IndexCount) const;
@@ -98,6 +89,7 @@ protected:
 	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, float* Data, int IndexStart, int IndexCount) const;
 	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, double* Data, int IndexStart, int IndexCount) const;
 	HAPI_Result FetchHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FString* Data, int IndexStart, int IndexCount) const;
+
 	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, uint8* Data, int* Sizes, int IndexStart, int IndexCount) const;
 	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int8* Data, int* Sizes, int IndexStart, int IndexCount) const;
 	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, int16* Data, int* Sizes, int IndexStart, int IndexCount) const;
@@ -107,31 +99,14 @@ protected:
 	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, double* Data, int* Sizes, int IndexStart, int IndexCount) const;
 	HAPI_Result FetchHapiDataArray(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FString* Data, int* Sizes, int IndexStart, int IndexCount) const;
 
-	// Internal functions for sending data to HAPI.
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const uint8* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int8* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int16* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const int64* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const float* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const double* Data, int IndexStart, int IndexCount) const;
-	HAPI_Result SendHapiData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, const FString* Data, int IndexStart, int IndexCount) const;
-
 	// Data conversion functions.
 	template<typename DataType> static void ConvertFromRawData(const FHoudiniRawAttributeData& RawData, DataType* Data, size_t Count);
-	template<typename DataType> static void ConvertToRawData(FHoudiniRawAttributeData& RawData, const DataType* Data, size_t Count);
-
-	template<typename SrcType, typename DestType> static void Convert(const SrcType* SourceData, DestType* DestData, int Count);
+		template<typename SrcType, typename DestType> static void Convert(const SrcType* SourceData, DestType* DestData, int Count);
 	static FString ToString(int32 Number);
 	static FString ToString(float Number);
 	static FString ToString(double Number);
 	static double ToDouble(const FString& Str);
 	static int ToInt(const FString& Str);
-
-
-	bool GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data);
-	bool GetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data, int Start, int Count) const;
-	bool SetRawAttributeData(const HAPI_Session* Session, const HAPI_AttributeInfo& AttributeInfo, FHoudiniRawAttributeData& Data, int IndexStart, int IndexCount) const;
 
 	template<typename DataType>
 	static HAPI_StorageType GetHapiType();
