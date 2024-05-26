@@ -27,6 +27,7 @@
 #include "UnrealAnimationTranslator.h"
 
 #include "HoudiniEngine.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniInputObject.h"
@@ -850,8 +851,8 @@ FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAnimSeq
 		FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
 		TCHAR_TO_ANSI(*BoneNameAttributeName), &BoneNameInfo), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		BoneNames, NewNodeId, 0, TCHAR_TO_ANSI(*BoneNameAttributeName), BoneNameInfo), false);
+	FHoudiniHapiAccessor Accessor(NewNodeId, 0, TCHAR_TO_ANSI(*BoneNameAttributeName));
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(BoneNameInfo, BoneNames), false);
 
 	//  Create point attribute info for the bone path.
 	HAPI_AttributeInfo AttributeInfoName;
@@ -868,8 +869,8 @@ FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAnimSeq
 		NewNodeId, 0, "path", &AttributeInfoName), false);
 
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		BonePaths, NewNodeId, 0, "path", AttributeInfoName), false);
+	Accessor.Init(NewNodeId, 0, "path");
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoName, BonePaths), false);
 
 	//--------------------------------------------------------------------------------------------------------------------- 
 	// unreal_skeleton
@@ -888,9 +889,8 @@ FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAnimSeq
 		NewNodeId, 0, HAPI_UNREAL_ATTRIB_SKELETON, &UnrealSkeletonInfo), false);
 
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		UnrealSkeletonPaths, NewNodeId, 0, HAPI_UNREAL_ATTRIB_SKELETON, UnrealSkeletonInfo), false);
-
+	Accessor.Init(NewNodeId, 0, HAPI_UNREAL_ATTRIB_SKELETON);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(UnrealSkeletonInfo, UnrealSkeletonPaths), false);
 
 	//--------------------------------------------------------------------------------------------------------------------- 
 	// Time
@@ -1010,12 +1010,10 @@ FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAnimSeq
 		FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
 		"fbx_custom_attributes", &CustomAttrsInfo), false);
 
-	//Dict string data
-	FHoudiniEngineUtils::HapiSetAttributeDictionaryData(
-		FbxCustomAttributes,
-		NewNodeId, 0, "fbx_custom_attributes", CustomAttrsInfo
-		);
-	
+	Accessor.Init(NewNodeId, 0, "fbx_custom_attributes");
+	Accessor.SetAttributeDictionary(CustomAttrsInfo, FbxCustomAttributes);
+
+
 	//--------------------------------------------------------------------------------------------------------------------- 
 	// clipinfo
 	//---------------------------------------------------------------------------------------------------------------------
@@ -1049,7 +1047,9 @@ FUnrealAnimationTranslator::AddBoneTracksToNode(HAPI_NodeId& NewNodeId, UAnimSeq
 		NewNodeId, 0, "clipinfo", &ClipInfo), false);
 
 	TArray<FString> ClipInfoData = { ClipInfoString };
-	FHoudiniEngineUtils::HapiSetAttributeDictionaryData(ClipInfoData, NewNodeId, 0, "clipinfo", ClipInfo);
+
+	Accessor.Init(NewNodeId, 0, "clipinfo");
+	Accessor.SetAttributeDictionary(ClipInfo, ClipInfoData);;
 	
 #endif
 	return true;

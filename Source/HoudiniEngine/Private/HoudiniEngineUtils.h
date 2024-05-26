@@ -53,7 +53,7 @@ enum class EHoudiniCurveType : int8;
 enum class EHoudiniCurveMethod : int8;
 enum class EHoudiniInstancerType : uint8;
 
-#define H_DEPRECATED_OLD_ATTRIBUTE_API(Version, Message) // [[deprecated(Message " Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.")]]
+#define H_DEPRECATED_OLD_ATTRIBUTE_API(Version, Message)  [[deprecated(Message " Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.")]]
 
 class FHoudiniParameterWidgetMetaData : public ISlateMetaData
 {
@@ -462,6 +462,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			bool bAttemptRunLengthEncoding = false);
 
 		// Helper function for setting unique float values
+		H_DEPRECATED_OLD_ATTRIBUTE_API(20.5, "Use FHoudiniHapiAccessor instead.")
 		static HAPI_Result HapiSetAttributeFloatUniqueData(
 			const float InFloatData,
 			const HAPI_NodeId& InNodeId,
@@ -490,6 +491,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
             bool bAttemptRunLengthEncoding = false);
 
 		// Helper function for setting unique int values
+		H_DEPRECATED_OLD_ATTRIBUTE_API(20.5, "Use FHoudiniHapiAccessor instead.")
 		static HAPI_Result HapiSetAttributeIntUniqueData(
 			const int32 InIntData,
 			const HAPI_NodeId& InNodeId,
@@ -615,16 +617,9 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const FString& InAttributeName,
 			const HAPI_AttributeInfo& InAttributeInfo);
 
-		H_DEPRECATED_OLD_ATTRIBUTE_API(20.5, "Use FHoudiniHapiAccessor instead.")
-		static HAPI_Result HapiSetAttributeUInt64Data(
-			const int64* InInt64Data,
-			const HAPI_NodeId& InNodeId,
-			const HAPI_PartId& InPartId,
-			const FString& InAttributeName,
-			const HAPI_AttributeInfo& InAttributeInfo);
-
 		// Helper function to set Double attribute data
 		// The data will be sent in chunks if too large for thrift
+		H_DEPRECATED_OLD_ATTRIBUTE_API(20.5, "Use FHoudiniHapiAccessor instead.")
 		static HAPI_Result HapiSetAttributeDoubleData(
 			const TArray<double>& InDoubleData,
 			const HAPI_NodeId& InNodeId,
@@ -655,7 +650,8 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			const HAPI_PartId& InPartId);
 
 		// Helper function to set attribute string data for a single FString
-		static HAPI_Result HapiSetAttributeStringData(
+		H_DEPRECATED_OLD_ATTRIBUTE_API(20.5, "Use FHoudiniHapiAccessor instead.")
+		static HAPI_Result HapiSetAttributeStringUniqueData(
 			const FString& InString,
 			const HAPI_NodeId& InNodeId,
 			const HAPI_PartId& InPartId,
