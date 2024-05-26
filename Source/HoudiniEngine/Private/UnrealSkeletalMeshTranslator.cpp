@@ -28,6 +28,7 @@
 
 #include "HoudiniApi.h"
 #include "HoudiniEngine.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineString.h"
 #include "HoudiniEngineUtils.h"
@@ -883,14 +884,18 @@ FUnrealSkeletalMeshTranslator::CreateSkeletalMeshBoneCaptureAttributes(
 
 	TArray<int32> SizesFixedArray;
 	SizesFixedArray.Add(CaptNamesData.Num());
-	FHoudiniEngineUtils::HapiSetAttributeStringArrayData(CaptNamesData, InNodeId, 0, "capt_names", CaptNamesInfo, SizesFixedArray);
+
+
+	FHoudiniHapiAccessor Accessor(InNodeId, 0, "capt_names");
+	Accessor.SetAttributeArrayData(CaptNamesInfo, CaptNamesData, SizesFixedArray);
 
 	//boneCapture_pCaptPath-------------------------------------------------------------------
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
 		FHoudiniEngine::Get().GetSession(), InNodeId, 0,
 		"boneCapture_pCaptPath", &CaptNamesInfo), false);
 
-	FHoudiniEngineUtils::HapiSetAttributeStringArrayData(CaptNamesData, InNodeId, 0, "boneCapture_pCaptPath", CaptNamesInfo, SizesFixedArray);
+	Accessor.Init(InNodeId, 0, "boneCapture_pCaptPath");
+	Accessor.SetAttributeArrayData(CaptNamesInfo, CaptNamesData, SizesFixedArray);
 
 	//--------------------------------------------------------------------------------------------------------------------- 
 	// Capt_Parents
@@ -1795,20 +1800,21 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForSkeletalMeshSockets(
 	}
 
 	//we can now upload them to our attribute.
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		SocketPos, OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeInfoPos), false);
+	FHoudiniHapiAccessor Accessor;
+	Accessor.Init(OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoPos, SocketPos), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		SocketRot, OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_ROTATION, AttributeInfoRot), false);
+	Accessor.Init(OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_ROTATION);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoRot, SocketRot), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		SocketScale, OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_SCALE, AttributeInfoScale), false);
+	Accessor.Init(OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_SCALE);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoScale, SocketScale), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		SocketNames, OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME, AttributeInfoName), false);
+	Accessor.Init(OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoName, SocketNames), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		SocketBoneNames, OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_MESH_SOCKET_BONE_NAME, AttributeInfoBoneName), false);
+	Accessor.Init(OutSocketsNodeId, 0, HAPI_UNREAL_ATTRIB_MESH_SOCKET_BONE_NAME);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoBoneName, SocketBoneNames), false);
 
 	// We will also create the socket_details attributes
 	for (int32 Idx = 0; Idx < NumSockets; ++Idx)
@@ -1887,8 +1893,8 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForSkeletalMeshSockets(
 			FHoudiniEngine::Get().GetSession(),
 			OutSocketsNodeId, 0, TCHAR_TO_ANSI(*NameAttr), &AttributeInfoName), false);
 
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-			SocketNames[Idx], OutSocketsNodeId, 0, NameAttr, AttributeInfoName), false);
+		Accessor.Init(OutSocketsNodeId, 0, TCHAR_TO_ANSI(*NameAttr));
+		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoName, SocketNames[Idx]), false);
 
 		//  Create the mesh_socketX_bone attrib info
 		FHoudiniApi::AttributeInfo_Init(&AttributeInfoBoneName);
@@ -1904,8 +1910,8 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForSkeletalMeshSockets(
 			FHoudiniEngine::Get().GetSession(),
 			OutSocketsNodeId, 0, TCHAR_TO_ANSI(*BoneNameAttr), &AttributeInfoBoneName), false);
 
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-			SocketBoneNames[Idx], OutSocketsNodeId, 0, BoneNameAttr, AttributeInfoBoneName), false);
+		Accessor.Init(OutSocketsNodeId, 0, TCHAR_TO_ANSI(*BoneNameAttr));
+		HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoBoneName, SocketBoneNames[Idx]), false);
 	}
 
 	// Now add the sockets group
@@ -2230,9 +2236,9 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
 	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
 		FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
 		"name", &BoneNameInfo), false);
-	
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		BoneNameData, NewNodeId, 0, "name", BoneNameInfo), false);
+
+	FHoudiniHapiAccessor Accessor(NewNodeId, 0, "name");
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(BoneNameInfo, BoneNameData), false);
 
 	//----------------------------------------
 	// in_transform: 3x3 component space transform for each bone

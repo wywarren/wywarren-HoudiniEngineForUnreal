@@ -36,6 +36,7 @@
 #include "UnrealLandscapeTranslator.h"
 
 #include "HoudiniDataLayerUtils.h"
+#include "HoudiniEngineAttributes.h"
 #include "HoudiniGeoPartObject.h"
 
 #include "Landscape.h"
@@ -1441,8 +1442,8 @@ bool FUnrealLandscapeTranslator::AddLandscapeMaterialAttributesToVolume(
 		if (HAPI_RESULT_SUCCESS == Result)
 		{
 			// Set the attribute's string data
-			Result = FHoudiniEngineUtils::HapiSetAttributeStringData(
-				InLandscapeMaterialString, VolumeNodeId, PartId, HAPI_UNREAL_ATTRIB_MATERIAL, AttributeInfoMaterial);
+			FHoudiniHapiAccessor Accessor(VolumeNodeId, PartId, HAPI_UNREAL_ATTRIB_MATERIAL);
+			HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoMaterial, InLandscapeMaterialString), false);
 		}
 
 		if (Result != HAPI_RESULT_SUCCESS)
@@ -1477,8 +1478,8 @@ bool FUnrealLandscapeTranslator::AddLandscapeMaterialAttributesToVolume(
 		if (Result == HAPI_RESULT_SUCCESS)
 		{
 			// Set the attribute's string data
-			Result = FHoudiniEngineUtils::HapiSetAttributeStringData(
-				InLandscapeMaterialString, VolumeNodeId, PartId, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE, AttributeInfoMaterial);
+			FHoudiniHapiAccessor Accessor(VolumeNodeId, PartId, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE);
+			HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoMaterial, InLandscapeMaterialString), false);
 		}
 
 		if (Result != HAPI_RESULT_SUCCESS)
@@ -1513,8 +1514,8 @@ bool FUnrealLandscapeTranslator::AddLandscapeMaterialAttributesToVolume(
 		if (Result == HAPI_RESULT_SUCCESS)
 		{
 			// Set the attribute's string data
-			Result = FHoudiniEngineUtils::HapiSetAttributeStringData(
-				InPhysMatlString, VolumeNodeId, PartId, HAPI_UNREAL_ATTRIB_PHYSICAL_MATERIAL, AttributeInfoMaterial);
+			FHoudiniHapiAccessor Accessor(VolumeNodeId, PartId, HAPI_UNREAL_ATTRIB_PHYSICAL_MATERIAL);
+			HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoMaterial, InPhysMatlString), false);
 		}
 
 		if (Result != HAPI_RESULT_SUCCESS)
@@ -1991,10 +1992,11 @@ FUnrealLandscapeTranslator::AddLandscapePositionAttribute(const HAPI_NodeId& Nod
 		FHoudiniEngine::Get().GetSession(), NodeId, 0,
 		HAPI_UNREAL_ATTRIB_POSITION, &AttributeInfoPointPosition), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		(const float*)LandscapePositionArray.GetData(), NodeId, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeInfoPointPosition), false);
 
-	return true;
+	FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_POSITION);
+	bool bSuccess = Accessor.SetAttributeData(AttributeInfoPointPosition, (const float*)LandscapePositionArray.GetData());
+
+	return bSuccess;
 }
 
 bool 
@@ -2017,10 +2019,10 @@ FUnrealLandscapeTranslator::AddLandscapeNormalAttribute(const HAPI_NodeId& NodeI
 		FHoudiniEngine::Get().GetSession(), NodeId,
 		0, HAPI_UNREAL_ATTRIB_NORMAL, &AttributeInfoPointNormal), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		(const float*)LandscapeNormalArray.GetData(), NodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL, AttributeInfoPointNormal), false);
+	FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_NORMAL);
+	bool bSuccess = Accessor.SetAttributeData(AttributeInfoPointNormal, (const float*)LandscapeNormalArray.GetData());
 
-	return true;
+	return bSuccess;
 }
 
 bool 
@@ -2043,10 +2045,10 @@ FUnrealLandscapeTranslator::AddLandscapeUVAttribute(const HAPI_NodeId& NodeId, c
 		FHoudiniEngine::Get().GetSession(), NodeId,
 		0, HAPI_UNREAL_ATTRIB_UV, &AttributeInfoPointUV), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		(const float*)LandscapeUVArray.GetData(), NodeId, 0, HAPI_UNREAL_ATTRIB_UV, AttributeInfoPointUV), false);
+	FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_UV);
+	bool bSuccess = Accessor.SetAttributeData(AttributeInfoPointUV, (const float*)LandscapeUVArray.GetData());
 
-	return true;
+	return bSuccess;
 }
 
 bool 
@@ -2070,8 +2072,8 @@ FUnrealLandscapeTranslator::AddLandscapeComponentVertexIndicesAttribute(const HA
 		0, HAPI_UNREAL_ATTRIB_LANDSCAPE_VERTEX_INDEX,
 		&AttributeInfoPointLandscapeComponentVertexIndices), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeIntData(
-		(const int*)LandscapeComponentVertexIndicesArray.GetData(), NodeId, 0, HAPI_UNREAL_ATTRIB_LANDSCAPE_VERTEX_INDEX, AttributeInfoPointLandscapeComponentVertexIndices), false);
+	FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_LANDSCAPE_VERTEX_INDEX);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoPointLandscapeComponentVertexIndices, (const int*)LandscapeComponentVertexIndicesArray.GetData()), false);
 
 	return true;
 }
@@ -2152,8 +2154,8 @@ FUnrealLandscapeTranslator::AddLandscapeLightmapColorAttribute(const HAPI_NodeId
 		FHoudiniEngine::Get().GetSession(), NodeId,
 		0, HAPI_UNREAL_ATTRIB_LIGHTMAP_COLOR, &AttributeInfoPointLightmapColor), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		(const float*)LandscapeLightmapValues.GetData(), NodeId, 0, HAPI_UNREAL_ATTRIB_LIGHTMAP_COLOR, AttributeInfoPointLightmapColor, true), false);
+	FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_LIGHTMAP_COLOR);
+	bool bSuccess = Accessor.SetAttributeData(AttributeInfoPointLightmapColor, (const float*)LandscapeLightmapValues.GetData());
 
 	return true;
 }
@@ -2267,9 +2269,8 @@ FUnrealLandscapeTranslator::AddLandscapeMeshIndicesAndMaterialsAttribute(
                                            NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL, &AttributeInfoPrimitiveMaterial),
                                        false);
 
-            HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringMap(FaceMaterials,
-                                           NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL, AttributeInfoPrimitiveMaterial),
-                                       false);
+			FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL);
+			HOUDINI_CHECK_RETURN(Accessor.SetAttributeStringMap(AttributeInfoPrimitiveMaterial, FaceMaterials), false);
         }
 
         if (FaceHoleMaterials.HasEntries())
@@ -2290,11 +2291,8 @@ FUnrealLandscapeTranslator::AddLandscapeMeshIndicesAndMaterialsAttribute(
                                            &AttributeInfoPrimitiveMaterialHole),
                                        false);
 
-            HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringMap(
-                                           FaceHoleMaterials,
-                                           NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE,
-                                           AttributeInfoPrimitiveMaterialHole),
-                                       false);
+			FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE);
+			HOUDINI_CHECK_RETURN(Accessor.SetAttributeStringMap(AttributeInfoPrimitiveMaterialHole, FaceHoleMaterials), false);
         }
 	}		
 
@@ -2324,8 +2322,8 @@ FUnrealLandscapeTranslator::AddLandscapeGlobalMaterialAttribute(
 		FHoudiniEngine::Get().GetSession(), NodeId, 0,
 		HAPI_UNREAL_ATTRIB_MATERIAL, &AttributeInfoDetailMaterial), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		MaterialInterface->GetPathName(), NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL, AttributeInfoDetailMaterial), false);
+	FHoudiniHapiAccessor Accessor(NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoDetailMaterial, MaterialInterface->GetPathName()), false);
 
 	// If there's a global landscape hole material, we marshall it as detail.
 	UMaterialInterface * HoleMaterialInterface = LandscapeProxy->GetLandscapeHoleMaterial();
@@ -2344,8 +2342,8 @@ FUnrealLandscapeTranslator::AddLandscapeGlobalMaterialAttribute(
 		NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE,
 		&AttributeInfoDetailMaterialHole), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
-		HoleMaterialInterface->GetPathName(), NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE, AttributeInfoDetailMaterialHole), false);
+	Accessor.Init(NodeId, 0, HAPI_UNREAL_ATTRIB_MATERIAL_HOLE);
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeUniqueData(AttributeInfoDetailMaterialHole, HoleMaterialInterface->GetPathName()), false);
 
 	return true;
 }
@@ -2374,8 +2372,8 @@ FUnrealLandscapeTranslator::AddLandscapeLayerAttribute(
 		TCHAR_TO_ANSI(*LayerName),
 		&AttributeInfoLayer), false);
 
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
-		LandscapeLayerArray, NodeId, 0, LayerName, AttributeInfoLayer, true), false);
+	FHoudiniHapiAccessor Accessor(NodeId, 0, TCHAR_TO_ANSI(*LayerName));
+	HOUDINI_CHECK_RETURN(Accessor.SetAttributeData(AttributeInfoLayer, LandscapeLayerArray), false);
 
 	return true;
 }
