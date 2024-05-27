@@ -363,7 +363,9 @@ bool FHoudiniHapiAccessor::GetAttributeDataMultiSession(const HAPI_AttributeInfo
 	if (!AttributeInfo.exists)
 		return false;
 
-	
+	if (IndexCount == -1)
+		IndexCount = AttributeInfo.count;
+
 	int NumSessions = CalculateNumberOfSessions();
 	if (IsHapiArrayType(AttributeInfo.storage))
 	{
@@ -436,6 +438,9 @@ bool FHoudiniHapiAccessor::SetAttributeData(const HAPI_AttributeInfo& AttributeI
 template<typename DataType>
 bool FHoudiniHapiAccessor::SetAttributeDataMultiSession(const HAPI_AttributeInfo& AttributeInfo, const DataType* Data, int IndexStart, int IndexCount) const
 {
+	if (IndexCount == -1)
+		IndexCount = AttributeInfo.count;
+
 	// Task array.
 	int NumSessions = CalculateNumberOfSessions(); 
 	TArray<FAsyncTask<FHoudiniAttributeSetTask<DataType>>> Tasks;
