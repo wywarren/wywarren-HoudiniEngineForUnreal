@@ -168,7 +168,6 @@ TArray<FHoudiniEngineBakedActor> FHoudiniTestContext::BakeSelectedTopNetwork()
 	UHoudiniPDGAssetLink * PDGAssetLink = HAC->GetPDGAssetLink();
 
 	FHoudiniBakedObjectData BakeOutputs;
-	BakeOutputs;
 	TArray<FHoudiniEngineBakedActor> BakedActors;
 
 	FHoudiniEngineBakeUtils::BakePDGAssetLinkOutputsKeepActors(
