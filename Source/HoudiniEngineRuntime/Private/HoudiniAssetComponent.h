@@ -826,6 +826,11 @@ protected:
 	UPROPERTY(Transient)
 	double LastTickTime;
 
+	// The last timestamp this component received a session sync update ping
+	// used to limit the frequency at which we ping HDAs for session sync updates
+	UPROPERTY(Transient)
+	double LastLiveSyncPingTime;
+
 	//
 	// Begin: IHoudiniAssetStateEvents
 	//
