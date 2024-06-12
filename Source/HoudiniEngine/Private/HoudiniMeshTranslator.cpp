@@ -5915,6 +5915,8 @@ FHoudiniMeshTranslator::CreateNeededMaterials()
 	
 	TArray<UPackage*> MaterialAndTexturePackages;
 
+	TArray<UMaterialInterface*> OutMaterialArray;
+
 	FinalPackageParams.OverideEnabled = false;
 	FHoudiniMaterialTranslator::CreateHoudiniMaterials(
 		HGPO.AssetId,
@@ -5924,6 +5926,7 @@ FHoudiniMeshTranslator::CreateNeededMaterials()
 		InputAssignmentMaterials,
 		AllOutputMaterials,
 		OutputAssignmentMaterials,
+		OutMaterialArray,
 		MaterialAndTexturePackages,
 		false, 
 		bTreatExistingMaterialsAsUpToDate);
