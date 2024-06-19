@@ -649,7 +649,8 @@ FHoudiniGenericAttribute::UpdatePropertyAttributeOnObject(
 // 	}
 // #endif
 
-	if (!FoundProperty && !FindPropertyOnObject(InObject, PropertyName, FoundPropertyChain, FoundProperty, FoundPropertyObject, OutContainer, false))
+	bool bExactPropertyFound = false;
+	if (!FoundProperty && !FindPropertyOnObject(InObject, PropertyName, FoundPropertyChain, FoundProperty, FoundPropertyObject, OutContainer, bExactPropertyFound, false))
 		return false;
 
 	// Set the member and active properties on the chain
@@ -677,6 +678,7 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 	FProperty*& OutFoundProperty,
 	UObject*& OutFoundPropertyObject,
 	void*& OutContainer,
+	bool& OutExactPropertyFound,
 	bool bDumpAttributes)
 {
 #if WITH_EDITOR
@@ -700,14 +702,13 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 	OutFoundProperty = nullptr;
 	OutFoundPropertyObject = InObject;
 
-	bool bExactPropertyHasBeenFound = false;
 	FHoudiniGenericAttribute::TryToFindProperty(
 		InObject,
 		ObjectClass,
 		InPropertyName,
 		InPropertyChain,
 		OutFoundProperty,
-		bExactPropertyHasBeenFound,
+		OutExactPropertyFound,
 		OutContainer,
 		bDumpAttributes);
 
@@ -720,89 +721,99 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 		OutFoundProperty = ObjectClass->FindPropertyByName(*InPropertyName);
 
 	// We found exactly the Property we were looking for
-	if (OutFoundProperty && bExactPropertyHasBeenFound)
+	if (OutFoundProperty && OutExactPropertyFound)
 		return true;
 
-	// We may have found a property that matches what we're looking for
-	// but not exactly - see if we can find a better match on some nested classes
+	// Secondaries will store our current "best bet"
 	FProperty* SecondaryFoundProperty = nullptr ;
 	UObject* SecondaryPropertyObject = InObject;
 	void* SecondaryContainer = nullptr;
 	bool bSecondaryFound = false;
+
+	// Lambda function used mainly to avoid code duplication
+	// Searches for a uproperty on a given object
+	// If an exact match is found - OutExactPropertyFound is set to true and the out parameters are set - we can exit immediately
+	// If a partial match is found - then we set the SecondaryFoundProperties and should keep looking for an exact match
+	auto SearchPropertyOn = [bDumpAttributes, InPropertyName, &InPropertyChain,
+		&OutFoundProperty, &OutFoundPropertyObject, &OutContainer, &OutExactPropertyFound,
+		&SecondaryFoundProperty, &SecondaryPropertyObject, &SecondaryContainer, &bSecondaryFound]
+		(UObject* InObject, const FString& InObjClass, const FString& InDumpStringBegin, const FString& InDumpStringEnd)
+	{
+		if (bDumpAttributes)
+		{
+			HOUDINI_LOG_MESSAGE(TEXT(" "));
+			HOUDINI_LOG_MESSAGE(TEXT("%s"), *InDumpStringBegin);
+
+			if (!IsValid(InObject))
+				InObject = FHoudiniEngineRuntimeUtils::GetClassByName(InObjClass);
+		}
+
+		// We may have found a property that matches what we're looking for
+		// but not exactly - see if we can find a better match on some nested classes	
+		FProperty* CurrentFoundProperty = nullptr;
+		UObject* CurrentPropertyObject = InObject;
+		void* CurrentContainer = nullptr;
+		bool bCurrentFound = false;
+		if (InObject && FindPropertyOnObject(
+			InObject, InPropertyName, InPropertyChain, CurrentFoundProperty, CurrentPropertyObject, CurrentContainer, OutExactPropertyFound, bDumpAttributes))
+		{
+			bCurrentFound = true;
+		}
+
+		if (bDumpAttributes)
+		{
+			HOUDINI_LOG_MESSAGE(TEXT("%s"), *InDumpStringEnd);
+		}
+		else if (bCurrentFound)
+		{
+			// See if we have a perfect match for the component found property
+			if (OutExactPropertyFound)
+			{
+				// Exact match - use this found property
+				OutFoundProperty = CurrentFoundProperty;
+				OutFoundPropertyObject = CurrentPropertyObject;
+				OutContainer = CurrentContainer;
+				//return true;
+			}
+			else if (!bSecondaryFound)
+			{
+				// Not an exact match - use this as secondary but keep looking in other components
+				SecondaryFoundProperty = CurrentFoundProperty;
+				SecondaryPropertyObject = CurrentPropertyObject;
+				SecondaryContainer = CurrentContainer;
+				bSecondaryFound = true;
+			}
+		}
+	};
 
 	// Handle common properties nested in classes
 	// Static Meshes
 	UStaticMesh* SM = Cast<UStaticMesh>(InObject);
 	if (IsValid(SM))
 	{
+		// Search on the BodySetup
 		UObject* BS = SM->GetBodySetup();
-		if (bDumpAttributes)
-		{
-			HOUDINI_LOG_MESSAGE(TEXT(" "));
-			HOUDINI_LOG_MESSAGE(TEXT("\n------------ BODY SETUP ------------------------------------------------------------------------------------"));
+		FString DumpBegin = TEXT("\n------------ BODY SETUP ------------------------------------------------------------------------------------");
+		FString DumpEnd = TEXT("\n------------ BODY SETUP END --------------------------------------------------------------------------------");
+		SearchPropertyOn(BS, TEXT("BodySetup"), DumpBegin, DumpEnd);
+		if (OutExactPropertyFound)
+			return true;
 
-			if (!IsValid(BS))
-				BS = FHoudiniEngineRuntimeUtils::GetClassByName("BodySetup");
-		}
+		// Search in the Asset Import Data
+		UObject* AID = SM->GetAssetImportData();
+		DumpBegin = TEXT("------------ ASSET IMPORT DATA -----------------------------------------------------------------------------");
+		DumpEnd = TEXT("\n------------ ASSET IMPORT DATA END -------------------------------------------------------------------------");
+		SearchPropertyOn(AID, TEXT("AssetImportData"), DumpBegin, DumpEnd);
+		if (OutExactPropertyFound)
+			return true;
 
-		if (BS && FindPropertyOnObject(
-			BS, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
-		{
-			bSecondaryFound = true;
-		}
-
-		if (bDumpAttributes)
-		{
-			HOUDINI_LOG_MESSAGE(TEXT("\n------------ BODY SETUP END --------------------------------------------------------------------------------"));
-		}
-		
-		if (!bSecondaryFound || bDumpAttributes)
-		{
-			UObject* AID = SM->GetAssetImportData();
-			if (bDumpAttributes)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT(" "));
-				HOUDINI_LOG_MESSAGE(TEXT("------------ ASSET IMPORT DATA -----------------------------------------------------------------------------"));
-
-				if (!IsValid(AID))
-					AID = FHoudiniEngineRuntimeUtils::GetClassByName("AssetImportData");
-			}
-
-			if (AID && FindPropertyOnObject(
-				AID, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
-			{
-				bSecondaryFound = true;
-			}
-
-			if (bDumpAttributes)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT("\n------------ ASSET IMPORT DATA END -------------------------------------------------------------------------"));
-			}
-		}
-		
-		if (!bSecondaryFound || bDumpAttributes)
-		{
-			UObject* NC = SM->GetNavCollision();
-			if (bDumpAttributes)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT(" "));
-				HOUDINI_LOG_MESSAGE(TEXT("------------ NAV COLLISION ---------------------------------------------------------------------------------"));
-
-				if (!IsValid(NC))
-					NC = FHoudiniEngineRuntimeUtils::GetClassByName("AssetImportData");
-			}
-
-			if (NC && FindPropertyOnObject(
-				NC, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
-			{
-				bSecondaryFound = true;
-			}
-
-			if (bDumpAttributes)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT("\n------------ NAV COLLISION END -----------------------------------------------------------------------------"));
-			}
-		}
+		// Search in Nav Collision 
+		UObject* NC = SM->GetNavCollision();
+		DumpBegin = TEXT("------------ NAV COLLISION ---------------------------------------------------------------------------------");
+		DumpEnd = TEXT("\n------------ NAV COLLISION END -----------------------------------------------------------------------------");
+		SearchPropertyOn(NC, TEXT("NavCollision"), DumpBegin, DumpEnd);
+		if (OutExactPropertyFound)
+			return true;
 	}
 
 	// For Actors, parse their components
@@ -819,59 +830,35 @@ FHoudiniGenericAttribute::FindPropertyOnObject(
 		}
 
 		int32 CompIdx = 0;
-		for (USceneComponent * SceneComponent : AllComponents)
+		for (USceneComponent* SceneComponent : AllComponents)
 		{
 			if (!IsValid(SceneComponent))
 				continue;
 
-			if (bDumpAttributes)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT(" "));
-				HOUDINI_LOG_MESSAGE(TEXT("------------ %s"), *SceneComponent->GetClass()->GetName());
-			}
-
-			if (FindPropertyOnObject(
-				SceneComponent, InPropertyName, InPropertyChain, SecondaryFoundProperty, SecondaryPropertyObject, SecondaryContainer, bDumpAttributes))
-			{
-				bSecondaryFound = true;
-			}
-
-			if (bDumpAttributes)
-			{
-				HOUDINI_LOG_MESSAGE(TEXT("------------ %s END"), *SceneComponent->GetClass()->GetName());
-				HOUDINI_LOG_MESSAGE(TEXT(" "));
-			}
+			// Search for the property on the component
+			FString DumpBegin = TEXT("------------ ") + SceneComponent->GetClass()->GetName();
+			FString DumpEnd = DumpBegin + TEXT(" END");
+			SearchPropertyOn(SceneComponent, TEXT("SceneComponent"), DumpBegin, DumpEnd);
+			if (OutExactPropertyFound)
+				return true;
 		}
 	}
 
-	// If we found a secondary option for our property 
-	// See if it's a better match than the previous one
-	if (bSecondaryFound && SecondaryFoundProperty)
+	if (OutExactPropertyFound)
+		return true;
+
+	// If we found a secondary option for our property but haven't found an exact match 
+	// - use the secondary property if we didn't find a property the first time
+	if (!OutFoundProperty && bSecondaryFound && SecondaryFoundProperty)
 	{
-		bool bUseSecondaryProperty = false;
-
-		// See if we have a perfect match for the secondary
-		FString DisplayName = SecondaryFoundProperty->GetDisplayNameText().ToString().Replace(TEXT(" "), TEXT(""));
-		FString Name = SecondaryFoundProperty->GetName();
-		if ((Name == InPropertyName) || (DisplayName == InPropertyName))
-			bUseSecondaryProperty = true;
-
-		// If we didn't find a property the first time, then use the secondary
-		if (!OutFoundProperty)
-			bUseSecondaryProperty = true;
-		
-		if(bUseSecondaryProperty)
-		{
-			OutFoundProperty = SecondaryFoundProperty;
-			OutFoundPropertyObject = SecondaryPropertyObject;
-			OutContainer = SecondaryContainer;
-		}
+		OutFoundProperty = SecondaryFoundProperty;
+		OutFoundPropertyObject = SecondaryPropertyObject;
+		OutContainer = SecondaryContainer;
 	}
 
 	// We found the Property we were looking for
 	if (OutFoundProperty)
 		return true;
-
 #endif
 	return false;
 }
