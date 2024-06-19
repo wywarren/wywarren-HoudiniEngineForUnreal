@@ -304,6 +304,7 @@ FUnrealFoliageTypeTranslator::CreateHoudiniFoliageTypeAttributes(UFoliageType* I
 		UObject* FoundPropertyObject = nullptr;
 		void* Container = nullptr;
 		FEditPropertyChain FoundPropertyChain;
+		bool bExactPropertyFound = false;
 		if (!FHoudiniGenericAttribute::FindPropertyOnObject(
 				InFoliageType,
 				PropertyNameStr,
@@ -311,6 +312,7 @@ FUnrealFoliageTypeTranslator::CreateHoudiniFoliageTypeAttributes(UFoliageType* I
 				FoundProperty,
 				FoundPropertyObject,
 				Container,
+				bExactPropertyFound,
 				false))
 			continue;
 
