@@ -638,11 +638,14 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 
 	auto UpdatePathForServer = [&]
 	{
+		// Get the existing PATH env var
+		FString OrigPathVar = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
+		// Make sure we only extend the PATH once!
+		if (OrigPathVar.Contains(LibHAPILocation))
+			return;
+
 		// Modify our PATH so that HARC will find HARS.exe
 		const TCHAR* PathDelimiter = FPlatformMisc::GetPathVarDelimiter();
-
-		FString OrigPathVar = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
-
 		FString ModifiedPath =
 #if PLATFORM_MAC
 			// On Mac our binaries are split between two folders
