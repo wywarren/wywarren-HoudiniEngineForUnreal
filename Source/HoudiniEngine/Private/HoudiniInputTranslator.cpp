@@ -4339,9 +4339,9 @@ FHoudiniInputTranslator::HapiCreateInputNodeForActor(
 	TSet<FUnrealObjectInputHandle> Handles;
 	bool bSuccess = false;
 	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled() && InputSettings.bImportAsReference)
-		HapiCreateInputNodeForActorReference(InObject, InputSettings, bInputNodesCanBeDeleted);
+		bSuccess = HapiCreateInputNodeForActorReference(InObject, InputSettings, bInputNodesCanBeDeleted);
 	else
-		HapiCreateInputNodesForActorComponents(InInput, InObject, Actor, InActorTransform, CreatedNodeIds, Handles, bInputNodesCanBeDeleted);
+		bSuccess = HapiCreateInputNodesForActorComponents(InInput, InObject, Actor, InActorTransform, CreatedNodeIds, Handles, bInputNodesCanBeDeleted);
 
 	// Cache our transformn
 	InObject->SetTransform(Actor->GetTransform());
