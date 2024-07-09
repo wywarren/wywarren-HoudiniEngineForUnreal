@@ -77,8 +77,7 @@ FUnrealFoliageTypeTranslator::HapiCreateInputNodeForFoliageType_InstancedStaticM
 		const int32 PartId = 0; 
 		CreateHoudiniFoliageTypeAttributes(InFoliageType, InputObjectNodeId, PartId, HAPI_ATTROWNER_DETAIL);
 		
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-			FHoudiniEngine::Get().GetSession(), InputObjectNodeId), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(InputObjectNodeId), false);
 	}
 
 	return bSuccess;
@@ -134,8 +133,7 @@ bool FUnrealFoliageTypeTranslator::CreateInputNodeForReference(
 	constexpr int32 PartId = 0;
 	if (CreateHoudiniFoliageTypeAttributes(InFoliageType, InInputNodeId, PartId, HAPI_ATTROWNER_POINT))
 	{
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-			FHoudiniEngine::Get().GetSession(), InInputNodeId), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(InInputNodeId), false);
 		return true;
 	}
 

@@ -1698,6 +1698,8 @@ FHoudiniEngineUtils::LocateLibHAPIInRegistry(
 bool
 FHoudiniEngineUtils::LoadHoudiniAsset(const UHoudiniAsset * HoudiniAsset, HAPI_AssetLibraryId& OutAssetLibraryId)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::LoadHoudiniAsset);
+
 	OutAssetLibraryId = -1;
 
 	if (!IsValid(HoudiniAsset))
@@ -2371,6 +2373,8 @@ FHoudiniEngineUtils::GatherAllAssetOutputs(
 	const bool bOutputTemplatedGeos,
 	TArray<HAPI_NodeId>& OutOutputNodes)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::GatherAllAssetOutputs);
+
 	OutOutputNodes.Empty();
 	
 	// Ensure the asset has a valid node ID
@@ -3023,6 +3027,8 @@ FHoudiniEngineUtils::ConvertHoudiniRotEulerToUnrealVector(const TArray<float>& I
 bool
 FHoudiniEngineUtils::UploadHACTransform(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UploadHACTransform);
+
 	if (!HAC || !HAC->bUploadTransformsToHoudiniEngine)
 		return false;
 
@@ -3241,6 +3247,8 @@ FHoudiniEngineUtils::UpdateEditorProperties(const bool bInForceFullUpdate)
 
 void FHoudiniEngineUtils::UpdateBlueprintEditor(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UpdateBlueprintEditor);
+
 	if (!IsInGameThread())
 	{
 		// We need to be in the game thread to trigger editor properties update
@@ -3259,6 +3267,8 @@ void FHoudiniEngineUtils::UpdateBlueprintEditor(UHoudiniAssetComponent* HAC)
 void
 FHoudiniEngineUtils::UpdateEditorProperties_Internal(const bool bInForceFullUpdate)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UpdateEditorProperties_Internal);
+
 #if WITH_EDITOR
 #define HOUDINI_USE_DETAILS_FOCUS_HACK 1
 
@@ -7630,6 +7640,8 @@ FHoudiniEngineUtils::CreateNode(
 	const HAPI_Bool& bInCookOnCreation,
 	HAPI_NodeId* OutNewNodeId)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::CreateNode);
+
 	// Call HAPI::CreateNode
 	HAPI_Result Result = FHoudiniApi::CreateNode(
 		FHoudiniEngine::Get().GetSession(),
@@ -8484,6 +8496,13 @@ FHoudiniEngineUtils::MoveActorToLevel(AActor* InActor, ULevel* InDesiredLevel)
 	return true;
 }
 
+HAPI_Result
+FHoudiniEngineUtils::HapiCommitGeo(const HAPI_NodeId& InNodeId)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::HapiCommitGeo);
+	return FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), InNodeId);
+}
+
 bool
 FHoudiniEngineUtils::HapiCookNode(const HAPI_NodeId& InNodeId, HAPI_CookOptions* InCookOptions, const bool& bWaitForCompletion)
 {
@@ -8543,6 +8562,8 @@ FHoudiniEngineUtils::HapiCookNode(const HAPI_NodeId& InNodeId, HAPI_CookOptions*
 HAPI_Result
 FHoudiniEngineUtils::CreateInputNode(const FString& InNodeLabel, HAPI_NodeId& OutNodeId, const int32 InParentNodeId)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::CreateInputNode);
+
 	HAPI_NodeId NodeId = -1;
 	HAPI_Session const* const Session = FHoudiniEngine::Get().GetSession();
 

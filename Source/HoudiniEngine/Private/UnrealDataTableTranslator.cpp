@@ -820,10 +820,7 @@ bool FUnrealDataTableTranslator::CreateInputNodeForDataTable(
 		}
 	}
 
-
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), InputNodeId), false);
-
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(InputNodeId), false);
 	if (!FHoudiniEngineUtils::HapiCookNode(InputNodeId, nullptr, true))
 		return false;
 

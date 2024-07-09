@@ -339,8 +339,7 @@ FUnrealInstanceTranslator::HapiCreateInputNodeForInstancer(
 			Scales, InstancesNodeId, 0, HAPI_UNREAL_ATTRIB_SCALE, AttributeInfoScale), false);
 
 		// Commit the instance point geo.
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-			FHoudiniEngine::Get().GetSession(), InstancesNodeId), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(InstancesNodeId), false);
 	}
 
 	// Connect the mesh to the copytopoints node's second input
