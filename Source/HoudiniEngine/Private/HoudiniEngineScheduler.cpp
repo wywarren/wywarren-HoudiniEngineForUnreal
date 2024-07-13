@@ -34,11 +34,13 @@
 const uint32
 FHoudiniEngineScheduler::InitialTaskSize = 256u;
 
+// Update frequency in (ms) for polling the scheduler
 const float
 FHoudiniEngineScheduler::UpdateFrequency = 0.1f;
 
 FHoudiniEngineScheduler::FHoudiniEngineScheduler()
-	: Tasks(nullptr)
+	: WakeUpEvent(FEventRef(EEventMode::AutoReset))
+	, Tasks(nullptr)
 	, PositionWrite(0u)
 	, PositionRead(0u)
 	, bStopping(false)
@@ -564,7 +566,7 @@ FHoudiniEngineScheduler::ProcessQueuedTasks()
 		if (FPlatformProcess::SupportsMultithreading())
 		{
 			// We want to yield for a bit.
-			FPlatformProcess::SleepNoStats(UpdateFrequency);
+			WakeUpEvent->Wait(UpdateFrequency * 1000.0f);
 		}
 		else
 		{
@@ -686,6 +688,9 @@ FHoudiniEngineScheduler::AddTask(const FHoudiniEngineTask & Task)
 
 	// Wrap around if required.
 	PositionWrite &= (TaskCount - 1);
+
+	// Wake up the thread to process the task.
+	WakeUpEvent->Trigger();
 }
 
 uint32

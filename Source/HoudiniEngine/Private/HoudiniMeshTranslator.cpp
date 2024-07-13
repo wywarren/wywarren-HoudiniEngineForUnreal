@@ -5915,6 +5915,8 @@ FHoudiniMeshTranslator::CreateNeededMaterials()
 	
 	TArray<UPackage*> MaterialAndTexturePackages;
 
+	TArray<UMaterialInterface*> OutMaterialArray;
+
 	FinalPackageParams.OverideEnabled = false;
 	FHoudiniMaterialTranslator::CreateHoudiniMaterials(
 		HGPO.AssetId,
@@ -5924,6 +5926,7 @@ FHoudiniMeshTranslator::CreateNeededMaterials()
 		InputAssignmentMaterials,
 		AllOutputMaterials,
 		OutputAssignmentMaterials,
+		OutMaterialArray,
 		MaterialAndTexturePackages,
 		false, 
 		bTreatExistingMaterialsAsUpToDate);
@@ -6804,15 +6807,15 @@ FHoudiniMeshTranslator::GenerateOrientedBoxAsSimpleCollision(const TArray<FVecto
 	//
 
 	const int32 NumPoints = InPositionArray.Num();
-	TArray<gte::Vector3<double>> Points;
+	TArray<houdini::gte::Vector3<double>> Points;
 	Points.SetNumUninitialized(InPositionArray.Num());
 	for(int32 i = 0; i < NumPoints; ++i)
 	{
 		Points[i] = Convert<double>(InPositionArray[i]);
 	}
 	// Calculate bounding Box.
-	gte::OrientedBox3<double> MinimalBox = gte::OrientedBox3<double>();
-	gte::MinimumVolumeBox3<double, double> BoxCompute;
+	houdini::gte::OrientedBox3<double> MinimalBox = houdini::gte::OrientedBox3<double>();
+	houdini::gte::MinimumVolumeBox3<double, double> BoxCompute;
 	MinimalBox = BoxCompute(NumPoints, Points.GetData(), nullptr);
 	
 	// FVector unitVec = FVector::OneVector;// bs->BuildScale3D;
@@ -7072,21 +7075,21 @@ FHoudiniMeshTranslator::GenerateOrientedSphylAsSimpleCollision(const TArray<FVec
 	//
 
 	const int32 NumPoints = InPositionArray.Num();
-	TArray<gte::Vector3<double>> Points;
+	TArray<houdini::gte::Vector3<double>> Points;
 	Points.SetNumUninitialized(InPositionArray.Num());
 	for(int32 i = 0; i < NumPoints; ++i)
 	{
 		Points[i] = Convert<double>(InPositionArray[i]);
 	}
 
-	gte::Capsule3<double> FitCapsule;
+	houdini::gte::Capsule3<double> FitCapsule;
 	const bool bResultValid = GetContainer(NumPoints, Points.GetData(), FitCapsule);
 	if (!bResultValid)
 	{
 		return 0;
 	}
 
-	gte::Vector3<double> GteCenter, GteDirection;
+	houdini::gte::Vector3<double> GteCenter, GteDirection;
 	double Extent;
 	FitCapsule.segment.GetCenteredForm(GteCenter, GteDirection, Extent);
 	const FVector Direction = Convert<double>(GteDirection);

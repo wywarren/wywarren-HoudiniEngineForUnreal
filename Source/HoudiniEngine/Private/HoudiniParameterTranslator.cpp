@@ -104,8 +104,10 @@ FHoudiniParameterTranslator::UpdateParameters(UHoudiniAssetComponent* HAC)
 		// Replace with the new parameters
 		HAC->Parameters = NewParameters;
 
-		// Update the details panel after the parameter changes/updates
-		FHoudiniEngineUtils::UpdateEditorProperties(true);
+#if WITH_EDITORONLY_DATA
+		// Indicate we want to update the details panel after the parameter changes/updates
+		HAC->bNeedToUpdateEditorProperties = true;
+#endif
 	}
 
 
@@ -115,6 +117,8 @@ FHoudiniParameterTranslator::UpdateParameters(UHoudiniAssetComponent* HAC)
 bool
 FHoudiniParameterTranslator::OnPreCookParameters(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::OnPreCookParameters);
+
 	// Call OnPreCook for all parameters.
 	// Parameters can use this to ensure that any cached / non-cooking state is properly
 	// synced before the cook starts (Looking at you, ramp parameters!)
@@ -133,6 +137,8 @@ FHoudiniParameterTranslator::OnPreCookParameters(UHoudiniAssetComponent* HAC)
 bool
 FHoudiniParameterTranslator::UpdateLoadedParameters(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateLoadedParameters);
+
 	if (!IsValid(HAC))
 		return false;
 
@@ -212,8 +218,10 @@ FHoudiniParameterTranslator::UpdateLoadedParameters(UHoudiniAssetComponent* HAC)
 		// Simply replace with the new parameters
 		HAC->Parameters = NewParameters;
 
-		// Update the details panel after the parameter changes/updates
-		FHoudiniEngineUtils::UpdateEditorProperties(true);
+#if WITH_EDITORONLY_DATA
+		// Indicate we want to update the details panel after the parameter changes/updates
+		HAC->bNeedToUpdateEditorProperties = true;
+#endif
 	}
 
 	return true;
@@ -230,9 +238,10 @@ FHoudiniParameterTranslator::BuildAllParameters(
 	const UHoudiniAsset* InHoudiniAsset,
 	const FString& InHoudiniAssetName)
 {
-	const bool bIsAssetValid = IsValid(InHoudiniAsset);
-	
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::BuildAllParameters);
+
 	// Ensure the asset has a valid node ID
+	const bool bIsAssetValid = IsValid(InHoudiniAsset);	
 	if (AssetId < 0 && !bIsAssetValid)
 	{	
 		return false;
@@ -1311,6 +1320,8 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 	const TArray<HAPI_StringHandle>* DefaultStringValues,
 	const TArray<HAPI_ParmChoiceInfo>* DefaultChoiceValues)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo);
+
 	if (!IsValid(HoudiniParameter))
 		return false;
 
@@ -1378,6 +1389,8 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 			|| ParmType == EHoudiniParameterType::Toggle
 			|| ParmType == EHoudiniParameterType::Color))
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Expr);
+
 			// See if the parm has an expression
 			int32 TupleIdx = ParmInfo.intValuesIndex;
 			bool bHasExpression = false;
@@ -1419,6 +1432,8 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 		// Get parameter tags.
 		if (bHasValidNodeId)
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Tags);
+
 			int32 TagCount = HoudiniParameter->GetTagCount();
 			for (int32 Idx = 0; Idx < TagCount; ++Idx)
 			{
@@ -1461,6 +1476,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 	{
 		case EHoudiniParameterType::Button:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Button);
 			UHoudiniParameterButton* HoudiniParameterButton = Cast<UHoudiniParameterButton>(HoudiniParameter);
 			if (IsValid(HoudiniParameterButton))
 			{
@@ -1471,6 +1487,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::ButtonStrip:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__ButtonStrip);
 			UHoudiniParameterButtonStrip* HoudiniParameterButtonStrip = Cast<UHoudiniParameterButtonStrip>(HoudiniParameter);
 			if (IsValid(HoudiniParameterButtonStrip)) 
 			{
@@ -1548,6 +1565,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Color:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Color);
 			UHoudiniParameterColor* HoudiniParameterColor = Cast<UHoudiniParameterColor>(HoudiniParameter);
 			if (IsValid(HoudiniParameterColor))
 			{
@@ -1595,6 +1613,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::ColorRamp:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__ColorRamp);
 			UHoudiniParameterRampColor* HoudiniParameterRampColor = Cast<UHoudiniParameterRampColor>(HoudiniParameter);
 			if (IsValid(HoudiniParameterRampColor))
 			{
@@ -1605,6 +1624,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 			break;
 		case EHoudiniParameterType::FloatRamp:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__FloatRamp);
 			UHoudiniParameterRampFloat* HoudiniParameterRampFloat = Cast<UHoudiniParameterRampFloat>(HoudiniParameter);
 			if (IsValid(HoudiniParameterRampFloat))
 			{
@@ -1619,6 +1639,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 		case EHoudiniParameterType::FileGeo:
 		case EHoudiniParameterType::FileImage:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Files);
 			UHoudiniParameterFile* HoudiniParameterFile = Cast<UHoudiniParameterFile>(HoudiniParameter);
 			if (IsValid(HoudiniParameterFile))
 			{
@@ -1703,6 +1724,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Float:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Float);
 			UHoudiniParameterFloat* HoudiniParameterFloat = Cast<UHoudiniParameterFloat>(HoudiniParameter);
 			if (IsValid(HoudiniParameterFloat))
 			{
@@ -1867,6 +1889,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Folder:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Folder);
 			UHoudiniParameterFolder* HoudiniParameterFolder = Cast<UHoudiniParameterFolder>(HoudiniParameter);
 			if (IsValid(HoudiniParameterFolder))
 			{
@@ -1879,6 +1902,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::FolderList:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__FolderList);
 			UHoudiniParameterFolderList* HoudiniParameterFolderList = Cast<UHoudiniParameterFolderList>(HoudiniParameter);
 			if (IsValid(HoudiniParameterFolderList))
 			{
@@ -1890,30 +1914,14 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Input:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Input);
 			// Inputs parameters are just stored, and handled separately by UHoudiniInputs
 			UHoudiniParameterOperatorPath* HoudiniParameterOperatorPath = Cast<UHoudiniParameterOperatorPath>(HoudiniParameter);
 			if (IsValid(HoudiniParameterOperatorPath))
 			{
-				/*
 				// DO NOT CREATE A DUPLICATE INPUT HERE!
 				// Inputs are created by the input translator, and will be tied to this parameter there
-				UHoudiniInput * NewInput = NewObject< UHoudiniInput >(
-				HoudiniParameterOperatorPath,
-				UHoudiniInput::StaticClass());
 
-				UHoudiniAssetComponent *ParentHAC = Cast<UHoudiniAssetComponent>(HoudiniParameterOperatorPath->GetOuter());
-
-				if (!ParentHAC)
-					return false;
-
-				if (!IsValid(NewInput))
-					return false;
-				
-				// Set the nodeId
-				NewInput->SetAssetNodeId(ParentHAC->GetAssetId());
-				NewInput->SetInputType(EHoudiniInputType::Geometry);
-				HoudiniParameterOperatorPath->HoudiniInputs.Add(NewInput);
-				*/
 				// Set the valueIndex
 				HoudiniParameterOperatorPath->SetValueIndex(ParmInfo.stringValuesIndex);
 			}
@@ -1922,6 +1930,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Int:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Int);
 			UHoudiniParameterInt* HoudiniParameterInt = Cast<UHoudiniParameterInt>(HoudiniParameter);
 			if (IsValid(HoudiniParameterInt))
 			{
@@ -2042,6 +2051,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::IntChoice:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__IntChoice);
 			UHoudiniParameterChoice* HoudiniParameterIntChoice = Cast<UHoudiniParameterChoice>(HoudiniParameter);
 			if (IsValid(HoudiniParameterIntChoice))
 			{
@@ -2170,6 +2180,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::StringChoice:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__StringChoice);
 			UHoudiniParameterChoice* HoudiniParameterStringChoice = Cast<UHoudiniParameterChoice>(HoudiniParameter);
 			if (IsValid(HoudiniParameterStringChoice))
 			{
@@ -2281,6 +2292,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Label:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Label);
 			UHoudiniParameterLabel* HoudiniParameterLabel = Cast<UHoudiniParameterLabel>(HoudiniParameter);
 			if (IsValid(HoudiniParameterLabel))
 			{
@@ -2331,6 +2343,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::MultiParm:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__MultiParm);
 			UHoudiniParameterMultiParm* HoudiniParameterMulti = Cast<UHoudiniParameterMultiParm>(HoudiniParameter);
 			if (IsValid(HoudiniParameterMulti))
 			{
@@ -2373,6 +2386,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Separator:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Sep);
 			UHoudiniParameterSeparator* HoudiniParameterSeparator = Cast<UHoudiniParameterSeparator>(HoudiniParameter);
 			if (IsValid(HoudiniParameterSeparator))
 			{
@@ -2389,6 +2403,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 		case EHoudiniParameterType::String:
 		case EHoudiniParameterType::StringAssetRef:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__String);
 			UHoudiniParameterString* HoudiniParameterString = Cast<UHoudiniParameterString>(HoudiniParameter);
 			if (IsValid(HoudiniParameterString))
 			{
@@ -2458,6 +2473,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 
 		case EHoudiniParameterType::Toggle:
 		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UpdateParameterFromInfo__Toggle);
 			UHoudiniParameterToggle* HoudiniParameterToggle = Cast<UHoudiniParameterToggle>(HoudiniParameter);
 			if (IsValid(HoudiniParameterToggle))
 			{
@@ -2670,6 +2686,7 @@ FHoudiniParameterTranslator::UploadChangedParameters( UHoudiniAssetComponent * H
 bool
 FHoudiniParameterTranslator::UploadParameterValue(UHoudiniParameter* InParam)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UploadParameterValue);
 	if (!IsValid(InParam))
 		return false;
 
@@ -2897,6 +2914,8 @@ FHoudiniParameterTranslator::UploadParameterValue(UHoudiniParameter* InParam)
 bool
 FHoudiniParameterTranslator::RevertParameterToDefault(UHoudiniParameter* InParam)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::RevertParameterToDefault);
+
 	if (!IsValid(InParam))
 		return false;
 
@@ -2984,6 +3003,8 @@ bool
 FHoudiniParameterTranslator::SyncMultiParmValuesAtLoad(
 	UHoudiniParameter* InParam, TArray<UHoudiniParameter*>& OldParams, const int32& InAssetId, const HAPI_AssetInfo& AssetInfo)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::SyncMultiParmValuesAtLoad);
+
 	UHoudiniParameterMultiParm* MultiParam = Cast<UHoudiniParameterMultiParm>(InParam);
 	if (!IsValid(MultiParam))
 		return false;
@@ -3419,6 +3440,8 @@ FHoudiniParameterTranslator::GetMultiParmInstanceStartIdx(const HAPI_AssetInfo& 
 bool 
 FHoudiniParameterTranslator::RevertRampParameters(TMap<FString, UHoudiniParameter*> & InRampParams, const int32 & AssetId) 
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::RevertRampParameters);
+
 	if (InRampParams.Num() <= 0)
 		return true;
 

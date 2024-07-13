@@ -1698,6 +1698,8 @@ FHoudiniEngineUtils::LocateLibHAPIInRegistry(
 bool
 FHoudiniEngineUtils::LoadHoudiniAsset(const UHoudiniAsset * HoudiniAsset, HAPI_AssetLibraryId& OutAssetLibraryId)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::LoadHoudiniAsset);
+
 	OutAssetLibraryId = -1;
 
 	if (!IsValid(HoudiniAsset))
@@ -2371,6 +2373,8 @@ FHoudiniEngineUtils::GatherAllAssetOutputs(
 	const bool bOutputTemplatedGeos,
 	TArray<HAPI_NodeId>& OutOutputNodes)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::GatherAllAssetOutputs);
+
 	OutOutputNodes.Empty();
 	
 	// Ensure the asset has a valid node ID
@@ -3023,6 +3027,8 @@ FHoudiniEngineUtils::ConvertHoudiniRotEulerToUnrealVector(const TArray<float>& I
 bool
 FHoudiniEngineUtils::UploadHACTransform(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UploadHACTransform);
+
 	if (!HAC || !HAC->bUploadTransformsToHoudiniEngine)
 		return false;
 
@@ -3241,6 +3247,8 @@ FHoudiniEngineUtils::UpdateEditorProperties(const bool bInForceFullUpdate)
 
 void FHoudiniEngineUtils::UpdateBlueprintEditor(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UpdateBlueprintEditor);
+
 	if (!IsInGameThread())
 	{
 		// We need to be in the game thread to trigger editor properties update
@@ -3259,6 +3267,8 @@ void FHoudiniEngineUtils::UpdateBlueprintEditor(UHoudiniAssetComponent* HAC)
 void
 FHoudiniEngineUtils::UpdateEditorProperties_Internal(const bool bInForceFullUpdate)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::UpdateEditorProperties_Internal);
+
 #if WITH_EDITOR
 #define HOUDINI_USE_DETAILS_FOCUS_HACK 1
 
@@ -7630,6 +7640,8 @@ FHoudiniEngineUtils::CreateNode(
 	const HAPI_Bool& bInCookOnCreation,
 	HAPI_NodeId* OutNewNodeId)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::CreateNode);
+
 	// Call HAPI::CreateNode
 	HAPI_Result Result = FHoudiniApi::CreateNode(
 		FHoudiniEngine::Get().GetSession(),
@@ -7671,59 +7683,14 @@ FHoudiniEngineUtils::CreateNode(
 int32
 FHoudiniEngineUtils::HapiGetCookCount(const HAPI_NodeId& InNodeId)
 {
+	// To reduce the "cost" of the call on big HDAs - limit or search to non bypassed SOP/OBJ nodes
 	int32 CookCount = -1;
-
-	FHoudiniApi::GetTotalCookCount(
+	if (HAPI_RESULT_FAILURE == FHoudiniApi::GetTotalCookCount(
 		FHoudiniEngine::Get().GetSession(),
-		InNodeId, HAPI_NODETYPE_ANY, HAPI_NODEFLAGS_ANY, true, &CookCount);
-
-	/*
-	// TODO:
-	// Use HAPI_GetCookingTotalCount() when available
-	HAPI_NodeInfo NodeInfo;
-	FHoudiniApi::NodeInfo_Init(&NodeInfo);
-
-	int32 CookCount = -1;
-	HAPI_Result Result = FHoudiniApi::GetNodeInfo(FHoudiniEngine::Get().GetSession(), InNodeId, &NodeInfo);
-	
-	if (Result != HAPI_RESULT_FAILURE)
+		InNodeId, HAPI_NODETYPE_OBJ | HAPI_NODETYPE_SOP, HAPI_NODEFLAGS_NON_BYPASS, true, &CookCount))
 	{
-		if (NodeInfo.type != HAPI_NODETYPE_OBJ)
-		{
-			// For SOP assets, get the cook count straight from the Asset Node
-			CookCount = NodeInfo.totalCookCount;
-		}
-		else
-		{
-			// For OBJ nodes, get the cook count from the display geos
-			// Retrieve information about each object contained within our asset.
-			TArray< HAPI_ObjectInfo > ObjectInfos;
-			if (!FHoudiniEngineUtils::HapiGetObjectInfos(InNodeId, ObjectInfos))
-				return false;
-
-			for (auto CurrentHapiObjectInfo : ObjectInfos)
-			{
-				// Get the Display Geo's info				
-				HAPI_GeoInfo DisplayHapiGeoInfo;
-				FHoudiniApi::GeoInfo_Init(&DisplayHapiGeoInfo);
-				if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetDisplayGeoInfo(
-					FHoudiniEngine::Get().GetSession(), CurrentHapiObjectInfo.nodeId, &DisplayHapiGeoInfo))
-				{
-					continue;
-				}
-
-				HAPI_NodeInfo DisplayNodeInfo;
-				FHoudiniApi::NodeInfo_Init(&DisplayNodeInfo);
-				if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetNodeInfo(FHoudiniEngine::Get().GetSession(), DisplayHapiGeoInfo.nodeId, &DisplayNodeInfo))
-				{
-					continue;
-				}
-
-				CookCount += DisplayNodeInfo.totalCookCount;
-			}
-		}
+		return -1;
 	}
-	*/
 
 	return CookCount;
 }
@@ -8529,6 +8496,13 @@ FHoudiniEngineUtils::MoveActorToLevel(AActor* InActor, ULevel* InDesiredLevel)
 	return true;
 }
 
+HAPI_Result
+FHoudiniEngineUtils::HapiCommitGeo(const HAPI_NodeId& InNodeId)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::HapiCommitGeo);
+	return FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), InNodeId);
+}
+
 bool
 FHoudiniEngineUtils::HapiCookNode(const HAPI_NodeId& InNodeId, HAPI_CookOptions* InCookOptions, const bool& bWaitForCompletion)
 {
@@ -8588,6 +8562,8 @@ FHoudiniEngineUtils::HapiCookNode(const HAPI_NodeId& InNodeId, HAPI_CookOptions*
 HAPI_Result
 FHoudiniEngineUtils::CreateInputNode(const FString& InNodeLabel, HAPI_NodeId& OutNodeId, const int32 InParentNodeId)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineUtils::CreateInputNode);
+
 	HAPI_NodeId NodeId = -1;
 	HAPI_Session const* const Session = FHoudiniEngine::Get().GetSession();
 
@@ -8676,44 +8652,6 @@ FHoudiniEngineUtils::JSONFromString(const FString& JSONString, TSharedPtr<FJsonO
 
 	return true;
 }
-
-void
-FHoudiniEngineUtils::ConvertHoudiniComponentSpaceTransform(
-	const float* RotationData,
-	const FVector3f& PositionData,
-	FTransform& OutUnrealTransform)
-{
-	//Read in 3x3 into Matrix, and append the translation
-	FMatrix M44Pose;  //this is unconverted houdini space
-	M44Pose.M[0][0] = RotationData[0];
-	M44Pose.M[0][1] = RotationData[1];
-	M44Pose.M[0][2] = RotationData[2];
-	M44Pose.M[0][3] = 0;
-	M44Pose.M[1][0] = RotationData[3];
-	M44Pose.M[1][1] = RotationData[4];
-	M44Pose.M[1][2] = RotationData[5];
-	M44Pose.M[1][3] = 0;
-	M44Pose.M[2][0] = RotationData[6];
-	M44Pose.M[2][1] = RotationData[7];
-	M44Pose.M[2][2] = RotationData[8];
-	M44Pose.M[2][3] = 0;
-	M44Pose.M[3][0] = PositionData.X;
-	M44Pose.M[3][1] = PositionData.Y;
-	M44Pose.M[3][2] = PositionData.Z;
-	M44Pose.M[3][3] = 1;
-
-	const FTransform PoseTransform = FTransform(M44Pose); //this is in Houdini Space
-
-	//Now convert to unreal
-	const FQuat PoseQ = PoseTransform.GetRotation();
-	const FQuat ConvertedPoseQ = FQuat(PoseQ.X, PoseQ.Z, PoseQ.Y, -PoseQ.W) * FQuat::MakeFromEuler({ 90.f, 0.f, 0.f });
-
-	const FVector PoseT = PoseTransform.GetLocation();
-	const FVector ConvertedPoseT = FVector(PoseT.X, PoseT.Z, PoseT.Y);
-	const FVector PoseS = PoseTransform.GetScale3D();
-	OutUnrealTransform = FTransform(ConvertedPoseQ, ConvertedPoseT * 100, PoseS * 100);
-}
-
 
 bool
 FHoudiniEngineUtils::UpdateMeshPartUVSets(
@@ -8860,6 +8798,35 @@ FHoudiniEngineUtils::ForceDeleteObject(UObject* Object)
 	// CollectGarbage so we don't get stale objects.
 	if (bDeleteSucceeded)
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
+}
+
+TArray<FString> FHoudiniEngineUtils::GetAttributeNames(const HAPI_Session* Session, HAPI_NodeId NodeId, HAPI_PartId PartId, HAPI_AttributeOwner Owner)
+{
+	HAPI_PartInfo PartInfo;
+	TArray<FString> Results;
+
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetPartInfo(Session, NodeId, PartId, &PartInfo), Results);
+
+	TArray<HAPI_StringHandle> StringHandles;
+	StringHandles.SetNum(PartInfo.attributeCounts[Owner]);
+
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::GetAttributeNames(Session, NodeId, PartId, Owner, StringHandles.GetData(), StringHandles.Num()), Results);
+
+	FHoudiniEngineString::SHArrayToFStringArray(StringHandles, Results);
+
+	return Results;
+}
+
+TMap< HAPI_AttributeOwner, TArray<FString>> FHoudiniEngineUtils::GetAllAttributeNames(const HAPI_Session* Session, HAPI_NodeId NodeId, HAPI_PartId PartId)
+{
+	TMap< HAPI_AttributeOwner, TArray<FString>> Results;
+
+	Results.Add(HAPI_AttributeOwner::HAPI_ATTROWNER_VERTEX, GetAttributeNames(Session, NodeId, PartId, HAPI_AttributeOwner::HAPI_ATTROWNER_VERTEX));
+	Results.Add(HAPI_AttributeOwner::HAPI_ATTROWNER_POINT, GetAttributeNames(Session, NodeId, PartId, HAPI_AttributeOwner::HAPI_ATTROWNER_POINT));
+	Results.Add(HAPI_AttributeOwner::HAPI_ATTROWNER_PRIM, GetAttributeNames(Session, NodeId, PartId, HAPI_AttributeOwner::HAPI_ATTROWNER_PRIM));
+	Results.Add(HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL, GetAttributeNames(Session, NodeId, PartId, HAPI_AttributeOwner::HAPI_ATTROWNER_DETAIL));
+
+	return Results;
 }
 
 

@@ -65,6 +65,14 @@ static TAutoConsoleVariable<float> CVarHoudiniEngineTickTimeLimit(
 	TEXT("1.0: Default\n")
 );
 
+static TAutoConsoleVariable<float> CVarHoudiniEngineLiveSyncTickTime(
+	TEXT("HoudiniEngine.LiveSyncTickTime"),
+	1.0,
+	TEXT("Frequency at which to look for update when using Session Sync.\n")
+	TEXT("<= 0.0: No Limit\n")
+	TEXT("1.0: Default\n")
+);
+
 FHoudiniEngineManager::FHoudiniEngineManager()
 	: CurrentIndex(0)
 	, ComponentCount(0)
@@ -346,6 +354,16 @@ FHoudiniEngineManager::Tick(float DeltaTime)
 			// Update the tick time for this component
 			CurrentComponent->LastTickTime = dNow;
 		}
+#if WITH_EDITORONLY_DATA
+		// See if we need to update this HDA's details panel
+		if (CurrentComponent->bNeedToUpdateEditorProperties)
+		{
+			// Only do an update if the HAC is selected
+			if(CurrentComponent->IsOwnerSelected())
+				FHoudiniEngineUtils::UpdateEditorProperties(true);
+			CurrentComponent->bNeedToUpdateEditorProperties = false;
+		}
+#endif
 	}
 
 	// Handle Asset delete
@@ -473,9 +491,11 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 		// Refresh UI when pause cooking
 		if (!FHoudiniEngine::Get().HasUIFinishRefreshingWhenPausingCooking()) 
 		{
+#if WITH_EDITORONLY_DATA
 			// Trigger a details panel update if the Houdini asset actor is selected
 			if (HAC->IsOwnerSelected())
-				FHoudiniEngineUtils::UpdateEditorProperties(true);
+				HAC->bNeedToUpdateEditorProperties = true;
+#endif
 
 			// Finished refreshing UI of one HDA.
 			FHoudiniEngine::Get().RefreshUIDisplayedWhenPauseCooking();
@@ -643,8 +663,10 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 			
 			if(!bCookStarted)
 			{
+#if WITH_EDITORONLY_DATA
 				// Just refresh editor properties?
-				FHoudiniEngineUtils::UpdateEditorProperties(true);
+				HAC->bNeedToUpdateEditorProperties = true;
+#endif
 
 				// TODO: Check! update state?
 				HAC->SetAssetState(EHoudiniAssetState::None);
@@ -677,17 +699,6 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 			HAC->HandleOnPreOutputProcessing();
 			HAC->OnPreOutputProcessing();
 			
-			/*
-			// Always update cookcount even when not successful?
-			//if (bSuccess)
-			{
-				// Update the cook count on the HAC
-				// It's better to do it before processing, as changes could be done to the HAC while we're processing outputs
-				int32 CookCount = FHoudiniEngineUtils::HapiGetCookCount(HAC->GetAssetId());
-				HAC->SetAssetCookCount(CookCount);
-			}
-			*/
-
 			if (PostCook(HAC, bSuccess, HAC->GetAssetId()))
 			{
 				// Cook was successful, process the results
@@ -711,10 +722,6 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 		case EHoudiniAssetState::Processing:
 		{
 			UpdateProcess(HAC);
-
-			// This is too late to update the cook count, things might have changed since we asked for a cook
-			//int32 CookCount = FHoudiniEngineUtils::HapiGetCookCount(HAC->GetAssetId());
-			//HAC->SetAssetCookCount(CookCount);
 
 			HAC->HandleOnPostOutputProcessing();
 			HAC->OnPostOutputProcessing();
@@ -744,26 +751,35 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 			}
 
 			// See if we need to get an update from Session Sync
-			if(FHoudiniEngine::Get().IsSessionSyncEnabled() 
+			bool bEnableLiveSync = FHoudiniEngine::Get().IsSessionSyncEnabled()
 				&& FHoudiniEngine::Get().IsSyncWithHoudiniCookEnabled()
-				&& HAC->GetAssetState() == EHoudiniAssetState::None)
-			{
-				bool bEnableLiveSync = true;
-				if (bIsNodeSyncComponent)
-				{
-					UHoudiniNodeSyncComponent* HNSC = Cast<UHoudiniNodeSyncComponent>(HAC);
-					bEnableLiveSync = HNSC ? HNSC->GetLiveSyncEnabled() : false;
-				}
+				&& HAC->GetAssetState() == EHoudiniAssetState::None;
 
-				int32 CookCount = FHoudiniEngineUtils::HapiGetCookCount(HAC->GetAssetId());
-				if (CookCount >= 0 && CookCount != HAC->GetAssetCookCount() && bEnableLiveSync)
+			if (bIsNodeSyncComponent)
+			{
+				UHoudiniNodeSyncComponent* HNSC = Cast<UHoudiniNodeSyncComponent>(HAC);
+				bEnableLiveSync = HNSC ? HNSC->GetLiveSyncEnabled() : false;
+			}
+
+			if(bEnableLiveSync)
+			{
+				double dNow = FPlatformTime::Seconds();
+				double dLiveSyncTick = CVarHoudiniEngineLiveSyncTickTime.GetValueOnAnyThread();
+				if ((dNow - HAC->LastLiveSyncPingTime) > dLiveSyncTick)
 				{
-					// The cook count has changed on the Houdini side,
-					// this indicates that the user has changed something in Houdini so we need to trigger an update
-					HAC->SetAssetState(EHoudiniAssetState::PreCook);
-					
-					// Make sure to update the cookcount to prevent loop cooking
-					HAC->SetAssetCookCount(CookCount);
+					// Update the last live sync ping time for this component
+					HAC->LastLiveSyncPingTime = dNow;
+
+					int32 CookCount = FHoudiniEngineUtils::HapiGetCookCount(HAC->GetAssetId());
+					if (CookCount >= 0 && CookCount != HAC->GetAssetCookCount())
+					{
+						// The cook count has changed on the Houdini side,
+						// this indicates that the user has changed something in Houdini so we need to trigger an update
+						HAC->SetAssetState(EHoudiniAssetState::PreCook);
+
+						// Make sure to update the cookcount to prevent loop cooking
+						HAC->SetAssetCookCount(CookCount);
+					}
 				}
 			}
 			break;
@@ -879,6 +895,8 @@ FHoudiniEngineManager::StartTaskAssetInstantiation(UHoudiniAsset* HoudiniAsset, 
 bool 
 FHoudiniEngineManager::UpdateInstantiating(UHoudiniAssetComponent* HAC, EHoudiniAssetState& NewState )
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineManager::UpdateInstantiating);
+
 	check(HAC);
 
 	// Will return true if the asset's state need to be updated
@@ -1057,6 +1075,8 @@ FHoudiniEngineManager::StartTaskAssetCooking(
 	bool bOutputTemplateGeos,
 	FGuid& OutTaskGUID)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineManager::StartTaskAssetCooking);
+
 	// Make sure we have a valid session before attempting anything
 	if (!FHoudiniEngine::Get().GetSession())
 		return false;
@@ -1292,8 +1312,10 @@ FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSucces
 
 		FHoudiniEngine::Get().UpdateCookingNotification(FText::FromString(DisplayName + " :\nFinished processing outputs"), true);
 
-		// Trigger a details panel update
-		FHoudiniEngineUtils::UpdateEditorProperties(true);
+#if WITH_EDITORONLY_DATA
+		// Indicate we want to trigger a details panel update
+		HAC->bNeedToUpdateEditorProperties = true;
+#endif
 
 		// If any outputs have HoudiniStaticMeshes, and if timer based refinement is enabled on the HAC,
 		// set the RefineMeshesTimer and ensure BuildStaticMeshesForAllHoudiniStaticMeshes is bound to
@@ -1314,7 +1336,7 @@ FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSucces
 	const TArray<int32> OutputNodes = HAC->GetOutputNodeIds();
 	for (int32 NodeId : OutputNodes)
 	{
-		int32 NodeCookCount = FHoudiniEngineUtils::HapiGetCookCount(HAC->GetAssetId());
+		int32 NodeCookCount = FHoudiniEngineUtils::HapiGetCookCount(NodeId);
 		HAC->SetOutputNodeCookCount(NodeId, NodeCookCount);
 	}
 
@@ -1326,8 +1348,8 @@ FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSucces
 
 	if (bNeedsToTriggerViewportUpdate && GEditor)
 	{
-		// We need to manually update the vieport with HoudiniMeshProxies
-		// if not, modification made in H with the two way debugger wont be visible in Unreal until the vieports gets focus
+		// We need to manually update the viewport with HoudiniMeshProxies
+		// if not, modification made in H with the two way debugger wont be visible in Unreal until the viewports gets focus
 		GEditor->RedrawAllViewports(false);
 	}
 
@@ -1359,6 +1381,8 @@ FHoudiniEngineManager::UpdateProcess(UHoudiniAssetComponent* HAC)
 bool
 FHoudiniEngineManager::StartTaskAssetRebuild(const HAPI_NodeId& InAssetId, FGuid& OutTaskGUID)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineManager::StartTaskAssetRebuild);
+
 	// Check this HAC doesn't already have a running task
 	if (OutTaskGUID.IsValid())
 		return false;
@@ -1387,6 +1411,8 @@ FHoudiniEngineManager::StartTaskAssetRebuild(const HAPI_NodeId& InAssetId, FGuid
 bool
 FHoudiniEngineManager::StartTaskAssetDelete(const HAPI_NodeId& InNodeId, FGuid& OutTaskGUID, bool bShouldDeleteParent)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineManager::StartTaskAssetDelete);
+
 	if (InNodeId < 0)
 		return false;
 

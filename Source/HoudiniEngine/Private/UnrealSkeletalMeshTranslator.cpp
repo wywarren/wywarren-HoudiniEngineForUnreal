@@ -386,24 +386,8 @@ FUnrealSkeletalMeshTranslator::CreateInputNodesForSkeletalMesh(
 	// Node ID for the newly created node
 	HAPI_NodeId NewNodeId = -1;
 
-	// Export sockets if there are some
 	bool DoExportSockets = ExportSockets && (SkeletalMesh->NumSockets() > 0);
-
-	// Export LODs if there are some	
 	bool DoExportLODs = ExportAllLODs && (SkeletalMesh->GetLODNum() > 1);
-
-	/*
-	// Const cast due to deprecation warning to access the body setup
-	const USkeletalMesh* SK_const = SkeletalMesh;
-	const UBodySetup* BodySetup = SK_const->GetBodySetup();
-	bool DoExportColliders = ExportColliders && BodySetup != nullptr;
-	if (DoExportColliders)
-	{
-		if (BodySetup->AggGeom.GetElementCount() <= 0)
-		{
-			DoExportColliders = false;
-		}
-	}*/
 
 	// Export colliders if there are some
 	// For Skeletal mesh, we need to look at all the SKBodySetups
@@ -1187,8 +1171,7 @@ FUnrealSkeletalMeshTranslator::SetSkeletalMeshDataOnNodeFromMeshDescription(
 	}
 	
 	// Commit the geo.
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), NewNodeId), false);
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(NewNodeId), false);
 
 	return true;
 }
@@ -1633,8 +1616,7 @@ FUnrealSkeletalMeshTranslator::SetSkeletalMeshDataOnNodeFromSourceModel(
 	}
 
 	// Commit the geo.
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), NewNodeId), false);
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(NewNodeId), false);
 
 	return true;
 }
@@ -1949,8 +1931,7 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForSkeletalMeshSockets(
 		OutSocketsNodeId, 0, HAPI_GROUPTYPE_POINT, SocketGroupStr, GroupArray.GetData(), 0, NumSockets), false);
 
 	// Commit the geo.
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), OutSocketsNodeId), false);
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(OutSocketsNodeId), false);
 
 	return true;
 }
@@ -2294,8 +2275,7 @@ FUnrealSkeletalMeshTranslator::CreateInputNodeForCapturePose(
 	//----------------------------------------
 	// End of capture pose translation
 	//----------------------------------------
-
-	FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), NewNodeId);
+	FHoudiniEngineUtils::HapiCommitGeo(NewNodeId);
 	
 	if (bUseRefCountedInputSystem)
 	{

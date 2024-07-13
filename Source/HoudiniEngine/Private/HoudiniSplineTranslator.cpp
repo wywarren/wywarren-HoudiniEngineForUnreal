@@ -437,6 +437,8 @@ FHoudiniSplineTranslator::HapiUpdateNodeForHoudiniSplineComponent(
 	UHoudiniSplineComponent* HoudiniSplineComponent,
 	bool bInAddRotAndScaleAttributes)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniSplineTranslator::HapiUpdateNodeForHoudiniSplineComponent);
+
 	if (!IsValid(HoudiniSplineComponent))
 		return true;
 
@@ -1432,8 +1434,7 @@ FHoudiniSplineTranslator::HapiCreateCurveInputNodeForDataLegacy(
 	}
 
 	// Finally, commit the geo ...
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), CurveNodeId), false);
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(CurveNodeId), false);
 
 	// And cook it with refinement enabled
 	CookOptions.refineCurveToLinear = true;
@@ -2235,6 +2236,7 @@ FHoudiniSplineTranslator::CreateAllSplinesFromHoudiniOutput(UHoudiniOutput* InOu
 
 	InOutput->SetOutputObjects(NewOutputObjects);
 
+	// TODO: remove and delay editor propreties update
 	FHoudiniEngineUtils::UpdateEditorProperties(true);
 
 	return true;

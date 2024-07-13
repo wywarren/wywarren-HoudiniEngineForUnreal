@@ -191,8 +191,7 @@ FUnrealAnimationTranslator::HapiCreateInputNodeForAnimation(
 	if (FUnrealAnimationTranslator::SetAnimationDataOnNode(Animation, NewNodeId))
 	{
 		// Commit the geo.
-		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-			FHoudiniEngine::Get().GetSession(), NewNodeId), false);
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(NewNodeId), false);
 
 		//Create Output Node
 		HAPI_NodeId OutputNodeId;
@@ -311,24 +310,12 @@ FUnrealAnimationTranslator::HapiCreateInputNodeForAnimation(
 		}
 
 		// Connect output to detail wrangle (build_clipinfo)
-		
 		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::ConnectNodeInput(
 			FHoudiniEngine::Get().GetSession(),
 			OutputNodeId, 0, DetailWrangleNodeId, 0), false);
 
-		//HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		//	FHoudiniEngine::Get().GetSession(), AttribWrangleNodeId), false);
-
-		//HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		//	FHoudiniEngine::Get().GetSession(), PackNodeId), false);
-
-		//HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		//	FHoudiniEngine::Get().GetSession(), OutputNodeId), false);
-
-
 		FHoudiniEngineUtils::HapiCookNode(AttribWrangleNodeId, nullptr, true);
 		FHoudiniEngineUtils::HapiCookNode(PackNodeId, nullptr, true);
-
 	}
 
 	if (bUseRefCountedInputSystem)
@@ -337,8 +324,6 @@ FUnrealAnimationTranslator::HapiCreateInputNodeForAnimation(
 		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, InputNodeId, Handle, InputObjectNodeId, nullptr, bInputNodesCanBeDeleted))
 			OutHandle = Handle;
 	}
-
-
 
 	return true;
 }

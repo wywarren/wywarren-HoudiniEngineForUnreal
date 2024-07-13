@@ -637,6 +637,11 @@ public:
 
 	UPROPERTY()
 	bool bLandscapeUseTempLayers;
+
+	// Indicates whether or not this component should update the editor's UI
+	// This is to prevent successive calls of the function for the same HDAs 
+	UPROPERTY(Transient, DuplicateTransient)
+	bool bNeedToUpdateEditorProperties;
 #endif
 
 protected:
@@ -825,6 +830,11 @@ protected:
 	// used to prioritize/limit the number of HAC processed per tick
 	UPROPERTY(Transient)
 	double LastTickTime;
+
+	// The last timestamp this component received a session sync update ping
+	// used to limit the frequency at which we ping HDAs for session sync updates
+	UPROPERTY(Transient)
+	double LastLiveSyncPingTime;
 
 	//
 	// Begin: IHoudiniAssetStateEvents

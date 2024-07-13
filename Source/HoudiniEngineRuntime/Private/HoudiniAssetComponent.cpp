@@ -241,6 +241,7 @@ UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & Object
 	bReplacePreviousBake = false;
 	ActorBakeOption = EHoudiniEngineActorBakeOption::OneActorPerComponent;
 	bAllowPlayInEditorRefinement = false;
+	bNeedToUpdateEditorProperties = false;
 #endif
 
 	//
@@ -262,11 +263,10 @@ UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & Object
 	Bounds = FBox(ForceInitToZero);
 
 	LastTickTime = 0.0;
+	LastLiveSyncPingTime = 0.0;
 
 	// Initialize the default SM Build settings with the plugin's settings default values
 	StaticMeshBuildSettings = FHoudiniEngineRuntimeUtils::GetDefaultMeshBuildSettings();
-	
-	
 }
 
 UHoudiniAssetComponent::~UHoudiniAssetComponent()
@@ -564,6 +564,8 @@ UHoudiniAssetComponent::GetTemporaryCookFolderOrDefault() const
 bool
 UHoudiniAssetComponent::NeedUpdate() const
 {	
+	TRACE_CPUPROFILER_EVENT_SCOPE(UHoudiniAssetComponent::NeedUpdate);
+
 	if (AssetState != DebugLastAssetState)
 	{
 		DebugLastAssetState = AssetState;
@@ -811,7 +813,6 @@ UHoudiniAssetComponent::NeedsToWaitForInputHoudiniAssets()
 			continue;
 
 		EHoudiniInputType CurrentInputType = CurrentInput->GetInputType();
-
 		if (!CurrentInput->IsAssetInput())
 			continue;
 

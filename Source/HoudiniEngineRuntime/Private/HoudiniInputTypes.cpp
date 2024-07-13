@@ -60,6 +60,7 @@ FHoudiniInputObjectSettings::FHoudiniInputObjectSettings()
 	, bExportHeightDataPerEditLayer(true)
 	, bExportPaintLayersPerEditLayer(false)
 	, bExportMergedPaintLayers(true)
+	, bExportLevelInstanceContent(true)
 {
 	UHoudiniRuntimeSettings const* const HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
 	if (IsValid(HoudiniRuntimeSettings))

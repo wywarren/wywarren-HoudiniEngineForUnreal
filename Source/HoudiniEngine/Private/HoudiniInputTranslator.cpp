@@ -400,6 +400,8 @@ FHoudiniInputTranslator::BuildAllInputs(
 bool
 FHoudiniInputTranslator::DisconnectInput(UHoudiniInput* InputToDestroy, const EHoudiniInputType& InputType)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::DisconnectInput);
+
 	if (!IsValid(InputToDestroy))
 		return false;
 
@@ -433,6 +435,8 @@ FHoudiniInputTranslator::DisconnectInput(UHoudiniInput* InputToDestroy, const EH
 bool
 FHoudiniInputTranslator::DestroyInputNodes(UHoudiniInput* InputToDestroy, const EHoudiniInputType& InputType)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::DestroyInputNodes);
+
 	if (!IsValid(InputToDestroy))
 		return false;
 
@@ -628,6 +632,8 @@ FHoudiniInputTranslator::GetDefaultInputTypeFromLabel(const FString& InputName)
 bool
 FHoudiniInputTranslator::ChangeInputType(UHoudiniInput* InInput, const bool& bForce)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::ChangeInputType);
+
 	if (!IsValid(InInput))
 		return false;
 	
@@ -759,6 +765,8 @@ FHoudiniInputTranslator::SetDefaultAssetFromHDA(UHoudiniInput* Input, bool& bOut
 bool
 FHoudiniInputTranslator::UploadChangedInputs(UHoudiniAssetComponent * HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UploadChangedInputs);
+
 	if (!IsValid(HAC))
 		return false;
 
@@ -851,6 +859,8 @@ FHoudiniInputTranslator::UploadChangedInputs(UHoudiniAssetComponent * HAC)
 bool
 FHoudiniInputTranslator::UpdateInputProperties(UHoudiniInput* InInput)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UpdateInputProperties);
+
 	bool bSucess = UpdateTransformType(InInput);
 
 	bSucess &= UpdatePackBeforeMerge(InInput);
@@ -1039,6 +1049,8 @@ FHoudiniInputTranslator::UpdateTransformOffset(UHoudiniInput* InInput)
 bool
 FHoudiniInputTranslator::UploadInputData(UHoudiniInput* InInput, const FTransform & InActorTransform)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UploadInputData);
+
 	if (!IsValid(InInput))
 		return false;
 
@@ -1125,7 +1137,6 @@ FHoudiniInputTranslator::UploadInputData(UHoudiniInput* InInput, const FTransfor
 		{
 			int32 InputNodeId = InInput->GetInputNodeId();
 			TArray<int32> PreviousInputObjectNodeIds = InInput->GetCreatedDataNodeIds();
-
 			if (InInput->GetInputType() == EHoudiniInputType::Asset_DEPRECATED)
 			{
 				UHoudiniAssetComponent * OuterHAC = Cast<UHoudiniAssetComponent>(InInput->GetOuter());
@@ -1251,6 +1262,8 @@ FHoudiniInputTranslator::UploadInputData(UHoudiniInput* InInput, const FTransfor
 bool
 FHoudiniInputTranslator::UploadInputTransform(UHoudiniInput* InInput)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UploadInputTransform);
+
 	if (!IsValid(InInput))
 		return false;
 
@@ -1328,6 +1341,8 @@ FHoudiniInputTranslator::UploadHoudiniInputObject(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UploadHoudiniInputObject);
+
 	if (!InInput || !InInputObject)
 		return false;
 
@@ -1967,6 +1982,8 @@ FHoudiniInputTranslator::UploadHoudiniInputTransform(
 bool
 FHoudiniInputTranslator::HapiCreateInputNodeForObject(const FString& InObjNodeName, UHoudiniInputObject* InObject)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForObject);
+
 	if (!InObject)
 		return false;
 	
@@ -2050,8 +2067,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForObject(const FString& InObjNodeNa
 	}
 
 	// Commit the geo.
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), InputNodeId), false);
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(InputNodeId), false);
 
 	return true;
 }
@@ -2083,6 +2099,8 @@ FHoudiniInputTranslator::HapiCreateOrUpdateGeoObjectMergeAndSetTransform(
 	const FTransform& InTransform,
 	const int32& InTransformType)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateOrUpdateGeoObjectMergeAndSetTransform);
+
 	if (!FHoudiniEngineUtils::IsHoudiniNodeValid(InNodeToObjectMerge))
 		return false;
 
@@ -2167,6 +2185,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForStaticMesh(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForStaticMesh);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -2290,6 +2310,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForReference(
         const FHoudiniInputObjectSettings& InInputSettings,
         const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForReference);
+
     if (!IsValid(InObject))
         return false;
 
@@ -2362,12 +2384,553 @@ FHoudiniInputTranslator::HapiCreateInputNodeForReference(
 
 
 bool
+FHoudiniInputTranslator::HapiCreateInputNodeForActorReference(
+	UHoudiniInputActor* InActorObject,
+	const FHoudiniInputObjectSettings& InInputSettings,
+	const bool& bInputNodesCanBeDeleted)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForActorReference);
+
+	if (!IsValid(InActorObject))
+		return false;
+
+	// Get the Actor we want to send as reference
+	AActor* InActor = InActorObject->GetActor();
+	if (!InActor)
+		return false;
+
+	// Actors properties
+	FTransform ActorTransform = InActor->GetTransform();
+	FString ActorPath = InActor->GetPathName();
+	FString ActorLevelPath = InActor->GetLevel()->GetPathName();
+	{
+		// We just want the path up to the first point
+		int32 DotIndex;
+		if (ActorLevelPath.FindChar('.', DotIndex))
+			ActorLevelPath.LeftInline(DotIndex, false);
+	}
+
+	// Component properties
+	TArray<FTransform> ComponentTransforms;
+	TArray<FBox> ComponentBBoxes;
+	TArray<FString> ComponentReferences;
+	TArray<TArray<FString>> ComponentMaterials;
+	for (UHoudiniInputSceneComponent* CurComponent : InActorObject->GetActorComponents())
+	{
+		switch (CurComponent->Type)
+		{
+			case EHoudiniInputObjectType::StaticMeshComponent:
+			{
+				UHoudiniInputMeshComponent* InputSMC = Cast<UHoudiniInputMeshComponent>(CurComponent);
+				if (InputSMC)
+				{
+					// Ref
+					UStaticMesh* SM = InputSMC->GetStaticMesh();
+					FString AssetRef = FString();
+					if(IsValid(SM))
+						AssetRef = UHoudiniInputObject::FormatAssetReference(SM->GetFullName());
+					ComponentReferences.Add(AssetRef);
+
+					// Bounding box
+					FBox Bbox = InInputSettings.bImportAsReferenceBboxEnabled ?
+						SM->GetBoundingBox() :
+						FBox(EForceInit::ForceInit);
+					ComponentBBoxes.Add(Bbox);
+
+					// Transforms
+					// For some reason - object merge seem to ignore point rotations/scale values?
+					FTransform ComponentTransform = InputSMC->GetTransform();
+					ComponentTransform.SetLocation(InputSMC->GetTransformRelativeToOwner().GetLocation());
+					ComponentTransforms.Add(ComponentTransform);
+
+					// Materials
+					if (InInputSettings.bImportAsReferenceMaterialEnabled)
+						ComponentMaterials.Add(InputSMC->GetMaterialReferences());
+					else
+						ComponentMaterials.Add(TArray<FString>());					
+				}
+			}			
+			break;
+
+			case EHoudiniInputObjectType::InstancedStaticMeshComponent:
+			{
+				UHoudiniInputInstancedMeshComponent* InputIMC = Cast<UHoudiniInputInstancedMeshComponent>(CurComponent);
+				if (InputIMC)
+				{
+					// Ref
+					UStaticMesh* SM = InputIMC->GetStaticMesh();
+					FString AssetRef = FString();
+					if (IsValid(SM))
+						AssetRef = UHoudiniInputObject::FormatAssetReference(SM->GetFullName());
+					ComponentReferences.Add(AssetRef);
+
+					// Bounding box
+					FBox Bbox = InInputSettings.bImportAsReferenceBboxEnabled ?
+						SM->GetBoundingBox() :
+						FBox(EForceInit::ForceInit);
+					ComponentBBoxes.Add(Bbox);
+
+					// Transforms
+					ComponentTransforms.Add(InputIMC->GetTransformRelativeToOwner());
+
+					// Materials
+					if (InInputSettings.bImportAsReferenceMaterialEnabled)
+						ComponentMaterials.Add(InputIMC->GetMaterialReferences());
+					else
+						ComponentMaterials.Add(TArray<FString>());
+				}
+			}
+			break;
+
+			case EHoudiniInputObjectType::SkeletalMeshComponent:
+			{
+				UHoudiniInputSkeletalMeshComponent* InputSKMC = Cast<UHoudiniInputSkeletalMeshComponent>(CurComponent);
+				if (IsValid(InputSKMC))
+				{
+					// Ref
+					USkeletalMesh* SKM = InputSKMC->GetSkeletalMesh();
+					FString AssetRef = FString();
+					if (IsValid(SKM))
+						AssetRef = UHoudiniInputObject::FormatAssetReference(SKM->GetFullName());
+					ComponentReferences.Add(AssetRef);
+
+					// Bounding box
+					FBox Bbox = InInputSettings.bImportAsReferenceBboxEnabled ?
+						SKM->GetBounds().GetBox() :
+						FBox(EForceInit::ForceInit);
+					ComponentBBoxes.Add(Bbox);
+
+					// Transforms
+					ComponentTransforms.Add(InputSKMC->GetTransformRelativeToOwner());
+
+					// Materials
+					if (InInputSettings.bImportAsReferenceMaterialEnabled)
+						ComponentMaterials.Add(InputSKMC->GetMaterialReferences());
+					else
+						ComponentMaterials.Add(TArray<FString>());
+				}
+			}
+			break;
+
+			case EHoudiniInputObjectType::GeometryCollectionComponent:
+			{
+				UHoudiniInputGeometryCollectionComponent* InputGCC = Cast<UHoudiniInputGeometryCollectionComponent>(CurComponent);
+				if (IsValid(InputGCC))
+				{
+					// Ref
+					UGeometryCollection* GC = InputGCC->GetGeometryCollection();
+					FString AssetRef = FString();
+					if (IsValid(GC))
+						AssetRef = UHoudiniInputObject::FormatAssetReference(GC->GetFullName());
+					ComponentReferences.Add(AssetRef);
+
+					// Bounding box
+					TManagedArray<FBox>& BboxArray = GC->GetGeometryCollection()->BoundingBox;
+					FBox GCBbox = FBox(EForceInit::ForceInitToZero);
+					if (InInputSettings.bImportAsReferenceBboxEnabled)
+					{
+						for (FBox& Bbox : BboxArray)
+							GCBbox += Bbox;
+					}
+					ComponentBBoxes.Add(GCBbox);
+
+					// Transforms
+					ComponentTransforms.Add(InputGCC->GetTransformRelativeToOwner());
+
+					// Materials
+					if (InInputSettings.bImportAsReferenceMaterialEnabled)
+						ComponentMaterials.Add(InputGCC->GetMaterialReferences());
+					else
+						ComponentMaterials.Add(TArray<FString>());
+				}
+			}
+			break;
+
+			case EHoudiniInputObjectType::SplineMeshComponent:
+			case EHoudiniInputObjectType::SplineComponent:
+			case EHoudiniInputObjectType::HoudiniSplineComponent:
+			case EHoudiniInputObjectType::CameraComponent:
+			case EHoudiniInputObjectType::SceneComponent:
+			case EHoudiniInputObjectType::HoudiniAssetComponent:
+			case EHoudiniInputObjectType::LandscapeSplinesComponent:
+			{
+				// Ref
+				UObject* Obj = CurComponent->GetObject();
+				FString AssetRef = FString();
+				if (IsValid(Obj))
+					AssetRef = UHoudiniInputObject::FormatAssetReference(Obj->GetFullName());
+				ComponentReferences.Add(AssetRef);
+
+				// Bounding box
+				USceneComponent* SC = CurComponent->GetSceneComponent();
+				FBox SCBbox = FBox(EForceInit::ForceInitToZero);
+				if (InInputSettings.bImportAsReferenceBboxEnabled && IsValid(SC))
+				{
+					SCBbox = SC->GetLocalBounds().GetBox();
+				}
+				ComponentBBoxes.Add(SCBbox);
+
+				// Transforms
+				ComponentTransforms.Add(CurComponent->GetTransformRelativeToOwner());
+
+				// Materials
+				if (InInputSettings.bImportAsReferenceMaterialEnabled)
+					ComponentMaterials.Add(CurComponent->GetMaterialReferences());
+				else
+					ComponentMaterials.Add(TArray<FString>());
+			}
+			break;
+
+
+			default:
+			{
+				// Do Nothing
+			}
+			break;
+		}
+	}
+
+	// The identifier to the node in the input system
+	FString InputNodeName;
+	HAPI_NodeId ParentNodeId = -1;
+	HAPI_NodeId NodeId = -1;
+	FUnrealObjectInputHandle ParentHandle;
+	FUnrealObjectInputIdentifier Identifier;
+	{
+		// Build the identifier for the entry in the manager
+		constexpr bool bIsLeaf = true;
+		FUnrealObjectInputOptions Options;
+		Options.bImportAsReference = true;
+		Options.bImportAsReferenceRotScaleEnabled = InInputSettings.bImportAsReferenceRotScaleEnabled;
+		Identifier = FUnrealObjectInputIdentifier(InActor, Options, bIsLeaf);
+
+		// If the entry exists in the manager, the associated HAPI nodes are valid, and it is not marked as dirty, then
+		// return the existing entry
+		FUnrealObjectInputHandle Handle;
+		if (FUnrealObjectInputUtils::NodeExistsAndIsNotDirty(Identifier, Handle))
+		{
+			if (FUnrealObjectInputUtils::GetHAPINodeId(Handle, NodeId))
+			{
+				// Make sure the node cant be deleted if needed
+				if (!bInputNodesCanBeDeleted)
+					FUnrealObjectInputUtils::UpdateInputNodeCanBeDeleted(Handle, bInputNodesCanBeDeleted);
+
+				//OutHandle = Handle;
+				//InputNodeId = NodeId;
+				return true;
+			}
+		}
+
+		if (!FUnrealObjectInputUtils::GetHAPINodeId(Handle, NodeId))
+			NodeId = -1;
+
+		// If the entry does not exist, or is invalid, then we need create it
+		FUnrealObjectInputUtils::GetDefaultInputNodeName(Identifier, InputNodeName);
+		// Create any parent/container nodes that we would need, and get the node id of the immediate parent
+		if (FUnrealObjectInputUtils::EnsureParentsExist(Identifier, ParentHandle, bInputNodesCanBeDeleted) && ParentHandle.IsValid())
+			FUnrealObjectInputUtils::GetHAPINodeId(ParentHandle, ParentNodeId);
+	}
+
+	// Create a single input node
+	HAPI_NodeId NewNodeId = -1;	
+	if (ParentNodeId >= 0)
+	{
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::CreateInputNode(InputNodeName, NewNodeId, ParentNodeId), false);
+	}
+	else
+	{
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CreateInputNode(
+			FHoudiniEngine::Get().GetSession(), &NewNodeId, TCHAR_TO_UTF8(*InputNodeName)), false);
+	}
+
+	// Check if we have a valid id for this new input asset.
+	if (!FHoudiniEngineUtils::IsHoudiniNodeValid(NewNodeId))
+		return false;
+
+	// We have now created a valid new input node, we can delete the previous one
+	HAPI_NodeId PreviousInputNodeId = NodeId;
+	if (PreviousInputNodeId >= 0)
+	{
+		// Get the parent OBJ node ID before deleting!
+		HAPI_NodeId PreviousInputOBJNode = FHoudiniEngineUtils::HapiGetParentNodeId(PreviousInputNodeId);
+		if (HAPI_RESULT_SUCCESS != FHoudiniApi::DeleteNode(
+			FHoudiniEngine::Get().GetSession(), PreviousInputNodeId))
+		{
+			HOUDINI_LOG_WARNING(TEXT("Failed to cleanup the previous input node for %s."), *InputNodeName);
+		}
+
+		if (HAPI_RESULT_SUCCESS != FHoudiniApi::DeleteNode(
+			FHoudiniEngine::Get().GetSession(), PreviousInputOBJNode))
+		{
+			HOUDINI_LOG_WARNING(TEXT("Failed to cleanup the previous input OBJ node for %s."), *InputNodeName);
+		}
+	}
+
+	// We will create one point per component
+	int32 NumPoints = ComponentReferences.Num();
+
+	// Create and initialize a part with a point attribute
+	HAPI_PartInfo PartInfo;
+	FHoudiniApi::PartInfo_Init(&PartInfo);
+	PartInfo.attributeCounts[HAPI_ATTROWNER_POINT] = 1;
+	PartInfo.vertexCount = 0;
+	PartInfo.faceCount = 0;
+	PartInfo.pointCount = NumPoints;
+	PartInfo.type = HAPI_PARTTYPE_MESH;
+
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::SetPartInfo(
+		FHoudiniEngine::Get().GetSession(), NewNodeId, 0, &PartInfo), false);
+
+	// Point Position Attribute
+	{
+		// Create point attribute info for P.
+		HAPI_AttributeInfo AttributeInfoPoint;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfoPoint);
+		AttributeInfoPoint.count = NumPoints;
+		AttributeInfoPoint.tupleSize = 3;
+		AttributeInfoPoint.exists = true;
+		AttributeInfoPoint.owner = HAPI_ATTROWNER_POINT;
+		AttributeInfoPoint.storage = HAPI_STORAGETYPE_FLOAT;
+		AttributeInfoPoint.originalOwner = HAPI_ATTROWNER_INVALID;
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
+			HAPI_UNREAL_ATTRIB_POSITION, &AttributeInfoPoint), false);
+
+		// Extract/Convert the positions from the Transform
+		TArray<float> AllPositions;
+		AllPositions.SetNum(3 * NumPoints);
+		for (int32 Idx = 0; Idx < ComponentTransforms.Num(); Idx++)
+		{
+			FVector3f CurPos = (FVector3f)ComponentTransforms[Idx].GetLocation();
+			AllPositions[3 * Idx] = CurPos.X / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+			AllPositions[3 * Idx + 1] = CurPos.Z / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+			AllPositions[3 * Idx + 2] = CurPos.Y / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+		}
+
+		// Now that we have raw positions, we can upload them for our attribute.
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			AllPositions, NewNodeId, 0, HAPI_UNREAL_ATTRIB_POSITION, AttributeInfoPoint), false);
+	}
+
+	if(InInputSettings.bImportAsReferenceRotScaleEnabled)
+	{
+		// Extract/Convert the rotation/scale values from the Transform 
+		TArray<float> AllRotations;
+		AllRotations.SetNum(4 * NumPoints);
+		TArray<float> AllScales;
+		AllScales.SetNum(3 * NumPoints);
+		for (int32 Idx = 0; Idx < ComponentTransforms.Num(); Idx++)
+		{
+			FQuat InputRotation = ComponentTransforms[Idx].GetRotation();
+			AllRotations[4 * Idx] = (float)InputRotation.X;
+			AllRotations[4 * Idx + 1] = (float)InputRotation.Z;
+			AllRotations[4 * Idx + 2] = (float)InputRotation.Y;
+			AllRotations[4 * Idx + 3] = (float)-InputRotation.W;
+
+			FVector3f InputScale = (FVector3f)ComponentTransforms[Idx].GetScale3D();
+			AllScales[3 * Idx] = InputScale.X;
+			AllScales[3 * Idx + 1] = InputScale.Z;
+			AllScales[3 * Idx + 2] = InputScale.Y;
+		}
+
+		// Create ROTATION attribute info
+		HAPI_AttributeInfo AttributeInfoRotation;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfoRotation);
+		AttributeInfoRotation.count = NumPoints;
+		AttributeInfoRotation.tupleSize = 4;
+		AttributeInfoRotation.exists = true;
+		AttributeInfoRotation.owner = HAPI_ATTROWNER_POINT;
+		AttributeInfoRotation.storage = HAPI_STORAGETYPE_FLOAT;
+		AttributeInfoRotation.originalOwner = HAPI_ATTROWNER_INVALID;
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			FHoudiniEngine::Get().GetSession(),
+			NewNodeId, 0,
+			HAPI_UNREAL_ATTRIB_ROTATION,
+			&AttributeInfoRotation), false);
+
+		//we can now upload to our attribute.
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			AllRotations, NewNodeId, 0, HAPI_UNREAL_ATTRIB_ROTATION, AttributeInfoRotation), false);
+
+		// Create SCALE attribute info
+		HAPI_AttributeInfo AttributeInfoScale;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfoScale);
+		AttributeInfoScale.count = NumPoints;
+		AttributeInfoScale.tupleSize = 3;
+		AttributeInfoScale.exists = true;
+		AttributeInfoScale.owner = HAPI_ATTROWNER_POINT;
+		AttributeInfoScale.storage = HAPI_STORAGETYPE_FLOAT;
+		AttributeInfoScale.originalOwner = HAPI_ATTROWNER_INVALID;
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			FHoudiniEngine::Get().GetSession(),
+			NewNodeId, 0,
+			HAPI_UNREAL_ATTRIB_SCALE,
+			&AttributeInfoScale), false);
+
+		//we can now upload to our attribute.
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			AllScales, NewNodeId, 0, HAPI_UNREAL_ATTRIB_SCALE, AttributeInfoScale), false);
+	}
+
+	if (InInputSettings.bImportAsReferenceBboxEnabled)
+	{
+		// Extract/Convert the bbox min/max values from the Transform 
+		TArray<float> AllBBoxMins;
+		AllBBoxMins.SetNum(3 * NumPoints);
+		TArray<float> AllBBoxMaxs;
+		AllBBoxMaxs.SetNum(3 * NumPoints);
+		for (int32 Idx = 0; Idx < ComponentBBoxes.Num(); Idx++)
+		{
+			FVector3f CurMin = (FVector3f)ComponentBBoxes[Idx].Min;
+			FVector3f CurMax = (FVector3f)ComponentBBoxes[Idx].Max;
+
+			AllBBoxMins[3 * Idx] = CurMin.X / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+			AllBBoxMins[3 * Idx + 1] = CurMin.Z / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+			AllBBoxMins[3 * Idx + 2] = CurMin.Y / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+
+			AllBBoxMaxs[3 * Idx] = CurMax.X / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+			AllBBoxMaxs[3 * Idx + 1] = CurMax.Z / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+			AllBBoxMaxs[3 * Idx + 2] = CurMax.Y / HAPI_UNREAL_SCALE_FACTOR_POSITION;
+		}
+
+		// Create attribute info for both bbox min and bbox max
+		HAPI_AttributeInfo AttributeInfoBboxPoint;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfoBboxPoint);
+		AttributeInfoBboxPoint.count = NumPoints;
+		AttributeInfoBboxPoint.tupleSize = 3;
+		AttributeInfoBboxPoint.exists = true;
+		AttributeInfoBboxPoint.owner = HAPI_ATTROWNER_POINT;
+		AttributeInfoBboxPoint.storage = HAPI_STORAGETYPE_FLOAT;
+		AttributeInfoBboxPoint.originalOwner = HAPI_ATTROWNER_INVALID;
+
+		// bbox min
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
+			HAPI_UNREAL_ATTRIB_BBOX_MIN, &AttributeInfoBboxPoint), false);
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			AllBBoxMins, NewNodeId, 0, HAPI_UNREAL_ATTRIB_BBOX_MIN, AttributeInfoBboxPoint), false);
+
+		// bbox max
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
+			HAPI_UNREAL_ATTRIB_BBOX_MAX, &AttributeInfoBboxPoint), false);
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeFloatData(
+			AllBBoxMaxs, NewNodeId, 0, HAPI_UNREAL_ATTRIB_BBOX_MAX, AttributeInfoBboxPoint), false);
+	}
+
+	// Material Reference String Array Attribute
+	if (InInputSettings.bImportAsReferenceMaterialEnabled)
+	{
+		// Create point attribute info.
+		HAPI_AttributeInfo AttributeInfoPoint;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfoPoint);
+		AttributeInfoPoint.count = NumPoints;
+		AttributeInfoPoint.tupleSize = 1;
+		AttributeInfoPoint.exists = true;
+		AttributeInfoPoint.owner = HAPI_ATTROWNER_POINT;
+		AttributeInfoPoint.storage = HAPI_STORAGETYPE_STRING;
+		AttributeInfoPoint.originalOwner = HAPI_ATTROWNER_INVALID;
+
+		int32 MaxNumMaterials = 0;
+		for (int32 CompIdx = 0; CompIdx < ComponentMaterials.Num(); CompIdx++)
+		{
+			if (ComponentMaterials[CompIdx].Num() > MaxNumMaterials)
+				MaxNumMaterials = ComponentMaterials[CompIdx].Num();
+		}
+
+		// We set it to be multiple string attributes rather than a single string array attribute to not conflict
+		// with any existing HDA's that use the attribute name unreal_material
+		for (int32 MatIdx = 0; MatIdx < MaxNumMaterials; MatIdx++)
+		{
+			FString AttributeName = HAPI_UNREAL_ATTRIB_MATERIAL;
+			if (MatIdx > 0)
+				AttributeName.AppendInt(MatIdx);
+
+			// Create an array for the current Material 
+			TArray<FString> CurrentMaterials;
+			CurrentMaterials.SetNum(ComponentMaterials.Num());
+			for (int32 CompIdx = 0; CompIdx < ComponentMaterials.Num(); CompIdx++)
+			{
+				if (ComponentMaterials[CompIdx].IsValidIndex(MatIdx))
+					CurrentMaterials[CompIdx] = ComponentMaterials[CompIdx][MatIdx];
+				else
+					CurrentMaterials[CompIdx] = FString();
+			}
+
+			HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+				FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
+				TCHAR_TO_ANSI(*AttributeName), &AttributeInfoPoint), false);
+
+			HOUDINI_CHECK_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+				CurrentMaterials, NewNodeId, 0, AttributeName, AttributeInfoPoint), false);
+		}
+	}
+
+	// Unreal Reference String Attribute
+	{
+		// Create point attribute info.
+		HAPI_AttributeInfo AttributeInfoPoint;
+		FHoudiniApi::AttributeInfo_Init(&AttributeInfoPoint);
+		AttributeInfoPoint.count = NumPoints;
+		AttributeInfoPoint.tupleSize = 1;
+		AttributeInfoPoint.exists = true;
+		AttributeInfoPoint.owner = HAPI_ATTROWNER_POINT;
+		AttributeInfoPoint.storage = HAPI_STORAGETYPE_STRING;
+		AttributeInfoPoint.originalOwner = HAPI_ATTROWNER_INVALID;
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::AddAttribute(
+			FHoudiniEngine::Get().GetSession(), NewNodeId, 0,
+			HAPI_UNREAL_ATTRIB_INSTANCE_OVERRIDE, &AttributeInfoPoint), false);
+
+		HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiSetAttributeStringData(
+			ComponentReferences, NewNodeId, 0, HAPI_UNREAL_ATTRIB_INSTANCE_OVERRIDE, AttributeInfoPoint), false);
+	}
+
+	// Commit the geo.
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(NewNodeId), false);
+
+	FUnrealObjectInputHandle OutHandle;
+	{
+		// Record the node in the manager
+		const HAPI_NodeId ObjectNodeId = FHoudiniEngineUtils::HapiGetParentNodeId(NewNodeId);
+		FUnrealObjectInputHandle Handle;
+		if (FUnrealObjectInputUtils::AddNodeOrUpdateNode(Identifier, NewNodeId, Handle, ObjectNodeId, nullptr, bInputNodesCanBeDeleted))
+			OutHandle = Handle;
+
+		InActorObject->SetInputObjectNodeId(ObjectNodeId);
+		InActorObject->SetInputNodeId(NewNodeId);
+		InActorObject->InputNodeHandle = OutHandle;
+	}
+
+	if (!HapiSetGeoObjectTransform(InActorObject->GetInputObjectNodeId(), InActorObject->GetHoudiniObjectTransform()))
+		return false;
+
+	/*
+	// Ensure bImportAsReference is recorded as true
+	FHoudiniInputObjectSettings InputSettings(InInputSettings);
+	InputSettings.bImportAsReference = true;
+	// Update the cached data and input settings
+	InActorObject->Update(InObject->GetObject(), InputSettings);
+	*/
+
+	return true;
+}
+
+
+bool
 FHoudiniInputTranslator::HapiCreateInputNodeForAnimation(
 	const FString& InObjNodeName,
 	UHoudiniInputAnimation* InObject,
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForAnimation);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -2478,6 +3041,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMesh(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMesh);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -2583,6 +3148,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMeshComponent(
 	const FTransform& InActorTransform,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForSkeletalMeshComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -2758,6 +3325,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForGeometryCollection(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForGeometryCollection);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -2881,6 +3450,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForGeometryCollectionComponent(
 	const FTransform& InActorTransform,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForGeometryCollectionComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -2995,6 +3566,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSceneComponent(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForSceneComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -3025,6 +3598,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForStaticMeshComponent(
 	const FTransform& InActorTransform,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForStaticMeshComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -3233,6 +3808,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSplineMeshComponents(
 	const FTransform& InActorTransform,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForSplineMeshComponents);
+
 	if (!IsValid(InParentActorObject))
 		return false;
 
@@ -3373,6 +3950,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForInstancedStaticMeshComponent(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForInstancedStaticMeshComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -3433,6 +4012,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForSplineComponent(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForSplineComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -3476,6 +4057,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForHoudiniSplineComponent(
 	UHoudiniInputHoudiniSplineComponent* InObject,
 	const FHoudiniInputObjectSettings& InInputSettings)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForHoudiniSplineComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -3512,6 +4095,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForHoudiniAssetComponent(
 		UHoudiniInputHoudiniAsset* InObject,
 		const FHoudiniInputObjectSettings& InInputSettings)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForHoudiniAssetComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -3639,6 +4224,8 @@ FHoudiniInputTranslator::HapiCreateInputNodesForActorComponents(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodesForActorComponents);
+
 	if (!IsValid(InInput))
 		return false;
 
@@ -3690,7 +4277,7 @@ FHoudiniInputTranslator::HapiCreateInputNodesForActorComponents(
 
 				// Commit the geo if needed
 				if(bNeedCommit)
-					FHoudiniApi::CommitGeo(FHoudiniEngine::Get().GetSession(), CurComponent->GetInputNodeId());
+					FHoudiniEngineUtils::HapiCommitGeo(CurComponent->GetInputNodeId());
 			}
 			else
 			{
@@ -3736,6 +4323,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForActor(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForActor);
+
 	if (!IsValid(InInput))
 		return false;
 
@@ -3800,7 +4389,11 @@ FHoudiniInputTranslator::HapiCreateInputNodeForActor(
 	// Now, commit all of this actor's component
 	TArray<int32> CreatedNodeIds;
 	TSet<FUnrealObjectInputHandle> Handles;
-	bool bSuccess = HapiCreateInputNodesForActorComponents(InInput, InObject, Actor, InActorTransform, CreatedNodeIds, Handles, bInputNodesCanBeDeleted);
+	bool bSuccess = false;
+	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled() && InputSettings.bImportAsReference)
+		bSuccess = HapiCreateInputNodeForActorReference(InObject, InputSettings, bInputNodesCanBeDeleted);
+	else
+		bSuccess = HapiCreateInputNodesForActorComponents(InInput, InObject, Actor, InActorTransform, CreatedNodeIds, Handles, bInputNodesCanBeDeleted);
 
 	// Cache our transformn
 	InObject->SetTransform(Actor->GetTransform());
@@ -3809,28 +4402,30 @@ FHoudiniInputTranslator::HapiCreateInputNodeForActor(
 
 	if (FUnrealObjectInputRuntimeUtils::IsRefCountedInputSystemEnabled())
 	{
-		// Make a reference node for the actor
-		const FUnrealObjectInputOptions Options = FUnrealObjectInputOptions::MakeOptionsForGenericActor(InputSettings);
-		const FUnrealObjectInputIdentifier ActorInputNodeId(Actor, Options, false);
-		FUnrealObjectInputUtils::CreateOrUpdateReferenceInputMergeNode(ActorInputNodeId, Handles, InObject->InputNodeHandle);
-		if (!HapiSetGeoObjectTransform(InObject->GetInputObjectNodeId(), InObject->GetHoudiniObjectTransform()))
-			return false;
+		if (!InputSettings.bImportAsReference)
+		{
+			// Make a reference node for the actor
+			const FUnrealObjectInputOptions Options = FUnrealObjectInputOptions::MakeOptionsForGenericActor(InputSettings);
+			const FUnrealObjectInputIdentifier ActorInputNodeId(Actor, Options, false);
+			FUnrealObjectInputUtils::CreateOrUpdateReferenceInputMergeNode(ActorInputNodeId, Handles, InObject->InputNodeHandle);
+			if (!HapiSetGeoObjectTransform(InObject->GetInputObjectNodeId(), InObject->GetHoudiniObjectTransform()))
+				return false;
 
-		OutCreatedNodeIds.Add(InObject->GetInputObjectNodeId());
-		OutHandles.Add(InObject->InputNodeHandle);
+			OutCreatedNodeIds.Add(InObject->GetInputObjectNodeId());
+			OutHandles.Add(InObject->InputNodeHandle);
+		}
+		else
+		{
+			// We only created one node for the actor as ref
+			OutCreatedNodeIds.Add(InObject->GetInputObjectNodeId());
+			OutHandles.Add(InObject->InputNodeHandle);
+		}
 	}
 	else
 	{
 		OutCreatedNodeIds.Append(CreatedNodeIds);
 		OutHandles.Append(Handles);
 	}
-
-	/*
-	// TODO
-	// Support this type of input object
-	FString ObjNodeName = InInput->GetNodeBaseName();
-	return HapiCreateInputNodeForObject(ObjNodeName, InObject);	
-	*/
 
 	//TODO? Check
 	// return true if we have at least uploaded one component
@@ -3847,6 +4442,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForBP(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForBP);
+
 	if (!IsValid(InInput))
 		return false;
 
@@ -3930,6 +4527,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForLandscapeSplinesComponent(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool bInInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForLandscapeSplinesComponent);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -4009,6 +4608,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForLevelInstance(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForLevelInstance);
+
 	if (!IsValid(InObject) || !IsValid(InInput))
 		return false;
 
@@ -4112,6 +4713,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForPackedLevelActor(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForPackedLevelActor);
+
 	if (!IsValid(InObject) || !IsValid(InInput))
 		return false;
 
@@ -4206,6 +4809,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForLandscape(
 	TSet<FUnrealObjectInputHandle>& OutHandles,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForLandscape);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -4272,6 +4877,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForBrush(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForBrush);
+
 	if (!IsValid(InObject))
 		return false;
 
@@ -4308,6 +4915,8 @@ bool
 FHoudiniInputTranslator::HapiCreateInputNodeForCamera(
 	const FString& InNodeName, UHoudiniInputCameraComponent* InInputObject, const FHoudiniInputObjectSettings& InInputSettings)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForCamera);
+
 	if (!IsValid(InInputObject))
 		return false;
 
@@ -4366,6 +4975,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForCamera(
 bool
 FHoudiniInputTranslator::UpdateLoadedInputs(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UpdateLoadedInputs);
+
 	if (!IsValid(HAC))
 		return false;
 
@@ -4399,6 +5010,8 @@ FHoudiniInputTranslator::UpdateLoadedInputs(UHoudiniAssetComponent* HAC)
 bool
 FHoudiniInputTranslator::UpdateWorldInputs(UHoudiniAssetComponent* HAC)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::UpdateWorldInputs);
+
 	if (!IsValid(HAC))
 		return false;
 
@@ -4842,8 +5455,7 @@ FHoudiniInputTranslator::CreateInputNodeForReference(
 	}
 
 	// Commit the geo.
-	HOUDINI_CHECK_ERROR_RETURN(FHoudiniApi::CommitGeo(
-		FHoudiniEngine::Get().GetSession(), NewNodeId), false);
+	HOUDINI_CHECK_ERROR_RETURN(FHoudiniEngineUtils::HapiCommitGeo(NewNodeId), false);
 
 	InputNodeId = NewNodeId;
 	return true;
@@ -4863,6 +5475,8 @@ bool FHoudiniInputTranslator::CreateInputNodeForReference(
 	const bool& bImportAsReferenceMaterialEnabled,
 	const TArray<FString>& MaterialReferences)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::CreateInputNodeForReference);
+
 	// The identifier to the node in the input system
 	FString FinalInputNodeName = InputNodeName;
 	HAPI_NodeId ParentNodeId = -1;
@@ -4941,6 +5555,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForDataTable(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForDataTable);
+
 	if (!IsValid(InInputObject))
 		return false;
 
@@ -5019,6 +5635,8 @@ FHoudiniInputTranslator::HapiCreateInputNodeForFoliageType_InstancedStaticMesh(
 	const FHoudiniInputObjectSettings& InInputSettings,
 	const bool& bInputNodesCanBeDeleted)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniInputTranslator::HapiCreateInputNodeForFoliageType_InstancedStaticMesh);
+
 	if (!IsValid(InObject))
 		return false;
 

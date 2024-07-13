@@ -638,11 +638,14 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 
 	auto UpdatePathForServer = [&]
 	{
+		// Get the existing PATH env var
+		FString OrigPathVar = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
+		// Make sure we only extend the PATH once!
+		if (OrigPathVar.Contains(LibHAPILocation))
+			return;
+
 		// Modify our PATH so that HARC will find HARS.exe
 		const TCHAR* PathDelimiter = FPlatformMisc::GetPathVarDelimiter();
-
-		FString OrigPathVar = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
-
 		FString ModifiedPath =
 #if PLATFORM_MAC
 			// On Mac our binaries are split between two folders
@@ -1284,6 +1287,8 @@ FHoudiniEngine::FinishTaskSlateNotification(const FText& InText)
 
 bool FHoudiniEngine::UpdateCookingNotification(const FText& InText, const bool bExpireAndFade)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngine::UpdateCookingNotification);
+
 #if WITH_EDITOR
 	TimeSinceLastPersistentNotification = 0.0;
 
@@ -1306,13 +1311,17 @@ bool FHoudiniEngine::UpdateCookingNotification(const FText& InText, const bool b
 		if (HoudiniBrush.IsValid())
 			Info.Image = HoudiniBrush.Get();
 
-
-		CookingNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngine::UpdateCookingNotification__AddNotification);
+			CookingNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+		}
 	}
 
 	TSharedPtr<SNotificationItem> NotificationItem = CookingNotificationPtr.Pin();
 	if (NotificationItem.IsValid())
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngine::UpdateCookingNotification__UpdateNotification);
+
 		// Update the persistent notification.
 		NotificationItem->SetText(InText);
 		

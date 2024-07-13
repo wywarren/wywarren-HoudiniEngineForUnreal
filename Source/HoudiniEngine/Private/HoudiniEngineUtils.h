@@ -96,6 +96,9 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		// if bWaitForCompletion is true, this call will be blocking until the cook is finished
 		static bool HapiCookNode(const HAPI_NodeId& InNodeId, HAPI_CookOptions* InCookOptions = nullptr, const bool& bWaitForCompletion = false);
 
+		// Wrapper for CommitGeo - adds a profiler scope wrapper
+		static HAPI_Result HapiCommitGeo(const HAPI_NodeId& InNodeId);
+
 		// Return a specified HAPI status string.
 		static const FString GetStatusString(HAPI_StatusType status_type, HAPI_StatusVerbosity verbosity);
 
@@ -1162,6 +1165,9 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		static FString HapiGetEventTypeAsString(const HAPI_PDG_EventType& InEventType);
 		static FString HapiGetWorkItemStateAsString(const HAPI_PDG_WorkItemState& InWorkItemState);
 
+		static TArray<FString> GetAttributeNames(const HAPI_Session* Session, HAPI_NodeId Node, HAPI_PartId PartId, HAPI_AttributeOwner Owner);
+		static TMap< HAPI_AttributeOwner, TArray<FString>> GetAllAttributeNames(const HAPI_Session * Session, HAPI_NodeId Node, HAPI_PartId PartId);
+
 		// -------------------------------------------------
 		// Generic naming / pathing utilities
 		// -------------------------------------------------
@@ -1269,16 +1275,6 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		// -------------------------------------------------
 		static FString JSONToString(const TSharedPtr<FJsonObject>& JSONObject);
 		static bool JSONFromString(const ::FString& JSONString, TSharedPtr<FJsonObject>& OutJSONObject);
-
-		// -------------------------------------------------
-		// Transform Utilities
-		// -------------------------------------------------
-		// Convert Houdini component space transform to a UE component space transform
-		static void ConvertHoudiniComponentSpaceTransform(
-			const float* RotationData,
-			const FVector3f& PositionData,
-			FTransform& OutUnrealTransform
-		);
 
 		// -------------------------------------------------
 		// Mesh Attribute Utilities
